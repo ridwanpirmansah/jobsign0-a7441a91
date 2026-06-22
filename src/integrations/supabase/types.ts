@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_settings: {
+        Row: {
+          id: number
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          secret?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attendances: {
         Row: {
           check_in: string | null
@@ -247,6 +265,158 @@ export type Database = {
         }
         Relationships: []
       }
+      material_prices: {
+        Row: {
+          key: string
+          label: string
+          unit: string | null
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          key: string
+          label: string
+          unit?: string | null
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          key?: string
+          label?: string
+          unit?: string | null
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          adaptor: number
+          akrilik_cost: number
+          akrilik_l: number
+          akrilik_p: number
+          baut_fischer: number
+          co_date: string | null
+          created_at: string
+          created_by: string | null
+          dp: number
+          hpp: number
+          id: string
+          kabel_cost: number
+          kabel_meter: number
+          kabel_socket_cost: number
+          kabel_socket_meter: number
+          karet_seal: number
+          kota: string | null
+          led_cost: number
+          led_meter: number
+          modul: number
+          notes: string | null
+          order_no: string
+          outdoor_cost: number
+          paket: string | null
+          payment: number
+          print_cost: number
+          profit: number
+          project_id: string | null
+          socket_dc: number
+          solder_cost: number
+          source: Database["public"]["Enums"]["order_source"]
+          split: number
+          tempel_cost: number
+          text_neon: string
+          titik: number
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          adaptor?: number
+          akrilik_cost?: number
+          akrilik_l?: number
+          akrilik_p?: number
+          baut_fischer?: number
+          co_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          dp?: number
+          hpp?: number
+          id?: string
+          kabel_cost?: number
+          kabel_meter?: number
+          kabel_socket_cost?: number
+          kabel_socket_meter?: number
+          karet_seal?: number
+          kota?: string | null
+          led_cost?: number
+          led_meter?: number
+          modul?: number
+          notes?: string | null
+          order_no: string
+          outdoor_cost?: number
+          paket?: string | null
+          payment?: number
+          print_cost?: number
+          profit?: number
+          project_id?: string | null
+          socket_dc?: number
+          solder_cost?: number
+          source?: Database["public"]["Enums"]["order_source"]
+          split?: number
+          tempel_cost?: number
+          text_neon: string
+          titik?: number
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          adaptor?: number
+          akrilik_cost?: number
+          akrilik_l?: number
+          akrilik_p?: number
+          baut_fischer?: number
+          co_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          dp?: number
+          hpp?: number
+          id?: string
+          kabel_cost?: number
+          kabel_meter?: number
+          kabel_socket_cost?: number
+          kabel_socket_meter?: number
+          karet_seal?: number
+          kota?: string | null
+          led_cost?: number
+          led_meter?: number
+          modul?: number
+          notes?: string | null
+          order_no?: string
+          outdoor_cost?: number
+          paket?: string | null
+          payment?: number
+          print_cost?: number
+          profit?: number
+          project_id?: string | null
+          socket_dc?: number
+          solder_cost?: number
+          source?: Database["public"]["Enums"]["order_source"]
+          split?: number
+          tempel_cost?: number
+          text_neon?: string
+          titik?: number
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payrolls: {
         Row: {
           approved_at: string | null
@@ -419,6 +589,57 @@ export type Database = {
           },
         ]
       }
+      sync_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          header_row: number
+          id: number
+          last_sync_at: string | null
+          last_sync_inserted: number | null
+          last_sync_message: string | null
+          last_sync_skipped: number | null
+          last_sync_status: string | null
+          last_sync_updated: number | null
+          mapping: Json
+          sheet_name: string | null
+          spreadsheet_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          header_row?: number
+          id?: number
+          last_sync_at?: string | null
+          last_sync_inserted?: number | null
+          last_sync_message?: string | null
+          last_sync_skipped?: number | null
+          last_sync_status?: string | null
+          last_sync_updated?: number | null
+          mapping?: Json
+          sheet_name?: string | null
+          spreadsheet_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          header_row?: number
+          id?: number
+          last_sync_at?: string | null
+          last_sync_inserted?: number | null
+          last_sync_message?: string | null
+          last_sync_skipped?: number | null
+          last_sync_status?: string | null
+          last_sync_updated?: number | null
+          mapping?: Json
+          sheet_name?: string | null
+          spreadsheet_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -445,6 +666,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      attendance_check_in: { Args: { _token: string }; Returns: Json }
+      get_attendance_secret: { Args: never; Returns: string }
+      get_available_projects: {
+        Args: never
+        Returns: {
+          claimed_points: number
+          code: string
+          id: string
+          remaining_points: number
+          status: Database["public"]["Enums"]["project_status"]
+          title: string
+          total_points: number
+        }[]
+      }
+      get_project_rate_availability: {
+        Args: { _project_id: string }
+        Returns: {
+          claimed_points: number
+          rate_id: string
+          rate_name: string
+          rate_per_unit: number
+          remaining_points: number
+          total_points: number
+          unit: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -453,12 +700,20 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_owner: { Args: { _user_id: string }; Returns: boolean }
+      rotate_attendance_secret: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "owner" | "admin" | "karyawan"
       attendance_status: "hadir" | "izin" | "sakit" | "alpa"
       employee_type: "borongan" | "harian"
       job_log_status: "pending" | "approved" | "rejected"
+      order_source:
+        | "shopee"
+        | "tiktok"
+        | "tokopedia"
+        | "lazada"
+        | "direct"
+        | "lainnya"
       payroll_status: "draft" | "approved" | "paid"
       project_status: "draft" | "active" | "done" | "cancelled"
     }
@@ -592,6 +847,14 @@ export const Constants = {
       attendance_status: ["hadir", "izin", "sakit", "alpa"],
       employee_type: ["borongan", "harian"],
       job_log_status: ["pending", "approved", "rejected"],
+      order_source: [
+        "shopee",
+        "tiktok",
+        "tokopedia",
+        "lazada",
+        "direct",
+        "lainnya",
+      ],
       payroll_status: ["draft", "approved", "paid"],
       project_status: ["draft", "active", "done", "cancelled"],
     },
