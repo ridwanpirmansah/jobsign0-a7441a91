@@ -9,38 +9,310 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRatesRouteImport } from './routes/_authenticated/rates'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
+import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
+import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
+import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
+import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
+import { Route as AuthenticatedOwnerAttendanceQrRouteImport } from './routes/_authenticated/owner.attendance-qr'
+import { Route as AuthenticatedMeScanRouteImport } from './routes/_authenticated/me.scan'
+import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
+import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
+import { Route as AuthenticatedMeAttendanceRouteImport } from './routes/_authenticated/me.attendance'
+import { Route as ApiPublicHooksSyncProjectsRouteImport } from './routes/api/public/hooks/sync-projects'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRatesRoute = AuthenticatedRatesRouteImport.update({
+  id: '/rates',
+  path: '/rates',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPayrollRoute = AuthenticatedPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCustomersRoute = AuthenticatedCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedProjectsRoute,
+} as any)
+const AuthenticatedOwnerSyncRoute = AuthenticatedOwnerSyncRouteImport.update({
+  id: '/owner/sync',
+  path: '/owner/sync',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOwnerPricesRoute =
+  AuthenticatedOwnerPricesRouteImport.update({
+    id: '/owner/prices',
+    path: '/owner/prices',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerAttendanceQrRoute =
+  AuthenticatedOwnerAttendanceQrRouteImport.update({
+    id: '/owner/attendance-qr',
+    path: '/owner/attendance-qr',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMeScanRoute = AuthenticatedMeScanRouteImport.update({
+  id: '/me/scan',
+  path: '/me/scan',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeJobsRoute = AuthenticatedMeJobsRouteImport.update({
+  id: '/me/jobs',
+  path: '/me/jobs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeEarningsRoute = AuthenticatedMeEarningsRouteImport.update({
+  id: '/me/earnings',
+  path: '/me/earnings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeAttendanceRoute =
+  AuthenticatedMeAttendanceRouteImport.update({
+    id: '/me/attendance',
+    path: '/me/attendance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicHooksSyncProjectsRoute =
+  ApiPublicHooksSyncProjectsRouteImport.update({
+    id: '/api/public/hooks/sync-projects',
+    path: '/api/public/hooks/sync-projects',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/approvals': typeof AuthenticatedApprovalsRoute
+  '/customers': typeof AuthenticatedCustomersRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/employees': typeof AuthenticatedEmployeesRoute
+  '/orders': typeof AuthenticatedOrdersRoute
+  '/payroll': typeof AuthenticatedPayrollRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
+  '/rates': typeof AuthenticatedRatesRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/me/attendance': typeof AuthenticatedMeAttendanceRoute
+  '/me/earnings': typeof AuthenticatedMeEarningsRoute
+  '/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/me/scan': typeof AuthenticatedMeScanRoute
+  '/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
+  '/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/owner/sync': typeof AuthenticatedOwnerSyncRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/approvals': typeof AuthenticatedApprovalsRoute
+  '/customers': typeof AuthenticatedCustomersRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/employees': typeof AuthenticatedEmployeesRoute
+  '/orders': typeof AuthenticatedOrdersRoute
+  '/payroll': typeof AuthenticatedPayrollRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
+  '/rates': typeof AuthenticatedRatesRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/me/attendance': typeof AuthenticatedMeAttendanceRoute
+  '/me/earnings': typeof AuthenticatedMeEarningsRoute
+  '/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/me/scan': typeof AuthenticatedMeScanRoute
+  '/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
+  '/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/owner/sync': typeof AuthenticatedOwnerSyncRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
+  '/_authenticated/customers': typeof AuthenticatedCustomersRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
+  '/_authenticated/orders': typeof AuthenticatedOrdersRoute
+  '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
+  '/_authenticated/rates': typeof AuthenticatedRatesRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/me/attendance': typeof AuthenticatedMeAttendanceRoute
+  '/_authenticated/me/earnings': typeof AuthenticatedMeEarningsRoute
+  '/_authenticated/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/_authenticated/me/scan': typeof AuthenticatedMeScanRoute
+  '/_authenticated/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
+  '/_authenticated/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/_authenticated/owner/sync': typeof AuthenticatedOwnerSyncRoute
+  '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/approvals'
+    | '/customers'
+    | '/dashboard'
+    | '/employees'
+    | '/orders'
+    | '/payroll'
+    | '/projects'
+    | '/rates'
+    | '/reports'
+    | '/users'
+    | '/me/attendance'
+    | '/me/earnings'
+    | '/me/jobs'
+    | '/me/scan'
+    | '/owner/attendance-qr'
+    | '/owner/prices'
+    | '/owner/sync'
+    | '/projects/$id'
+    | '/api/public/hooks/sync-projects'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/approvals'
+    | '/customers'
+    | '/dashboard'
+    | '/employees'
+    | '/orders'
+    | '/payroll'
+    | '/projects'
+    | '/rates'
+    | '/reports'
+    | '/users'
+    | '/me/attendance'
+    | '/me/earnings'
+    | '/me/jobs'
+    | '/me/scan'
+    | '/owner/attendance-qr'
+    | '/owner/prices'
+    | '/owner/sync'
+    | '/projects/$id'
+    | '/api/public/hooks/sync-projects'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/approvals'
+    | '/_authenticated/customers'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/employees'
+    | '/_authenticated/orders'
+    | '/_authenticated/payroll'
+    | '/_authenticated/projects'
+    | '/_authenticated/rates'
+    | '/_authenticated/reports'
+    | '/_authenticated/users'
+    | '/_authenticated/me/attendance'
+    | '/_authenticated/me/earnings'
+    | '/_authenticated/me/jobs'
+    | '/_authenticated/me/scan'
+    | '/_authenticated/owner/attendance-qr'
+    | '/_authenticated/owner/prices'
+    | '/_authenticated/owner/sync'
+    | '/_authenticated/projects/$id'
+    | '/api/public/hooks/sync-projects'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  ApiPublicHooksSyncProjectsRoute: typeof ApiPublicHooksSyncProjectsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +320,203 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rates': {
+      id: '/_authenticated/rates'
+      path: '/rates'
+      fullPath: '/rates'
+      preLoaderRoute: typeof AuthenticatedRatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payroll': {
+      id: '/_authenticated/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof AuthenticatedPayrollRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/orders': {
+      id: '/_authenticated/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof AuthenticatedOrdersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/employees': {
+      id: '/_authenticated/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/customers': {
+      id: '/_authenticated/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof AuthenticatedCustomersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/approvals': {
+      id: '/_authenticated/approvals'
+      path: '/approvals'
+      fullPath: '/approvals'
+      preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects/$id': {
+      id: '/_authenticated/projects/$id'
+      path: '/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedProjectsRoute
+    }
+    '/_authenticated/owner/sync': {
+      id: '/_authenticated/owner/sync'
+      path: '/owner/sync'
+      fullPath: '/owner/sync'
+      preLoaderRoute: typeof AuthenticatedOwnerSyncRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/prices': {
+      id: '/_authenticated/owner/prices'
+      path: '/owner/prices'
+      fullPath: '/owner/prices'
+      preLoaderRoute: typeof AuthenticatedOwnerPricesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/attendance-qr': {
+      id: '/_authenticated/owner/attendance-qr'
+      path: '/owner/attendance-qr'
+      fullPath: '/owner/attendance-qr'
+      preLoaderRoute: typeof AuthenticatedOwnerAttendanceQrRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/scan': {
+      id: '/_authenticated/me/scan'
+      path: '/me/scan'
+      fullPath: '/me/scan'
+      preLoaderRoute: typeof AuthenticatedMeScanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/jobs': {
+      id: '/_authenticated/me/jobs'
+      path: '/me/jobs'
+      fullPath: '/me/jobs'
+      preLoaderRoute: typeof AuthenticatedMeJobsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/earnings': {
+      id: '/_authenticated/me/earnings'
+      path: '/me/earnings'
+      fullPath: '/me/earnings'
+      preLoaderRoute: typeof AuthenticatedMeEarningsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/attendance': {
+      id: '/_authenticated/me/attendance'
+      path: '/me/attendance'
+      fullPath: '/me/attendance'
+      preLoaderRoute: typeof AuthenticatedMeAttendanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/hooks/sync-projects': {
+      id: '/api/public/hooks/sync-projects'
+      path: '/api/public/hooks/sync-projects'
+      fullPath: '/api/public/hooks/sync-projects'
+      preLoaderRoute: typeof ApiPublicHooksSyncProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedProjectsRouteChildren {
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+}
+
+const AuthenticatedProjectsRouteChildren: AuthenticatedProjectsRouteChildren = {
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+}
+
+const AuthenticatedProjectsRouteWithChildren =
+  AuthenticatedProjectsRoute._addFileChildren(
+    AuthenticatedProjectsRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
+  AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
+  AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
+  AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
+  AuthenticatedRatesRoute: typeof AuthenticatedRatesRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedMeAttendanceRoute: typeof AuthenticatedMeAttendanceRoute
+  AuthenticatedMeEarningsRoute: typeof AuthenticatedMeEarningsRoute
+  AuthenticatedMeJobsRoute: typeof AuthenticatedMeJobsRoute
+  AuthenticatedMeScanRoute: typeof AuthenticatedMeScanRoute
+  AuthenticatedOwnerAttendanceQrRoute: typeof AuthenticatedOwnerAttendanceQrRoute
+  AuthenticatedOwnerPricesRoute: typeof AuthenticatedOwnerPricesRoute
+  AuthenticatedOwnerSyncRoute: typeof AuthenticatedOwnerSyncRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
+  AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
+  AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
+  AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
+  AuthenticatedRatesRoute: AuthenticatedRatesRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedMeAttendanceRoute: AuthenticatedMeAttendanceRoute,
+  AuthenticatedMeEarningsRoute: AuthenticatedMeEarningsRoute,
+  AuthenticatedMeJobsRoute: AuthenticatedMeJobsRoute,
+  AuthenticatedMeScanRoute: AuthenticatedMeScanRoute,
+  AuthenticatedOwnerAttendanceQrRoute: AuthenticatedOwnerAttendanceQrRoute,
+  AuthenticatedOwnerPricesRoute: AuthenticatedOwnerPricesRoute,
+  AuthenticatedOwnerSyncRoute: AuthenticatedOwnerSyncRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  ApiPublicHooksSyncProjectsRoute: ApiPublicHooksSyncProjectsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
