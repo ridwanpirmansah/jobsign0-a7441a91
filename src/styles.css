@@ -87,14 +87,15 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  /* Dark professional sidebar (slate-900 family) */
+  --sidebar: oklch(0.21 0.04 265);
+  --sidebar-foreground: oklch(0.96 0.005 250);
+  --sidebar-primary: oklch(0.62 0.18 250);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.28 0.04 260);
+  --sidebar-accent-foreground: oklch(0.98 0.003 247);
+  --sidebar-border: oklch(0.32 0.03 260);
+  --sidebar-ring: oklch(0.62 0.18 250);
 }
 
 .dark {
@@ -142,3 +143,101 @@
     color: var(--color-foreground);
   }
 }
+
+/* =========================================================
+   Mobile-only optimizations (lansia-friendly).
+   Scoped strictly to <768px so desktop is untouched.
+   ========================================================= */
+@media (max-width: 767px) {
+  html {
+    font-size: 17px; /* bumps rem-based sizes ~6% larger */
+  }
+
+  /* Main content area: tighter padding so content has more room */
+  main {
+    padding: 1rem !important;
+  }
+
+  /* Headings a touch larger and tighter */
+  h1 { font-size: 1.6rem !important; line-height: 1.2 !important; }
+  h2 { font-size: 1.3rem !important; line-height: 1.25 !important; }
+
+  /* Buttons: bigger tap targets (min 48px) and readable text */
+  button,
+  [role="button"],
+  a.inline-flex,
+  .btn {
+    min-height: 48px;
+  }
+  button svg,
+  [role="button"] svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  /* Form controls: larger height + 16px font to prevent iOS zoom */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  [data-slot="select-trigger"] {
+    min-height: 48px !important;
+    font-size: 1rem !important;
+  }
+  label { font-size: 0.95rem !important; }
+
+  /* Cards: a bit more breathing room */
+  [data-slot="card-content"],
+  [data-slot="card-header"] {
+    padding: 1rem !important;
+  }
+  [data-slot="card-title"] { font-size: 1.05rem !important; }
+
+  /* Tables: horizontal scroll instead of cramped wrap */
+  .table-wrap,
+  table {
+    font-size: 0.95rem;
+  }
+  table { min-width: 560px; }
+  .overflow-x-auto > table { min-width: 100%; }
+
+  /* Sidebar (mobile sheet) items larger */
+  [data-sidebar="menu-button"] {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+  [data-sidebar="menu-button"] svg {
+    width: 1.2rem !important;
+    height: 1.2rem !important;
+  }
+  [data-sidebar="group-label"] { font-size: 0.8rem; }
+
+  /* Sidebar trigger / header */
+  header [data-sidebar="trigger"] {
+    height: 44px;
+    width: 44px;
+  }
+  header { height: 56px !important; }
+
+  /* Badges slightly bigger */
+  [data-slot="badge"] {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.55rem;
+  }
+
+  /* Dialog content: full-bleed and scrollable */
+  [data-slot="dialog-content"],
+  [role="dialog"] {
+    max-width: calc(100vw - 1.5rem) !important;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
+  /* Stat numbers larger */
+  .text-xl { font-size: 1.4rem !important; }
+  .text-2xl { font-size: 1.65rem !important; }
+
+  /* Spacing fixes for common dense rows */
+  .gap-2 { gap: 0.6rem; }
+  .gap-3 { gap: 0.75rem; }
+}
+
