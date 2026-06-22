@@ -77,14 +77,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Neon Workflow System" },
+      { name: "description", content: "Sistem manajemen produksi neon sign & upah karyawan borongan/harian." },
+      { name: "author", content: "Neon Workflow" },
+      { property: "og:title", content: "Neon Workflow System" },
+      { property: "og:description", content: "Sistem manajemen produksi neon sign & upah karyawan borongan/harian." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Neon Workflow System" },
+      { name: "twitter:description", content: "Sistem manajemen produksi neon sign & upah karyawan borongan/harian." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2fac9150-dda5-474c-960f-ee75ebe915ba/id-preview-737bd214--b3ba1828-eb28-44a1-8734-a278458edad8.lovable.app-1781596354933.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2fac9150-dda5-474c-960f-ee75ebe915ba/id-preview-737bd214--b3ba1828-eb28-44a1-8734-a278458edad8.lovable.app-1781596354933.png" },
     ],
     links: [
       {

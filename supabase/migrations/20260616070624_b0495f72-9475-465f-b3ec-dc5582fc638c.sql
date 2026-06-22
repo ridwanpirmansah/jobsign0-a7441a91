@@ -1,0 +1,2 @@
+TRUNCATE TABLE public.payrolls, public.attendances, public.job_logs, public.project_assignments, public.projects, public.customers, public.job_rates, public.employees, public.user_roles, public.profiles RESTART IDENTITY CASCADE;
+DELETE FROM auth.users;

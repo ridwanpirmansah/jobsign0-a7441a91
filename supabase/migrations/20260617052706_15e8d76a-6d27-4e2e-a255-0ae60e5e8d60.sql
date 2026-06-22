@@ -1,0 +1,1 @@
+DELETE FROM public.attendances WHERE date = current_date;

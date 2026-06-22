@@ -1,0 +1,1 @@
+CREATE POLICY "karyawan read active projects" ON public.projects FOR SELECT TO authenticated USING (status IN ('draft','active'));
