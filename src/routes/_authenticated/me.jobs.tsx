@@ -252,7 +252,7 @@ function MyJobs() {
                     const rem = Number(p.remaining_points);
                     return (
                       <SelectItem key={p.id} value={p.id} disabled={rem <= 0}>
-                        {p.code} — {p.title} · Sisa {rem}/{p.total_points} titik{rem <= 0 ? " (penuh)" : ""}
+                        {p.code} — {p.title} · Sisa total {rem}/{p.total_points} titik{rem <= 0 ? " (penuh)" : ""}
                       </SelectItem>
                     );
                   })}
@@ -261,7 +261,7 @@ function MyJobs() {
               </Select>
               {selectedProject && (
                 <p className="text-xs mt-1 text-slate-500">
-                  Total titik project: <span className="font-semibold text-slate-900">{selectedProject.total_points}</span> per jenis tarif
+                  Total sisa garapan: <span className="font-semibold text-slate-900">{selectedProject.remaining_points}</span> dari <span className="font-semibold text-slate-900">{selectedProject.total_points}</span> titik gabungan semua jenis
                 </p>
               )}
             </div>
