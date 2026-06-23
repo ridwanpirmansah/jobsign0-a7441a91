@@ -490,6 +490,11 @@ function OrdersPage() {
                     <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
                     <TableCell className="text-xs">{o.co_date ?? "-"}</TableCell>
                     <TableCell><Badge variant="outline">{o.source}</Badge></TableCell>
+                    <TableCell>
+                      <Badge variant={o.status === "active" ? "default" : o.status === "return" ? "destructive" : "secondary"}>
+                        {STATUS_LABEL[(o.status as OrderStatus) ?? "active"] ?? o.status ?? "Aktif"}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-xs">{o.username ?? "-"}<div className="text-muted-foreground">{o.kota ?? ""}</div></TableCell>
                     <TableCell className="max-w-xs truncate">{o.text_neon}</TableCell>
                     <TableCell className="text-right">{o.titik}</TableCell>
