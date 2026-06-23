@@ -316,6 +316,15 @@ function OrdersPage() {
                   </Select>
                 </div>
                 <div>
+                  <Label>Status</Label>
+                  <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as OrderStatus }))}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>No. Order * <span className="text-xs text-muted-foreground">— otomatis, bisa diubah</span></Label>
                   <Input value={form.order_no} onChange={(e) => setForm((f) => ({ ...f, order_no: e.target.value }))}/>
                 </div>
