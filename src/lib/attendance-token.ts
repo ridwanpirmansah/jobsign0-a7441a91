@@ -2,7 +2,7 @@
 // Token = first 10 hex chars of HMAC-SHA256(secret, window) where window = floor(epoch_seconds / 6)
 // Must match public.attendance_check_in() in the database.
 
-export const WINDOW_SECONDS = 6;
+export const WINDOW_SECONDS = 10;
 
 export function currentWindow(nowMs = Date.now()): number {
   return Math.floor(nowMs / 1000 / WINDOW_SECONDS);
