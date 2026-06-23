@@ -386,8 +386,15 @@ function MyJobs() {
               <TableBody>
                 {logs?.map((l) => (
                   <TableRow key={l.id}>
-                    <TableCell>{format(new Date(l.log_date), "dd MMM yyyy")}</TableCell>
-                    <TableCell>{l.project?.code ?? "—"}</TableCell>
+                    <TableCell>{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</TableCell>
+                    <TableCell>
+                      {l.project ? (
+                        <div className="leading-tight">
+                          <div className="font-mono text-xs text-slate-500">{l.project.code}</div>
+                          <div className="font-medium text-slate-900">{l.project.title}</div>
+                        </div>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell>{l.rate?.name}</TableCell>
                     <TableCell className="text-right">{l.qty}</TableCell>
                     <TableCell className="text-right font-medium">{fmtIDR(Number(l.amount))}</TableCell>
