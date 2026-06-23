@@ -474,6 +474,7 @@ function OrdersPage() {
                   <TableHead>No</TableHead>
                   <TableHead>Tgl</TableHead>
                   <TableHead>Sumber</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>User / Kota</TableHead>
                   <TableHead>Text</TableHead>
                   <TableHead className="text-right">Titik</TableHead>
