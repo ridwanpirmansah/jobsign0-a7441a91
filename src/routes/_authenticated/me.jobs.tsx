@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Trash2, CheckCheck, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_authenticated/me/jobs")({ component: MyJobs });
 
