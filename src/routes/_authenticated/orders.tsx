@@ -182,6 +182,18 @@ function OrdersPage() {
 
   const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
 
+  // Auto-suggested adaptor variant based on LED length
+  const ledMeterNum = num(form.led_meter);
+  const suggestedVariant = useMemo(() => suggestAdaptor(ledMeterNum), [ledMeterNum]);
+
+  // Resolve adaptor cost: manual override > variant from price map > variant default
+  const adaptorVariantKey = form.adaptor_type || suggestedVariant.key;
+  const adaptorVariantPrice = useMemo(() => {
+    const v = ADAPTOR_VARIANTS.find((a) => a.key === adaptorVariantKey) ?? suggestedVariant;
+    return priceMap[v.key] ?? v.defaultPrice;
+  }, [adaptorVariantKey, priceMap, suggestedVariant]);
+  const adaptorCost = form.adaptor_manual ? num(form.adaptor) : adaptorVariantPrice;
+
   // Live calculation preview (mirror DB trigger)
   const calc = useMemo(() => {
     const led_meter = num(form.led_meter);
@@ -198,15 +210,17 @@ function OrdersPage() {
     const kabel_cost = kabel_meter * (priceMap.kabel_per_meter ?? 0);
     const kabel_socket_cost = kabel_socket_meter * (priceMap.kabel_socket_per_meter ?? 2500);
     const hpp = led_cost + akrilik_cost + solder_cost + tempel_cost + kabel_cost + kabel_socket_cost +
-      num(form.adaptor) + num(form.modul) + num(form.socket_dc) + num(form.baut_fischer) + outdoor_cost;
+      adaptorCost + num(form.modul) + num(form.socket_dc) + num(form.baut_fischer) + outdoor_cost;
     const totalPay = num(form.payment) + num(form.split);
     const profit = totalPay - hpp;
     const profit_pct = totalPay > 0 ? (profit / totalPay) * 100 : 0;
     const sisa = totalPay - num(form.dp);
     const rec_min = Math.round(hpp * 1.8);
     const rec_max = Math.round(hpp * 2);
-    return { kabel_meter, kabel_socket_meter, outdoor_cost, led_cost, akrilik_cost, solder_cost, tempel_cost, kabel_cost, kabel_socket_cost, hpp, profit, profit_pct, sisa, rec_min, rec_max, totalPay };
-  }, [form, priceMap]);
+    const marketplacePct = Number(priceMap.marketplace_markup_pct ?? 22);
+    const rec_marketplace = Math.round(hpp * (1 + marketplacePct / 100));
+    return { kabel_meter, kabel_socket_meter, outdoor_cost, led_cost, akrilik_cost, solder_cost, tempel_cost, kabel_cost, kabel_socket_cost, adaptor_cost: adaptorCost, hpp, profit, profit_pct, sisa, rec_min, rec_max, rec_marketplace, marketplacePct, totalPay };
+  }, [form, priceMap, adaptorCost]);
 
   const saveMut = useMutation({
     mutationFn: async () => {
