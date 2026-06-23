@@ -34,6 +34,7 @@ export const listPrices = createServerFn({ method: "GET" })
 const orderSchema = z.object({
   id: z.string().uuid().optional(),
   source: z.enum(["shopee", "tiktok", "tokopedia", "lazada", "direct", "lainnya"]),
+  status: z.enum(["active", "return", "draft"]).default("active"),
   order_no: z.string().min(1),
   co_date: z.string().nullable().optional(),
   username: z.string().optional().nullable(),
@@ -49,6 +50,7 @@ const orderSchema = z.object({
   dp: z.number().min(0).default(0),
   split: z.number().min(0).default(0),
   adaptor: z.number().min(0).default(0),
+  adaptor_type: z.string().optional().nullable(),
   modul: z.number().min(0).default(0),
   print_cost: z.number().min(0).default(0),
   karet_seal: z.number().min(0).default(0),
