@@ -361,7 +361,34 @@ function OrdersPage() {
                 <div><Label>Split (Rp)</Label><Input type="number" value={form.split} onChange={(e) => setForm((f) => ({ ...f, split: e.target.value }))}/></div>
 
                 <div className="sm:col-span-2 pt-2 border-t mt-2"><div className="text-sm font-semibold">Bahan tambahan (Rp)</div></div>
-                <div><Label>Adaptor</Label><Input type="number" value={form.adaptor} onChange={(e) => setForm((f) => ({ ...f, adaptor: e.target.value }))}/></div>
+                <div className="sm:col-span-2 rounded-lg border bg-slate-50/60 p-3 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <Label className="text-sm font-semibold">Adaptor</Label>
+                    <span className="text-xs text-muted-foreground">
+                      LED {ledMeterNum || 0}m → saran <span className="font-semibold text-foreground">{suggestedVariant.label}</span>
+                    </span>
+                  </div>
+                  <Select value={form.adaptor_type} onValueChange={(v) => setForm((f) => ({ ...f, adaptor_type: v, adaptor_manual: false }))}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      {ADAPTOR_VARIANTS.map((a) => {
+                        const price = priceMap[a.key] ?? a.defaultPrice;
+                        return <SelectItem key={a.key} value={a.key}>{a.label} (≤{a.maxLed}m) — Rp {rp(price)}</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Checkbox id="adaptor-manual" checked={form.adaptor_manual} onCheckedChange={(checked) => {
+                      const isChecked = !!checked;
+                      setForm((f) => ({ ...f, adaptor_manual: isChecked, adaptor: isChecked ? String(adaptorVariantPrice) : "" }));
+                    }}/>
+                    <Label htmlFor="adaptor-manual" className="cursor-pointer text-xs">Override harga manual</Label>
+                  </div>
+                  {form.adaptor_manual && (
+                    <Input type="number" value={form.adaptor} placeholder={String(adaptorVariantPrice)} onChange={(e) => setForm((f) => ({ ...f, adaptor: e.target.value }))}/>
+                  )}
+                  <div className="text-xs text-muted-foreground">Harga adaptor dipakai: <span className="font-semibold text-foreground">Rp {rp(adaptorCost)}</span></div>
+                </div>
                 <div><Label>Modul</Label><Input type="number" value={form.modul} onChange={(e) => setForm((f) => ({ ...f, modul: e.target.value }))}/></div>
                 <div><Label>Socket DC</Label><Input type="number" value={form.socket_dc} onChange={(e) => setForm((f) => ({ ...f, socket_dc: e.target.value }))}/></div>
                 <div><Label>Baut Fischer</Label><Input type="number" value={form.baut_fischer} onChange={(e) => setForm((f) => ({ ...f, baut_fischer: e.target.value }))}/></div>
