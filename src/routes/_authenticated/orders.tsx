@@ -30,11 +30,27 @@ export const Route = createFileRoute("/_authenticated/orders")({
 const SOURCES = ["shopee", "tiktok", "tokopedia", "lazada", "direct", "lainnya"] as const;
 type Source = (typeof SOURCES)[number];
 
+const STATUSES = ["active", "return", "draft"] as const;
+type OrderStatus = (typeof STATUSES)[number];
+const STATUS_LABEL: Record<OrderStatus, string> = { active: "Aktif", return: "Retur", draft: "Draft" };
+
+const ADAPTOR_VARIANTS = [
+  { key: "adaptor_2a", label: "Adaptor 2A", maxLed: 3, defaultPrice: 8000 },
+  { key: "adaptor_3a", label: "Adaptor 3A", maxLed: 5, defaultPrice: 15000 },
+  { key: "adaptor_3a_murni", label: "Adaptor 3A Murni", maxLed: 8, defaultPrice: 30000 },
+  { key: "adaptor_5a_murni", label: "Adaptor 5A Murni", maxLed: 11, defaultPrice: 40000 },
+] as const;
+
+function suggestAdaptor(ledMeter: number): typeof ADAPTOR_VARIANTS[number] {
+  return ADAPTOR_VARIANTS.find((a) => ledMeter <= a.maxLed) ?? ADAPTOR_VARIANTS[ADAPTOR_VARIANTS.length - 1];
+}
+
 const rp = (n: number) => new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
 
 type FormState = {
   id?: string;
   source: Source;
+  status: OrderStatus;
   order_no: string;
   co_date: string;
   username: string;
@@ -50,6 +66,8 @@ type FormState = {
   dp: string;
   split: string;
   adaptor: string;
+  adaptor_type: string; // variant key, or "manual"
+  adaptor_manual: boolean;
   modul: string;
   print_cost: string;
   karet_seal: string;
