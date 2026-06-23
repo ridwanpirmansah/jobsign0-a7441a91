@@ -69,9 +69,33 @@ function MyEarnings() {
   return (
     <div className="space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Pendapatan Saya</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Pendapatan {staff && onBehalfEmpId ? "Karyawan" : "Saya"}</h1>
         <p className="text-sm text-slate-500">Rekap upah borongan & slip gaji</p>
       </div>
+
+      {staff && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-900">
+              <ShieldCheck className="h-4 w-4" /> Mode Admin — Lihat pendapatan karyawan
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-md">
+              <Label>Karyawan</Label>
+              <Select value={onBehalfEmpId} onValueChange={setOnBehalfEmpId}>
+                <SelectTrigger><SelectValue placeholder={me?.employee ? "Diri sendiri (default)" : "Pilih karyawan"} /></SelectTrigger>
+                <SelectContent>
+                  {me?.employee && <SelectItem value={me.employee.id}>{me.employee.full_name} (saya)</SelectItem>}
+                  {employees?.filter((e) => e.id !== me?.employee?.id).map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.full_name} {e.type ? `· ${e.type}` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader><CardTitle className="text-base">Filter Periode</CardTitle></CardHeader>
