@@ -81,6 +81,7 @@ type FormState = {
 function emptyForm(defaults: Record<string, number>, nextOrderNo: string = ""): FormState {
   return {
     source: "shopee",
+    status: "active",
     order_no: nextOrderNo,
     co_date: new Date().toISOString().slice(0, 10),
     username: "",
@@ -95,7 +96,9 @@ function emptyForm(defaults: Record<string, number>, nextOrderNo: string = ""): 
     payment: "",
     dp: "",
     split: "",
-    adaptor: String(defaults.adaptor_default ?? 0),
+    adaptor: "",
+    adaptor_type: "adaptor_2a",
+    adaptor_manual: false,
     modul: String(defaults.modul_default ?? 0),
     print_cost: String(defaults.print_default ?? 0),
     karet_seal: String(defaults.karet_seal_default ?? 0),
@@ -111,6 +114,7 @@ function toForm(o: any): FormState {
   return {
     id: o.id,
     source: o.source,
+    status: (o.status as OrderStatus) ?? "active",
     order_no: o.order_no,
     co_date: o.co_date ?? "",
     username: o.username ?? "",
@@ -126,6 +130,8 @@ function toForm(o: any): FormState {
     dp: String(o.dp ?? ""),
     split: String(o.split ?? ""),
     adaptor: String(o.adaptor ?? 0),
+    adaptor_type: o.adaptor_type ?? "adaptor_2a",
+    adaptor_manual: !!o.adaptor && !!o.adaptor_type ? false : false,
     modul: String(o.modul ?? 0),
     print_cost: String(o.print_cost ?? 0),
     karet_seal: String(o.karet_seal ?? 0),
