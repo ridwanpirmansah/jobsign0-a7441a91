@@ -78,7 +78,7 @@ function Dashboard() {
     <div className="space-y-6 max-w-7xl">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Halo, {me?.profile?.full_name || "—"}</h1>
-        <p className="text-sm text-slate-500">{format(new Date(), "EEEE, dd MMMM yyyy")}</p>
+        <p className="text-sm text-slate-500">{format(new Date(), "EEEE, dd MMMM yyyy", { locale: idLocale })}</p>
       </div>
 
       {/* Check-in card */}
