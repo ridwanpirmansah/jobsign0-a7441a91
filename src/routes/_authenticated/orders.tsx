@@ -229,6 +229,7 @@ function OrdersPage() {
         data: {
           id: form.id,
           source: form.source,
+          status: form.status,
           order_no: form.order_no.trim(),
           co_date: form.co_date || null,
           username: form.username || null,
@@ -243,7 +244,8 @@ function OrdersPage() {
           payment: num(form.payment),
           dp: num(form.dp),
           split: num(form.split),
-          adaptor: num(form.adaptor),
+          adaptor: adaptorCost,
+          adaptor_type: adaptorVariantKey,
           modul: num(form.modul),
           print_cost: num(form.print_cost),
           karet_seal: num(form.karet_seal),
