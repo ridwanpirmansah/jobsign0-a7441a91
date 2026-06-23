@@ -135,7 +135,7 @@ function ProjectDetail() {
             <TableBody>
               {logs?.map((l) => (
                 <TableRow key={l.id}>
-                  <TableCell>{format(new Date(l.log_date), "dd MMM yyyy")}</TableCell>
+                  <TableCell>{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</TableCell>
                   <TableCell>{l.employee?.full_name}</TableCell>
                   <TableCell>{l.rate?.name}</TableCell>
                   <TableCell className="text-right">{l.qty}</TableCell>
