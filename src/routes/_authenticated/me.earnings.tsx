@@ -2,13 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ShieldCheck } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_authenticated/me/earnings")({ component: MyEarnings });
 
@@ -18,9 +21,20 @@ function fmtIDR(n: number) {
 
 function MyEarnings() {
   const { data: me } = useCurrentUser();
-  const empId = me?.employee?.id;
+  const staff = isStaff(me?.role);
+  const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
+  const empId = staff && onBehalfEmpId ? onBehalfEmpId : me?.employee?.id;
   const [from, setFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [to, setTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+
+  const { data: employees } = useQuery({
+    enabled: staff,
+    queryKey: ["employees-earnings-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("employees").select("id, full_name, type").eq("active", true).order("full_name");
+      return data ?? [];
+    },
+  });
 
   const { data: logs } = useQuery({
     enabled: !!empId,
