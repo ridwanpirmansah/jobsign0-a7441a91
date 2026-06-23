@@ -30,11 +30,27 @@ export const Route = createFileRoute("/_authenticated/orders")({
 const SOURCES = ["shopee", "tiktok", "tokopedia", "lazada", "direct", "lainnya"] as const;
 type Source = (typeof SOURCES)[number];
 
+const STATUSES = ["active", "return", "draft"] as const;
+type OrderStatus = (typeof STATUSES)[number];
+const STATUS_LABEL: Record<OrderStatus, string> = { active: "Aktif", return: "Retur", draft: "Draft" };
+
+const ADAPTOR_VARIANTS = [
+  { key: "adaptor_2a", label: "Adaptor 2A", maxLed: 3, defaultPrice: 8000 },
+  { key: "adaptor_3a", label: "Adaptor 3A", maxLed: 5, defaultPrice: 15000 },
+  { key: "adaptor_3a_murni", label: "Adaptor 3A Murni", maxLed: 8, defaultPrice: 30000 },
+  { key: "adaptor_5a_murni", label: "Adaptor 5A Murni", maxLed: 11, defaultPrice: 40000 },
+] as const;
+
+function suggestAdaptor(ledMeter: number): typeof ADAPTOR_VARIANTS[number] {
+  return ADAPTOR_VARIANTS.find((a) => ledMeter <= a.maxLed) ?? ADAPTOR_VARIANTS[ADAPTOR_VARIANTS.length - 1];
+}
+
 const rp = (n: number) => new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
 
 type FormState = {
   id?: string;
   source: Source;
+  status: OrderStatus;
   order_no: string;
   co_date: string;
   username: string;
@@ -50,6 +66,8 @@ type FormState = {
   dp: string;
   split: string;
   adaptor: string;
+  adaptor_type: string; // variant key, or "manual"
+  adaptor_manual: boolean;
   modul: string;
   print_cost: string;
   karet_seal: string;
@@ -63,6 +81,7 @@ type FormState = {
 function emptyForm(defaults: Record<string, number>, nextOrderNo: string = ""): FormState {
   return {
     source: "shopee",
+    status: "active",
     order_no: nextOrderNo,
     co_date: new Date().toISOString().slice(0, 10),
     username: "",
@@ -77,7 +96,9 @@ function emptyForm(defaults: Record<string, number>, nextOrderNo: string = ""): 
     payment: "",
     dp: "",
     split: "",
-    adaptor: String(defaults.adaptor_default ?? 0),
+    adaptor: "",
+    adaptor_type: "adaptor_2a",
+    adaptor_manual: false,
     modul: String(defaults.modul_default ?? 0),
     print_cost: String(defaults.print_default ?? 0),
     karet_seal: String(defaults.karet_seal_default ?? 0),
@@ -93,6 +114,7 @@ function toForm(o: any): FormState {
   return {
     id: o.id,
     source: o.source,
+    status: (o.status as OrderStatus) ?? "active",
     order_no: o.order_no,
     co_date: o.co_date ?? "",
     username: o.username ?? "",
@@ -108,6 +130,8 @@ function toForm(o: any): FormState {
     dp: String(o.dp ?? ""),
     split: String(o.split ?? ""),
     adaptor: String(o.adaptor ?? 0),
+    adaptor_type: o.adaptor_type ?? "adaptor_2a",
+    adaptor_manual: !!o.adaptor && !!o.adaptor_type ? false : false,
     modul: String(o.modul ?? 0),
     print_cost: String(o.print_cost ?? 0),
     karet_seal: String(o.karet_seal ?? 0),
@@ -158,6 +182,18 @@ function OrdersPage() {
 
   const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
 
+  // Auto-suggested adaptor variant based on LED length
+  const ledMeterNum = num(form.led_meter);
+  const suggestedVariant = useMemo(() => suggestAdaptor(ledMeterNum), [ledMeterNum]);
+
+  // Resolve adaptor cost: manual override > variant from price map > variant default
+  const adaptorVariantKey = form.adaptor_type || suggestedVariant.key;
+  const adaptorVariantPrice = useMemo(() => {
+    const v = ADAPTOR_VARIANTS.find((a) => a.key === adaptorVariantKey) ?? suggestedVariant;
+    return priceMap[v.key] ?? v.defaultPrice;
+  }, [adaptorVariantKey, priceMap, suggestedVariant]);
+  const adaptorCost = form.adaptor_manual ? num(form.adaptor) : adaptorVariantPrice;
+
   // Live calculation preview (mirror DB trigger)
   const calc = useMemo(() => {
     const led_meter = num(form.led_meter);
@@ -174,15 +210,17 @@ function OrdersPage() {
     const kabel_cost = kabel_meter * (priceMap.kabel_per_meter ?? 0);
     const kabel_socket_cost = kabel_socket_meter * (priceMap.kabel_socket_per_meter ?? 2500);
     const hpp = led_cost + akrilik_cost + solder_cost + tempel_cost + kabel_cost + kabel_socket_cost +
-      num(form.adaptor) + num(form.modul) + num(form.socket_dc) + num(form.baut_fischer) + outdoor_cost;
+      adaptorCost + num(form.modul) + num(form.socket_dc) + num(form.baut_fischer) + outdoor_cost;
     const totalPay = num(form.payment) + num(form.split);
     const profit = totalPay - hpp;
     const profit_pct = totalPay > 0 ? (profit / totalPay) * 100 : 0;
     const sisa = totalPay - num(form.dp);
     const rec_min = Math.round(hpp * 1.8);
     const rec_max = Math.round(hpp * 2);
-    return { kabel_meter, kabel_socket_meter, outdoor_cost, led_cost, akrilik_cost, solder_cost, tempel_cost, kabel_cost, kabel_socket_cost, hpp, profit, profit_pct, sisa, rec_min, rec_max, totalPay };
-  }, [form, priceMap]);
+    const marketplacePct = Number(priceMap.marketplace_markup_pct ?? 22);
+    const rec_marketplace = Math.round(hpp * (1 + marketplacePct / 100));
+    return { kabel_meter, kabel_socket_meter, outdoor_cost, led_cost, akrilik_cost, solder_cost, tempel_cost, kabel_cost, kabel_socket_cost, adaptor_cost: adaptorCost, hpp, profit, profit_pct, sisa, rec_min, rec_max, rec_marketplace, marketplacePct, totalPay };
+  }, [form, priceMap, adaptorCost]);
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -191,6 +229,7 @@ function OrdersPage() {
         data: {
           id: form.id,
           source: form.source,
+          status: form.status,
           order_no: form.order_no.trim(),
           co_date: form.co_date || null,
           username: form.username || null,
@@ -205,7 +244,8 @@ function OrdersPage() {
           payment: num(form.payment),
           dp: num(form.dp),
           split: num(form.split),
-          adaptor: num(form.adaptor),
+          adaptor: adaptorCost,
+          adaptor_type: adaptorVariantKey,
           modul: num(form.modul),
           print_cost: num(form.print_cost),
           karet_seal: num(form.karet_seal),
@@ -276,6 +316,15 @@ function OrdersPage() {
                   </Select>
                 </div>
                 <div>
+                  <Label>Status</Label>
+                  <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as OrderStatus }))}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>No. Order * <span className="text-xs text-muted-foreground">— otomatis, bisa diubah</span></Label>
                   <Input value={form.order_no} onChange={(e) => setForm((f) => ({ ...f, order_no: e.target.value }))}/>
                 </div>
@@ -312,7 +361,34 @@ function OrdersPage() {
                 <div><Label>Split (Rp)</Label><Input type="number" value={form.split} onChange={(e) => setForm((f) => ({ ...f, split: e.target.value }))}/></div>
 
                 <div className="sm:col-span-2 pt-2 border-t mt-2"><div className="text-sm font-semibold">Bahan tambahan (Rp)</div></div>
-                <div><Label>Adaptor</Label><Input type="number" value={form.adaptor} onChange={(e) => setForm((f) => ({ ...f, adaptor: e.target.value }))}/></div>
+                <div className="sm:col-span-2 rounded-lg border bg-slate-50/60 p-3 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <Label className="text-sm font-semibold">Adaptor</Label>
+                    <span className="text-xs text-muted-foreground">
+                      LED {ledMeterNum || 0}m → saran <span className="font-semibold text-foreground">{suggestedVariant.label}</span>
+                    </span>
+                  </div>
+                  <Select value={form.adaptor_type} onValueChange={(v) => setForm((f) => ({ ...f, adaptor_type: v, adaptor_manual: false }))}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      {ADAPTOR_VARIANTS.map((a) => {
+                        const price = priceMap[a.key] ?? a.defaultPrice;
+                        return <SelectItem key={a.key} value={a.key}>{a.label} (≤{a.maxLed}m) — Rp {rp(price)}</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Checkbox id="adaptor-manual" checked={form.adaptor_manual} onCheckedChange={(checked) => {
+                      const isChecked = !!checked;
+                      setForm((f) => ({ ...f, adaptor_manual: isChecked, adaptor: isChecked ? String(adaptorVariantPrice) : "" }));
+                    }}/>
+                    <Label htmlFor="adaptor-manual" className="cursor-pointer text-xs">Override harga manual</Label>
+                  </div>
+                  {form.adaptor_manual && (
+                    <Input type="number" value={form.adaptor} placeholder={String(adaptorVariantPrice)} onChange={(e) => setForm((f) => ({ ...f, adaptor: e.target.value }))}/>
+                  )}
+                  <div className="text-xs text-muted-foreground">Harga adaptor dipakai: <span className="font-semibold text-foreground">Rp {rp(adaptorCost)}</span></div>
+                </div>
                 <div><Label>Modul</Label><Input type="number" value={form.modul} onChange={(e) => setForm((f) => ({ ...f, modul: e.target.value }))}/></div>
                 <div><Label>Socket DC</Label><Input type="number" value={form.socket_dc} onChange={(e) => setForm((f) => ({ ...f, socket_dc: e.target.value }))}/></div>
                 <div><Label>Baut Fischer</Label><Input type="number" value={form.baut_fischer} onChange={(e) => setForm((f) => ({ ...f, baut_fischer: e.target.value }))}/></div>
@@ -345,9 +421,12 @@ function OrdersPage() {
                   <Row k="Tempel" v={`Rp ${rp(calc.tempel_cost)}`}/>
                   <Row k="Kabel" v={`Rp ${rp(calc.kabel_cost)}`}/>
                   <Row k="Kabel Socket" v={`Rp ${rp(calc.kabel_socket_cost)}`}/>
+                  <Row k="Adaptor" v={`Rp ${rp(calc.adaptor_cost)}`}/>
                   <Row k="Outdoor" v={`Rp ${rp(calc.outdoor_cost)}`}/>
                   <div className="border-t my-2"/>
                   <Row k="HPP" v={`Rp ${rp(calc.hpp)}`} bold/>
+                  <Row k={`Rekom. Marketplace (+${calc.marketplacePct}%)`} v={`Rp ${rp(calc.rec_marketplace)}`} bold positive />
+                  <div className="border-t my-2"/>
                   <Row k="Payment" v={`Rp ${rp(calc.totalPay)}`}/>
                   <Row k="DP" v={`Rp ${rp(num(form.dp))}`}/>
                   <Row k="Sisa Bayar" v={`Rp ${rp(calc.sisa)}`}/>
@@ -395,6 +474,7 @@ function OrdersPage() {
                   <TableHead>No</TableHead>
                   <TableHead>Tgl</TableHead>
                   <TableHead>Sumber</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>User / Kota</TableHead>
                   <TableHead>Text</TableHead>
                   <TableHead className="text-right">Titik</TableHead>
@@ -410,6 +490,11 @@ function OrdersPage() {
                     <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
                     <TableCell className="text-xs">{o.co_date ?? "-"}</TableCell>
                     <TableCell><Badge variant="outline">{o.source}</Badge></TableCell>
+                    <TableCell>
+                      <Badge variant={o.status === "active" ? "default" : o.status === "return" ? "destructive" : "secondary"}>
+                        {STATUS_LABEL[(o.status as OrderStatus) ?? "active"] ?? o.status ?? "Aktif"}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-xs">{o.username ?? "-"}<div className="text-muted-foreground">{o.kota ?? ""}</div></TableCell>
                     <TableCell className="max-w-xs truncate">{o.text_neon}</TableCell>
                     <TableCell className="text-right">{o.titik}</TableCell>
@@ -422,7 +507,7 @@ function OrdersPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Belum ada order</TableCell></TableRow>}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Belum ada order</TableCell></TableRow>}
               </TableBody>
             </Table>
           )}

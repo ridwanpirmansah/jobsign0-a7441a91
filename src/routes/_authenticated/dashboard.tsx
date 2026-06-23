@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarCheck, ClipboardList, Wallet, FolderKanban, ScanLine } from "lucide-react";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -77,7 +78,7 @@ function Dashboard() {
     <div className="space-y-6 max-w-7xl">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Halo, {me?.profile?.full_name || "—"}</h1>
-        <p className="text-sm text-slate-500">{format(new Date(), "EEEE, dd MMMM yyyy")}</p>
+        <p className="text-sm text-slate-500">{format(new Date(), "EEEE, dd MMMM yyyy", { locale: idLocale })}</p>
       </div>
 
       {/* Check-in card */}

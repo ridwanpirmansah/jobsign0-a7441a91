@@ -292,6 +292,7 @@ export type Database = {
       orders: {
         Row: {
           adaptor: number
+          adaptor_type: string | null
           akrilik_cost: number
           akrilik_l: number
           akrilik_p: number
@@ -323,6 +324,7 @@ export type Database = {
           solder_cost: number
           source: Database["public"]["Enums"]["order_source"]
           split: number
+          status: string
           tempel_cost: number
           text_neon: string
           titik: number
@@ -331,6 +333,7 @@ export type Database = {
         }
         Insert: {
           adaptor?: number
+          adaptor_type?: string | null
           akrilik_cost?: number
           akrilik_l?: number
           akrilik_p?: number
@@ -362,6 +365,7 @@ export type Database = {
           solder_cost?: number
           source?: Database["public"]["Enums"]["order_source"]
           split?: number
+          status?: string
           tempel_cost?: number
           text_neon: string
           titik?: number
@@ -370,6 +374,7 @@ export type Database = {
         }
         Update: {
           adaptor?: number
+          adaptor_type?: string | null
           akrilik_cost?: number
           akrilik_l?: number
           akrilik_p?: number
@@ -401,6 +406,7 @@ export type Database = {
           solder_cost?: number
           source?: Database["public"]["Enums"]["order_source"]
           split?: number
+          status?: string
           tempel_cost?: number
           text_neon?: string
           titik?: number
@@ -701,6 +707,10 @@ export type Database = {
       }
       is_admin_or_owner: { Args: { _user_id: string }; Returns: boolean }
       rotate_attendance_secret: { Args: never; Returns: string }
+      set_attendance_note: {
+        Args: { _attendance_id: string; _note: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "owner" | "admin" | "karyawan"
