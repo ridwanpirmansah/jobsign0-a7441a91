@@ -153,7 +153,7 @@ function MyEarnings() {
             <TableBody>
               {payrolls?.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell>{format(new Date(p.period_start), "dd MMM")} – {format(new Date(p.period_end), "dd MMM yyyy")}</TableCell>
+                  <TableCell>{format(new Date(p.period_start), "dd MMM", { locale: idLocale })} – {format(new Date(p.period_end), "dd MMM yyyy", { locale: idLocale })}</TableCell>
                   <TableCell className="text-right">{fmtIDR(Number(p.base))}</TableCell>
                   <TableCell className="text-right">{fmtIDR(Number(p.bonus))}</TableCell>
                   <TableCell className="text-right">{fmtIDR(Number(p.deductions))}</TableCell>
