@@ -166,15 +166,26 @@ function AuthPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="su-pass" className="text-sm">Password</Label>
-                    <Input
-                      id="su-pass"
-                      type="password"
-                      required
-                      minLength={6}
-                      value={signupPass}
-                      onChange={(e) => setSignupPass(e.target.value)}
-                      placeholder="Min. 6 karakter"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="su-pass"
+                        type={showSignupPass ? "text" : "password"}
+                        required
+                        minLength={6}
+                        value={signupPass}
+                        onChange={(e) => setSignupPass(e.target.value)}
+                        placeholder="Min. 6 karakter"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        aria-label={showSignupPass ? "Sembunyikan password" : "Tampilkan password"}
+                        onClick={() => setShowSignupPass((v) => !v)}
+                        className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-900"
+                      >
+                        {showSignupPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <Button type="submit" className="w-full mt-2 font-medium" disabled={loading}>
                     {loading ? "Memproses..." : "Daftar"}
