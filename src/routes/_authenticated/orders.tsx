@@ -421,9 +421,12 @@ function OrdersPage() {
                   <Row k="Tempel" v={`Rp ${rp(calc.tempel_cost)}`}/>
                   <Row k="Kabel" v={`Rp ${rp(calc.kabel_cost)}`}/>
                   <Row k="Kabel Socket" v={`Rp ${rp(calc.kabel_socket_cost)}`}/>
+                  <Row k="Adaptor" v={`Rp ${rp(calc.adaptor_cost)}`}/>
                   <Row k="Outdoor" v={`Rp ${rp(calc.outdoor_cost)}`}/>
                   <div className="border-t my-2"/>
                   <Row k="HPP" v={`Rp ${rp(calc.hpp)}`} bold/>
+                  <Row k={`Rekom. Marketplace (+${calc.marketplacePct}%)`} v={`Rp ${rp(calc.rec_marketplace)}`} bold positive />
+                  <div className="border-t my-2"/>
                   <Row k="Payment" v={`Rp ${rp(calc.totalPay)}`}/>
                   <Row k="DP" v={`Rp ${rp(num(form.dp))}`}/>
                   <Row k="Sisa Bayar" v={`Rp ${rp(calc.sisa)}`}/>
