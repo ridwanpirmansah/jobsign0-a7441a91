@@ -507,7 +507,7 @@ function OrdersPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Belum ada order</TableCell></TableRow>}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Belum ada order</TableCell></TableRow>}
               </TableBody>
             </Table>
           )}
