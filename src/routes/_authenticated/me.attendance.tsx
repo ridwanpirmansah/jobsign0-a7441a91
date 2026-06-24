@@ -51,9 +51,9 @@ function MyAttendance() {
         <h1 className="text-2xl font-bold text-slate-900">Absensi Saya</h1>
         <p className="text-sm text-slate-500">60 hari terakhir · {hadir} hari hadir</p>
       </div>
-      <Card>
-        <CardHeader><CardTitle className="text-base">Riwayat</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
+      <Card className="border-0 shadow-none bg-transparent sm:border sm:shadow-sm sm:bg-card">
+        <CardHeader className="px-0 sm:px-6"><CardTitle className="text-base">Riwayat</CardTitle></CardHeader>
+        <CardContent className="space-y-3 px-0 sm:px-6">
           {data?.map((r) => {
             const isEditing = editId === r.id;
             const d = new Date(r.date);
@@ -66,7 +66,7 @@ function MyAttendance() {
                 ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                 : "bg-slate-100 text-slate-600 border-slate-200";
             return (
-              <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+              <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-2.5 sm:p-4 shadow-sm">
                 <div className="flex items-stretch gap-3">
                   {/* Date block */}
                   <div className="flex flex-col items-center justify-center shrink-0 w-14 sm:w-16 rounded-lg bg-gradient-to-b from-indigo-50 to-white border border-indigo-100 py-2">

@@ -369,8 +369,53 @@ function MyJobs() {
 
       <Card>
         <CardHeader><CardTitle className="text-base">Riwayat Laporan {staff && onBehalfEmpId && onBehalfEmpId !== me?.employee?.id ? "Karyawan Terpilih" : "Saya"}</CardTitle></CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
+        <CardContent className="p-0 sm:p-6">
+          {/* Mobile: cards */}
+          <div className="md:hidden space-y-3 p-3">
+            {logs?.map((l) => (
+              <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-xs text-slate-500">{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</div>
+                    {l.project && <div className="text-sm font-medium text-slate-900 truncate">{l.project.title}</div>}
+                    {l.project && <div className="font-mono text-[10px] text-slate-400">{l.project.code}</div>}
+                  </div>
+                  <Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"} className="shrink-0">{l.status}</Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm border-t border-dashed border-slate-200 pt-2">
+                  <span className="text-slate-600">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
+                  <span className="font-bold text-emerald-600">{fmtIDR(Number(l.amount))}</span>
+                </div>
+                {(l.status === "pending" || staff) && (
+                  <div className="flex justify-end">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50">
+                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Hapus
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Hapus laporan ini?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Laporan {l.qty} × {l.rate?.name} ({fmtIDR(Number(l.amount))}) akan dihapus permanen.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteMut.mutate(l.id)} className="bg-rose-600 hover:bg-rose-700">Hapus</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
+              </div>
+            ))}
+            {!logs?.length && <div className="text-center text-slate-500 py-6 text-sm">Belum ada laporan</div>}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>

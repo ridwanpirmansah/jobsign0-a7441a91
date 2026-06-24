@@ -69,15 +69,28 @@ function ReportsPage() {
       <Card>
         <CardHeader><CardTitle className="text-base">Upah per Karyawan (approved)</CardTitle></CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader><TableRow><TableHead>Karyawan</TableHead><TableHead className="text-right">Total Upah</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {[...perEmp.values()].sort((a, b) => b.total - a.total).map((e, i) => (
-                <TableRow key={i}><TableCell>{e.name}</TableCell><TableCell className="text-right font-medium">{fmtIDR(e.total)}</TableCell></TableRow>
-              ))}
-              {!perEmp.size && <TableRow><TableCell colSpan={2} className="text-center py-6 text-slate-500">Tidak ada data</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+          {/* Mobile: cards */}
+          <div className="md:hidden space-y-2 p-3">
+            {[...perEmp.values()].sort((a, b) => b.total - a.total).map((e, i) => (
+              <div key={i} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <span className="font-medium text-slate-900 truncate">{e.name}</span>
+                <span className="font-bold text-emerald-600 shrink-0">{fmtIDR(e.total)}</span>
+              </div>
+            ))}
+            {!perEmp.size && <div className="text-center py-6 text-slate-500 text-sm">Tidak ada data</div>}
+          </div>
+          {/* Desktop: table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader><TableRow><TableHead>Karyawan</TableHead><TableHead className="text-right">Total Upah</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {[...perEmp.values()].sort((a, b) => b.total - a.total).map((e, i) => (
+                  <TableRow key={i}><TableCell>{e.name}</TableCell><TableCell className="text-right font-medium">{fmtIDR(e.total)}</TableCell></TableRow>
+                ))}
+                {!perEmp.size && <TableRow><TableCell colSpan={2} className="text-center py-6 text-slate-500">Tidak ada data</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
