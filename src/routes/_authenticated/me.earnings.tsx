@@ -113,27 +113,35 @@ function MyEarnings() {
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Total Periode</div><div className="text-2xl font-bold text-slate-900">{fmtIDR(summary.approvedTotal + summary.pendingTotal)}</div></CardContent></Card>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Detail Laporan</CardTitle></CardHeader>
-        <CardContent className="p-0 sm:p-6">
-          {/* Mobile: cards */}
-          <div className="md:hidden space-y-3 p-3">
-            {logs?.map((l) => (
-              <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-xs text-slate-500">{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</div>
-                    {l.project && <div className="text-sm font-medium text-slate-900 truncate">{l.project.title}</div>}
-                    {l.project && <div className="font-mono text-[10px] text-slate-400">{l.project.code}</div>}
+      <Card className="border-slate-200/70 shadow-sm">
+        <CardHeader className="pb-2 px-3 sm:px-6"><CardTitle className="text-base">Detail Laporan</CardTitle></CardHeader>
+        <CardContent className="p-0 sm:p-6 sm:pt-0">
+          {/* Mobile: colorful vertical blocks */}
+          <div className="md:hidden space-y-2 px-2 pb-2">
+            {logs?.map((l) => {
+              const tone = l.status === "approved"
+                ? { stripe: "bg-emerald-400", chip: "bg-emerald-100 text-emerald-700 border-emerald-200", amount: "text-emerald-700", bg: "from-emerald-50/60 to-white" }
+                : l.status === "rejected"
+                ? { stripe: "bg-rose-400", chip: "bg-rose-100 text-rose-700 border-rose-200", amount: "text-rose-700", bg: "from-rose-50/60 to-white" }
+                : { stripe: "bg-amber-400", chip: "bg-amber-100 text-amber-800 border-amber-200", amount: "text-amber-700", bg: "from-amber-50/60 to-white" };
+              return (
+                <div key={l.id} className={`relative overflow-hidden rounded-lg border border-slate-200/70 bg-gradient-to-br ${tone.bg} px-2.5 py-2 pl-3`}>
+                  <span className={`absolute left-0 top-0 h-full w-1 ${tone.stripe}`} />
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500">{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</div>
+                      {l.project && <div className="text-sm font-semibold text-slate-900 truncate">{l.project.title}</div>}
+                      {l.project && <div className="font-mono text-[10px] text-slate-400">{l.project.code}</div>}
+                    </div>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${tone.chip}`}>{l.status}</span>
                   </div>
-                  <Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"} className="shrink-0">{l.status}</Badge>
+                  <div className="mt-1.5 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 truncate">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
+                    <span className={`font-bold ${tone.amount}`}>{fmtIDR(Number(l.amount))}</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
-                  <span className="font-bold text-emerald-600">{fmtIDR(Number(l.amount))}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {!logs?.length && <div className="text-center text-slate-500 py-6 text-sm">Tidak ada data pada periode ini</div>}
           </div>
           {/* Desktop: table */}
@@ -168,39 +176,43 @@ function MyEarnings() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Slip Gaji</CardTitle></CardHeader>
-        <CardContent className="p-0 sm:p-6">
-          {/* Mobile: cards */}
-          <div className="md:hidden space-y-3 p-3">
-            {payrolls?.map((p) => (
-              <div key={p.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="text-sm font-semibold text-slate-900">
-                    {format(new Date(p.period_start), "dd MMM", { locale: idLocale })} – {format(new Date(p.period_end), "dd MMM yyyy", { locale: idLocale })}
+      <Card className="border-slate-200/70 shadow-sm">
+        <CardHeader className="pb-2 px-3 sm:px-6"><CardTitle className="text-base">Slip Gaji</CardTitle></CardHeader>
+        <CardContent className="p-0 sm:p-6 sm:pt-0">
+          {/* Mobile: colorful vertical blocks */}
+          <div className="md:hidden space-y-2 px-2 pb-2">
+            {payrolls?.map((p) => {
+              const paid = p.status === "paid";
+              return (
+                <div key={p.id} className={`relative overflow-hidden rounded-lg border border-slate-200/70 bg-gradient-to-br ${paid ? "from-emerald-50/60" : "from-indigo-50/60"} to-white px-2.5 py-2 pl-3`}>
+                  <span className={`absolute left-0 top-0 h-full w-1 ${paid ? "bg-emerald-400" : "bg-indigo-400"}`} />
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-sm font-semibold text-slate-900">
+                      {format(new Date(p.period_start), "dd MMM", { locale: idLocale })} – {format(new Date(p.period_end), "dd MMM yyyy", { locale: idLocale })}
+                    </div>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${paid ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-indigo-100 text-indigo-700 border-indigo-200"}`}>{p.status}</span>
                   </div>
-                  <Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status}</Badge>
+                  <div className="mt-1.5 grid grid-cols-3 gap-1.5 text-xs">
+                    <div className="rounded-md bg-sky-50 border border-sky-100 px-1.5 py-1">
+                      <div className="text-[9px] uppercase text-sky-700/80">Base</div>
+                      <div className="font-semibold text-sky-800 text-[11px]">{fmtIDR(Number(p.base))}</div>
+                    </div>
+                    <div className="rounded-md bg-emerald-50 border border-emerald-100 px-1.5 py-1">
+                      <div className="text-[9px] uppercase text-emerald-700/80">Bonus</div>
+                      <div className="font-semibold text-emerald-700 text-[11px]">{fmtIDR(Number(p.bonus))}</div>
+                    </div>
+                    <div className="rounded-md bg-rose-50 border border-rose-100 px-1.5 py-1">
+                      <div className="text-[9px] uppercase text-rose-700/80">Potongan</div>
+                      <div className="font-semibold text-rose-700 text-[11px]">{fmtIDR(Number(p.deductions))}</div>
+                    </div>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between border-t border-dashed border-slate-200 pt-1.5">
+                    <span className="text-[11px] text-slate-500">Total Diterima</span>
+                    <span className="text-base font-bold text-slate-900">{fmtIDR(Number(p.total))}</span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="rounded-md bg-slate-50 px-2 py-1.5">
-                    <div className="text-[10px] uppercase text-slate-500">Base</div>
-                    <div className="font-semibold text-slate-900">{fmtIDR(Number(p.base))}</div>
-                  </div>
-                  <div className="rounded-md bg-emerald-50 px-2 py-1.5">
-                    <div className="text-[10px] uppercase text-emerald-700/70">Bonus</div>
-                    <div className="font-semibold text-emerald-700">{fmtIDR(Number(p.bonus))}</div>
-                  </div>
-                  <div className="rounded-md bg-rose-50 px-2 py-1.5">
-                    <div className="text-[10px] uppercase text-rose-700/70">Potongan</div>
-                    <div className="font-semibold text-rose-700">{fmtIDR(Number(p.deductions))}</div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-2">
-                  <span className="text-xs text-slate-500">Total</span>
-                  <span className="text-base font-bold text-slate-900">{fmtIDR(Number(p.total))}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {!payrolls?.length && <div className="text-center text-slate-500 py-6 text-sm">Belum ada slip</div>}
           </div>
           {/* Desktop: table */}
