@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags,
+  ShoppingBag, Tags, Sparkles,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -36,6 +36,7 @@ const ownerItems = [
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
   { title: "Kelola User", url: "/users", icon: UserCog },
   { title: "Payroll", url: "/payroll", icon: Wallet },
+  { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
   { title: "Laporan", url: "/reports", icon: BarChart3 },
 ];
 

@@ -686,6 +686,7 @@ export type Database = {
           total_points: number
         }[]
       }
+      get_daily_attendance_token: { Args: { _date?: string }; Returns: string }
       get_project_rate_availability: {
         Args: { _project_id: string }
         Returns: {
