@@ -4,11 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Save, X } from "lucide-react";
+import { Pencil, Save, X, LogIn, LogOut, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -47,57 +46,104 @@ function MyAttendance() {
   const hadir = data?.filter((d) => d.status === "hadir").length ?? 0;
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Absensi Saya</h1>
         <p className="text-sm text-slate-500">60 hari terakhir · {hadir} hari hadir</p>
       </div>
       <Card>
         <CardHeader><CardTitle className="text-base">Riwayat</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Check In</TableHead>
-                <TableHead>Check Out</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Catatan</TableHead>
-                <TableHead className="w-20" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data?.map((r) => {
-                const isEditing = editId === r.id;
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell>{format(new Date(r.date), "EEE, dd MMM yyyy", { locale: idLocale })}</TableCell>
-                    <TableCell>{r.check_in ? format(new Date(r.check_in), "HH:mm") : "—"}</TableCell>
-                    <TableCell>{r.check_out ? format(new Date(r.check_out), "HH:mm") : "—"}</TableCell>
-                    <TableCell><Badge variant={r.status === "hadir" ? "default" : "secondary"}>{r.status}</Badge></TableCell>
-                    <TableCell className="text-sm text-slate-600 min-w-[220px]">
-                      {isEditing ? (
-                        <Textarea rows={2} value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Mis. terlambat karena hujan deras..." />
-                      ) : (
-                        <span className="whitespace-pre-wrap">{r.note ?? <span className="text-slate-400 italic">— belum ada catatan</span>}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isEditing ? (
-                        <div className="flex gap-1 justify-end">
-                          <Button size="icon" variant="ghost" disabled={saveNote.isPending} onClick={() => saveNote.mutate({ id: r.id, note: editNote })}><Save className="h-4 w-4 text-emerald-600" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => setEditId(null)}><X className="h-4 w-4" /></Button>
+        <CardContent className="space-y-3">
+          {data?.map((r) => {
+            const isEditing = editId === r.id;
+            const d = new Date(r.date);
+            const day = format(d, "dd", { locale: idLocale });
+            const mon = format(d, "MMM", { locale: idLocale });
+            const wk = format(d, "EEEE", { locale: idLocale });
+            const yr = format(d, "yyyy");
+            const statusColor =
+              r.status === "hadir"
+                ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                : "bg-slate-100 text-slate-600 border-slate-200";
+            return (
+              <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+                <div className="flex items-stretch gap-3">
+                  {/* Date block */}
+                  <div className="flex flex-col items-center justify-center shrink-0 w-14 sm:w-16 rounded-lg bg-gradient-to-b from-indigo-50 to-white border border-indigo-100 py-2">
+                    <span className="text-[10px] uppercase font-semibold text-indigo-500 tracking-wide">{mon}</span>
+                    <span className="text-2xl font-black leading-none text-slate-900">{day}</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">{yr}</span>
+                  </div>
+
+                  {/* Main info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-700 truncate capitalize">{wk}</p>
+                      <Badge variant="outline" className={`text-[10px] uppercase tracking-wide ${statusColor}`}>{r.status}</Badge>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1.5 min-w-0">
+                        <LogIn className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-emerald-700/70 leading-none">Check In</p>
+                          <p className="text-sm font-bold text-emerald-700 leading-tight">{r.check_in ? format(new Date(r.check_in), "HH:mm") : "—"}</p>
                         </div>
-                      ) : (
-                        <Button size="icon" variant="ghost" onClick={() => { setEditId(r.id); setEditNote(r.note ?? ""); }}><Pencil className="h-4 w-4" /></Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {!data?.length && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-6">Belum ada data</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+                      </div>
+                      <div className="flex items-center gap-1.5 rounded-md bg-rose-50 px-2 py-1.5 min-w-0">
+                        <LogOut className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-rose-700/70 leading-none">Check Out</p>
+                          <p className="text-sm font-bold text-rose-700 leading-tight">{r.check_out ? format(new Date(r.check_out), "HH:mm") : "—"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Note section */}
+                <div className="mt-3 pt-3 border-t border-dashed border-slate-200">
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        rows={2}
+                        value={editNote}
+                        onChange={(e) => setEditNote(e.target.value)}
+                        placeholder="Mis. terlambat karena hujan deras..."
+                        className="text-sm"
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>
+                          <X className="h-4 w-4 mr-1" /> Batal
+                        </Button>
+                        <Button size="sm" disabled={saveNote.isPending} onClick={() => saveNote.mutate({ id: r.id, note: editNote })}>
+                          <Save className="h-4 w-4 mr-1" /> Simpan
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <StickyNote className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
+                      <p className="flex-1 text-xs text-slate-600 whitespace-pre-wrap min-w-0">
+                        {r.note || <span className="text-slate-400 italic">Belum ada catatan</span>}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 shrink-0"
+                        onClick={() => { setEditId(r.id); setEditNote(r.note ?? ""); }}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        {r.note ? "Edit" : "Tambah"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {!data?.length && (
+            <div className="text-center text-slate-500 py-10 text-sm">Belum ada data</div>
+          )}
         </CardContent>
       </Card>
     </div>
