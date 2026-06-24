@@ -26,6 +26,7 @@ import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
 import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
 import { Route as AuthenticatedOwnerAttendanceQrRouteImport } from './routes/_authenticated/owner.attendance-qr'
+import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner.analytics'
 import { Route as AuthenticatedMeScanRouteImport } from './routes/_authenticated/me.scan'
 import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
 import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
@@ -118,6 +119,12 @@ const AuthenticatedOwnerAttendanceQrRoute =
     path: '/owner/attendance-qr',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOwnerAnalyticsRoute =
+  AuthenticatedOwnerAnalyticsRouteImport.update({
+    id: '/owner/analytics',
+    path: '/owner/analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMeScanRoute = AuthenticatedMeScanRouteImport.update({
   id: '/me/scan',
   path: '/me/scan',
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/me/jobs': typeof AuthenticatedMeJobsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
+  '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
@@ -186,6 +194,7 @@ export interface FileRoutesByTo {
   '/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/me/jobs': typeof AuthenticatedMeJobsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
+  '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
@@ -211,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/_authenticated/me/jobs': typeof AuthenticatedMeJobsRoute
   '/_authenticated/me/scan': typeof AuthenticatedMeScanRoute
+  '/_authenticated/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/_authenticated/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
   '/_authenticated/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/_authenticated/owner/sync': typeof AuthenticatedOwnerSyncRoute
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/me/earnings'
     | '/me/jobs'
     | '/me/scan'
+    | '/owner/analytics'
     | '/owner/attendance-qr'
     | '/owner/prices'
     | '/owner/sync'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/me/earnings'
     | '/me/jobs'
     | '/me/scan'
+    | '/owner/analytics'
     | '/owner/attendance-qr'
     | '/owner/prices'
     | '/owner/sync'
@@ -283,6 +295,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me/earnings'
     | '/_authenticated/me/jobs'
     | '/_authenticated/me/scan'
+    | '/_authenticated/owner/analytics'
     | '/_authenticated/owner/attendance-qr'
     | '/_authenticated/owner/prices'
     | '/_authenticated/owner/sync'
@@ -418,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnerAttendanceQrRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/owner/analytics': {
+      id: '/_authenticated/owner/analytics'
+      path: '/owner/analytics'
+      fullPath: '/owner/analytics'
+      preLoaderRoute: typeof AuthenticatedOwnerAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/me/scan': {
       id: '/_authenticated/me/scan'
       path: '/me/scan'
@@ -484,6 +504,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeEarningsRoute: typeof AuthenticatedMeEarningsRoute
   AuthenticatedMeJobsRoute: typeof AuthenticatedMeJobsRoute
   AuthenticatedMeScanRoute: typeof AuthenticatedMeScanRoute
+  AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
   AuthenticatedOwnerAttendanceQrRoute: typeof AuthenticatedOwnerAttendanceQrRoute
   AuthenticatedOwnerPricesRoute: typeof AuthenticatedOwnerPricesRoute
   AuthenticatedOwnerSyncRoute: typeof AuthenticatedOwnerSyncRoute
@@ -504,6 +525,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeEarningsRoute: AuthenticatedMeEarningsRoute,
   AuthenticatedMeJobsRoute: AuthenticatedMeJobsRoute,
   AuthenticatedMeScanRoute: AuthenticatedMeScanRoute,
+  AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
   AuthenticatedOwnerAttendanceQrRoute: AuthenticatedOwnerAttendanceQrRoute,
   AuthenticatedOwnerPricesRoute: AuthenticatedOwnerPricesRoute,
   AuthenticatedOwnerSyncRoute: AuthenticatedOwnerSyncRoute,
