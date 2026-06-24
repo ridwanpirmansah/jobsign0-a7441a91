@@ -218,7 +218,7 @@ function OrdersPage() {
     const rec_min = Math.round(hpp * 1.8);
     const rec_max = Math.round(hpp * 2);
     const marketplacePct = Number(priceMap.marketplace_markup_pct ?? 22);
-    const rec_marketplace = Math.round(hpp * (1 + marketplacePct / 100));
+    const rec_marketplace = Math.round((totalPay > 0 ? totalPay : hpp) * (1 + marketplacePct / 100));
     return { kabel_meter, kabel_socket_meter, outdoor_cost, led_cost, akrilik_cost, solder_cost, tempel_cost, kabel_cost, kabel_socket_cost, adaptor_cost: adaptorCost, hpp, profit, profit_pct, sisa, rec_min, rec_max, rec_marketplace, marketplacePct, totalPay };
   }, [form, priceMap, adaptorCost]);
 

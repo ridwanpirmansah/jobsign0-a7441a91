@@ -314,12 +314,24 @@ function Dashboard() {
         <h1 className="text-2xl font-bold text-slate-900">Halo, {me?.profile?.full_name || "—"}</h1>
         <p className="text-sm text-slate-500">
           {format(new Date(), "EEEE, dd MMMM yyyy", { locale: idLocale })}
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {me?.role === "owner" && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/70 bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber-950 shadow-sm shadow-amber-500/30">
+              ★ Owner
+            </span>
+          )}
+          {(me?.role === "owner" || me?.role === "admin") && (
+            <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700">
+              Admin
+            </span>
+          )}
           {empType && (
-            <Badge variant="outline" className="ml-2 capitalize">
+            <Badge variant="outline" className="capitalize">
               Pekerja {empType}
             </Badge>
           )}
-        </p>
+        </div>
       </div>
 
       {/* Check-in card */}
