@@ -36,6 +36,7 @@ const ownerItems = [
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
   { title: "Kelola User", url: "/users", icon: UserCog },
   { title: "Payroll", url: "/payroll", icon: Wallet },
+  { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
   { title: "Laporan", url: "/reports", icon: BarChart3 },
 ];
 
