@@ -7,9 +7,12 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, ShieldCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RefreshCw, ShieldCheck, Download, CalendarDays, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { computeToken, currentWindow, secondsLeftInWindow, WINDOW_SECONDS } from "@/lib/attendance-token";
+import { format } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/owner/attendance-qr")({
   component: AttendanceQrPage,
@@ -19,8 +22,10 @@ function AttendanceQrPage() {
   const { data: me } = useCurrentUser();
   const qc = useQueryClient();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const dailyCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [token, setToken] = useState<string>("");
   const [secsLeft, setSecsLeft] = useState<number>(WINDOW_SECONDS);
+  const [dailyDate, setDailyDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
 
   const { data: secret, isLoading, error } = useQuery({
     enabled: me?.role === "owner" || me?.role === "admin",
@@ -33,6 +38,17 @@ function AttendanceQrPage() {
     staleTime: Infinity,
   });
 
+  const { data: dailyToken, isFetching: dailyFetching } = useQuery({
+    enabled: (me?.role === "owner" || me?.role === "admin") && !!dailyDate,
+    queryKey: ["attendance-daily-token", dailyDate],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_daily_attendance_token", { _date: dailyDate });
+      if (error) throw error;
+      return data as string;
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+
   const rotateMut = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("rotate_attendance_secret");
@@ -42,6 +58,7 @@ function AttendanceQrPage() {
     onSuccess: () => {
       toast.success("Kunci QR berhasil dirotasi. Semua QR lama tidak berlaku.");
       qc.invalidateQueries({ queryKey: ["attendance-secret"] });
+      qc.invalidateQueries({ queryKey: ["attendance-daily-token"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -66,6 +83,41 @@ function AttendanceQrPage() {
     return () => { cancelled = true; clearInterval(id); };
   }, [secret]);
 
+  useEffect(() => {
+    if (!dailyToken || !dailyCanvasRef.current) return;
+    QRCode.toCanvas(dailyCanvasRef.current, dailyToken, {
+      width: 360, margin: 2, color: { dark: "#0f172a", light: "#ffffff" },
+    }).catch(() => undefined);
+  }, [dailyToken]);
+
+  const downloadDaily = async () => {
+    if (!dailyToken) return;
+    const dataUrl = await QRCode.toDataURL(dailyToken, {
+      width: 1024, margin: 4, color: { dark: "#0f172a", light: "#ffffff" },
+    });
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `qr-absensi-${dailyDate}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const printDaily = () => {
+    if (!dailyToken) return;
+    const canvas = dailyCanvasRef.current;
+    if (!canvas) return;
+    const url = canvas.toDataURL("image/png");
+    const w = window.open("", "_blank", "width=600,height=800");
+    if (!w) return;
+    w.document.write(`<!doctype html><html><head><title>QR Absensi ${dailyDate}</title>
+      <style>body{font-family:system-ui;text-align:center;padding:24px}h1{font-size:20px;margin:8px 0}p{color:#475569;font-size:13px;margin:4px 0 16px}img{width:90%;max-width:480px}</style>
+      </head><body><h1>QR Absensi Harian</h1><p>Berlaku hanya tanggal <b>${dailyDate}</b></p>
+      <img src="${url}" /><p style="margin-top:16px">Scan untuk Check-In / Check-Out</p>
+      <script>window.onload=()=>{setTimeout(()=>window.print(),300)}<\/script></body></html>`);
+    w.document.close();
+  };
+
   if (me && me.role !== "owner" && me.role !== "admin") {
     return <div className="p-6 text-sm text-rose-600">Akses ditolak. Hanya owner/admin.</div>;
   }
@@ -82,7 +134,7 @@ function AttendanceQrPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">QR Aktif</CardTitle>
+          <CardTitle className="text-base">QR Aktif (rotasi {WINDOW_SECONDS} detik)</CardTitle>
           <Badge variant="secondary" className="font-mono">Ganti dalam {secsLeft}s</Badge>
         </CardHeader>
         <CardContent>
@@ -110,12 +162,53 @@ function AttendanceQrPage() {
         </CardContent>
       </Card>
 
+      <Card className="border-amber-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-amber-600" />
+            QR Harian Cadangan (cetak / unduh)
+          </CardTitle>
+          <Badge variant="outline" className="border-amber-300 text-amber-700">Berlaku 1 hari</Badge>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-600">
+            QR ini hanya berlaku pada tanggal yang dipilih. Cetak dan tempel di workshop sebagai cadangan
+            apabila QR rotasi tidak bisa diakses. Besok harinya, unduh ulang QR untuk tanggal berikutnya.
+          </p>
+          <div className="flex flex-wrap gap-3 items-end">
+            <div>
+              <Label className="text-xs">Tanggal berlaku</Label>
+              <Input
+                type="date"
+                value={dailyDate}
+                onChange={(e) => setDailyDate(e.target.value)}
+                className="w-44"
+              />
+            </div>
+            <Button onClick={downloadDaily} disabled={!dailyToken || dailyFetching} variant="outline">
+              <Download className="h-4 w-4 mr-2" /> Unduh PNG
+            </Button>
+            <Button onClick={printDaily} disabled={!dailyToken || dailyFetching} variant="outline">
+              <Printer className="h-4 w-4 mr-2" /> Cetak
+            </Button>
+          </div>
+          {dailyToken && (
+            <div className="flex flex-col items-center gap-2 pt-2">
+              <div className="rounded-2xl border-2 border-amber-200 bg-white p-4 shadow-sm">
+                <canvas ref={dailyCanvasRef} className="block" />
+              </div>
+              <div className="text-xs text-slate-500">Hanya berlaku tanggal <b>{dailyDate}</b></div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {me?.role === "owner" && (
         <Card>
           <CardHeader><CardTitle className="text-base">Keamanan</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-slate-600">
-              Jika Anda curiga kunci bocor (misalnya ada karyawan menyimpan screenshot kunci secret), rotasi kunci untuk menonaktifkan semua QR sebelumnya.
+              Jika Anda curiga kunci bocor (misalnya ada karyawan menyimpan screenshot kunci secret), rotasi kunci untuk menonaktifkan semua QR sebelumnya. QR harian yang sudah dicetak juga akan ikut tidak berlaku.
             </p>
             <Button
               variant="outline"
