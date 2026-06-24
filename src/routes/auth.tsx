@@ -68,17 +68,55 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#f8f9fe] p-4">
+      {/* Soft neon background blobs */}
+      <div
+        className="pointer-events-none absolute -top-24 -left-24 h-[28rem] w-[28rem] rounded-full opacity-50"
+        style={{
+          background: "radial-gradient(circle, #ff4ecd 0%, transparent 70%)",
+          filter: "blur(80px)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute top-1/2 -right-32 h-[24rem] w-[24rem] rounded-full opacity-45"
+        style={{
+          background: "radial-gradient(circle, #00e5ff 0%, transparent 70%)",
+          filter: "blur(70px)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute -bottom-20 left-1/3 h-[22rem] w-[22rem] rounded-full opacity-40"
+        style={{
+          background: "radial-gradient(circle, #a855f7 0%, transparent 70%)",
+          filter: "blur(70px)",
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* Logo & Title */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/25">
-            <Zap className="h-7 w-7 text-primary-foreground" />
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-2xl"
+            style={{
+              background: "linear-gradient(135deg, #ff4ecd, #ff9050)",
+              boxShadow: "0 0 24px rgba(255,78,205,0.35), 0 0 48px rgba(255,144,80,0.2)",
+            }}
+          >
+            <Zap className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Neon Workflow System</h1>
-          <p className="text-sm text-slate-400">Manajemen produksi & upah karyawan</p>
+          <h1
+            className="text-2xl font-extrabold tracking-tight text-center"
+            style={{
+              color: "#1a1a2e",
+              textShadow: "0 0 10px rgba(255,78,205,0.25), 0 0 20px rgba(0,229,255,0.15)",
+            }}
+          >
+            Neon Workflow System
+          </h1>
+          <p className="text-sm text-slate-500 font-medium">Manajemen produksi & upah karyawan</p>
         </div>
 
-        <Card className="border border-slate-200 shadow-2xl shadow-black/10">
+        <Card className="border border-white/60 shadow-2xl shadow-black/5 backdrop-blur-sm bg-white/90">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Selamat datang</CardTitle>
             <CardDescription>Masuk atau daftarkan akun baru</CardDescription>
@@ -135,7 +173,15 @@ function AuthPage() {
                       </button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full mt-2 font-medium" disabled={loading}>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full mt-2 font-semibold text-white border-0"
+                    style={{
+                      background: "linear-gradient(135deg, #ff4ecd, #ff6b35)",
+                      boxShadow: "0 4px 16px rgba(255,78,205,0.35)",
+                    }}
+                  >
                     {loading ? "Memproses..." : "Masuk"}
                   </Button>
                 </form>
@@ -187,7 +233,15 @@ function AuthPage() {
                       </button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full mt-2 font-medium" disabled={loading}>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full mt-2 font-semibold text-white border-0"
+                    style={{
+                      background: "linear-gradient(135deg, #00e5ff, #2979ff)",
+                      boxShadow: "0 4px 16px rgba(0,229,255,0.35)",
+                    }}
+                  >
                     {loading ? "Memproses..." : "Daftar"}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center pt-1">
