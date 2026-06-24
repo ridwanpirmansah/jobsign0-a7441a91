@@ -115,55 +115,113 @@ function MyEarnings() {
 
       <Card>
         <CardHeader><CardTitle className="text-base">Detail Laporan</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead>Tanggal</TableHead><TableHead>Project</TableHead><TableHead>Tarif</TableHead>
-              <TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Upah</TableHead><TableHead>Status</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {logs?.map((l) => (
-                <TableRow key={l.id}>
-                  <TableCell>{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</TableCell>
-                  <TableCell>
-                    {l.project ? (
-                      <div className="leading-tight">
-                        <div className="font-mono text-xs text-slate-500">{l.project.code}</div>
-                        <div className="font-medium text-slate-900">{l.project.title}</div>
-                      </div>
-                    ) : "—"}
-                  </TableCell>
-                  <TableCell>{l.rate?.name}</TableCell>
-                  <TableCell className="text-right">{l.qty}</TableCell>
-                  <TableCell className="text-right">{fmtIDR(Number(l.amount))}</TableCell>
-                  <TableCell><Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"}>{l.status}</Badge></TableCell>
-                </TableRow>
-              ))}
-              {!logs?.length && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-6">Tidak ada data pada periode ini</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+        <CardContent className="p-0 sm:p-6">
+          {/* Mobile: cards */}
+          <div className="md:hidden space-y-3 p-3">
+            {logs?.map((l) => (
+              <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-xs text-slate-500">{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</div>
+                    {l.project && <div className="text-sm font-medium text-slate-900 truncate">{l.project.title}</div>}
+                    {l.project && <div className="font-mono text-[10px] text-slate-400">{l.project.code}</div>}
+                  </div>
+                  <Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"} className="shrink-0">{l.status}</Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
+                  <span className="font-bold text-emerald-600">{fmtIDR(Number(l.amount))}</span>
+                </div>
+              </div>
+            ))}
+            {!logs?.length && <div className="text-center text-slate-500 py-6 text-sm">Tidak ada data pada periode ini</div>}
+          </div>
+          {/* Desktop: table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Tanggal</TableHead><TableHead>Project</TableHead><TableHead>Tarif</TableHead>
+                <TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Upah</TableHead><TableHead>Status</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {logs?.map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell>{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</TableCell>
+                    <TableCell>
+                      {l.project ? (
+                        <div className="leading-tight">
+                          <div className="font-mono text-xs text-slate-500">{l.project.code}</div>
+                          <div className="font-medium text-slate-900">{l.project.title}</div>
+                        </div>
+                      ) : "—"}
+                    </TableCell>
+                    <TableCell>{l.rate?.name}</TableCell>
+                    <TableCell className="text-right">{l.qty}</TableCell>
+                    <TableCell className="text-right">{fmtIDR(Number(l.amount))}</TableCell>
+                    <TableCell><Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"}>{l.status}</Badge></TableCell>
+                  </TableRow>
+                ))}
+                {!logs?.length && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-6">Tidak ada data pada periode ini</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Slip Gaji</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader><TableRow><TableHead>Periode</TableHead><TableHead className="text-right">Base</TableHead><TableHead className="text-right">Bonus</TableHead><TableHead className="text-right">Potongan</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {payrolls?.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>{format(new Date(p.period_start), "dd MMM", { locale: idLocale })} – {format(new Date(p.period_end), "dd MMM yyyy", { locale: idLocale })}</TableCell>
-                  <TableCell className="text-right">{fmtIDR(Number(p.base))}</TableCell>
-                  <TableCell className="text-right">{fmtIDR(Number(p.bonus))}</TableCell>
-                  <TableCell className="text-right">{fmtIDR(Number(p.deductions))}</TableCell>
-                  <TableCell className="text-right font-semibold">{fmtIDR(Number(p.total))}</TableCell>
-                  <TableCell><Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status}</Badge></TableCell>
-                </TableRow>
-              ))}
-              {!payrolls?.length && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-6">Belum ada slip</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+        <CardContent className="p-0 sm:p-6">
+          {/* Mobile: cards */}
+          <div className="md:hidden space-y-3 p-3">
+            {payrolls?.map((p) => (
+              <div key={p.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="text-sm font-semibold text-slate-900">
+                    {format(new Date(p.period_start), "dd MMM", { locale: idLocale })} – {format(new Date(p.period_end), "dd MMM yyyy", { locale: idLocale })}
+                  </div>
+                  <Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status}</Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="rounded-md bg-slate-50 px-2 py-1.5">
+                    <div className="text-[10px] uppercase text-slate-500">Base</div>
+                    <div className="font-semibold text-slate-900">{fmtIDR(Number(p.base))}</div>
+                  </div>
+                  <div className="rounded-md bg-emerald-50 px-2 py-1.5">
+                    <div className="text-[10px] uppercase text-emerald-700/70">Bonus</div>
+                    <div className="font-semibold text-emerald-700">{fmtIDR(Number(p.bonus))}</div>
+                  </div>
+                  <div className="rounded-md bg-rose-50 px-2 py-1.5">
+                    <div className="text-[10px] uppercase text-rose-700/70">Potongan</div>
+                    <div className="font-semibold text-rose-700">{fmtIDR(Number(p.deductions))}</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-2">
+                  <span className="text-xs text-slate-500">Total</span>
+                  <span className="text-base font-bold text-slate-900">{fmtIDR(Number(p.total))}</span>
+                </div>
+              </div>
+            ))}
+            {!payrolls?.length && <div className="text-center text-slate-500 py-6 text-sm">Belum ada slip</div>}
+          </div>
+          {/* Desktop: table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader><TableRow><TableHead>Periode</TableHead><TableHead className="text-right">Base</TableHead><TableHead className="text-right">Bonus</TableHead><TableHead className="text-right">Potongan</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {payrolls?.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{format(new Date(p.period_start), "dd MMM", { locale: idLocale })} – {format(new Date(p.period_end), "dd MMM yyyy", { locale: idLocale })}</TableCell>
+                    <TableCell className="text-right">{fmtIDR(Number(p.base))}</TableCell>
+                    <TableCell className="text-right">{fmtIDR(Number(p.bonus))}</TableCell>
+                    <TableCell className="text-right">{fmtIDR(Number(p.deductions))}</TableCell>
+                    <TableCell className="text-right font-semibold">{fmtIDR(Number(p.total))}</TableCell>
+                    <TableCell><Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status}</Badge></TableCell>
+                  </TableRow>
+                ))}
+                {!payrolls?.length && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-6">Belum ada slip</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

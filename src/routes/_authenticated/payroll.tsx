@@ -101,31 +101,68 @@ function PayrollPage() {
       </Card>
 
       <Card><CardContent className="p-0">
-        <Table>
-          <TableHeader><TableRow><TableHead>Karyawan</TableHead><TableHead>Tipe</TableHead><TableHead className="text-right">Base</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
-          <TableBody>
-            {payrolls?.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell className="font-medium">{p.employee?.full_name}</TableCell>
-                <TableCell><Badge variant="outline">{p.employee?.type}</Badge></TableCell>
-                <TableCell className="text-right">{fmtIDR(Number(p.base))}</TableCell>
-                <TableCell className="text-right font-semibold">{fmtIDR(Number(p.total))}</TableCell>
-                <TableCell><Badge variant={p.status === "paid" ? "default" : p.status === "approved" ? "secondary" : "outline"}>{p.status}</Badge></TableCell>
-                <TableCell>
-                  <Select value={p.status} onValueChange={(v) => setStatus.mutate({ id: p.id, status: v as "draft" | "approved" | "paid" })}>
-                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">draft</SelectItem>
-                      <SelectItem value="approved" disabled={!isOwner && p.status !== "approved"}>approved {!isOwner && "(owner)"}</SelectItem>
-                      <SelectItem value="paid" disabled={!isOwner}>paid {!isOwner && "(owner)"}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!payrolls?.length && <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Belum ada payroll untuk periode ini. Klik <em>Generate</em>.</TableCell></TableRow>}
-          </TableBody>
-        </Table>
+        {/* Mobile: vertical cards */}
+        <div className="md:hidden space-y-3 p-3">
+          {payrolls?.map((p) => (
+            <div key={p.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-900 truncate">{p.employee?.full_name}</div>
+                  <Badge variant="outline" className="mt-1 text-xs">{p.employee?.type}</Badge>
+                </div>
+                <Badge variant={p.status === "paid" ? "default" : p.status === "approved" ? "secondary" : "outline"}>{p.status}</Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-md bg-slate-50 px-2 py-1.5">
+                  <div className="text-[10px] uppercase text-slate-500">Base</div>
+                  <div className="font-semibold">{fmtIDR(Number(p.base))}</div>
+                </div>
+                <div className="rounded-md bg-emerald-50 px-2 py-1.5">
+                  <div className="text-[10px] uppercase text-emerald-700/70">Total</div>
+                  <div className="font-bold text-emerald-700">{fmtIDR(Number(p.total))}</div>
+                </div>
+              </div>
+              <Select value={p.status} onValueChange={(v) => setStatus.mutate({ id: p.id, status: v as "draft" | "approved" | "paid" })}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">draft</SelectItem>
+                  <SelectItem value="approved" disabled={!isOwner && p.status !== "approved"}>approved {!isOwner && "(owner)"}</SelectItem>
+                  <SelectItem value="paid" disabled={!isOwner}>paid {!isOwner && "(owner)"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+          {!payrolls?.length && <div className="text-center py-8 text-slate-500 text-sm">Belum ada payroll untuk periode ini. Klik <em>Generate</em>.</div>}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader><TableRow><TableHead>Karyawan</TableHead><TableHead>Tipe</TableHead><TableHead className="text-right">Base</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
+            <TableBody>
+              {payrolls?.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-medium">{p.employee?.full_name}</TableCell>
+                  <TableCell><Badge variant="outline">{p.employee?.type}</Badge></TableCell>
+                  <TableCell className="text-right">{fmtIDR(Number(p.base))}</TableCell>
+                  <TableCell className="text-right font-semibold">{fmtIDR(Number(p.total))}</TableCell>
+                  <TableCell><Badge variant={p.status === "paid" ? "default" : p.status === "approved" ? "secondary" : "outline"}>{p.status}</Badge></TableCell>
+                  <TableCell>
+                    <Select value={p.status} onValueChange={(v) => setStatus.mutate({ id: p.id, status: v as "draft" | "approved" | "paid" })}>
+                      <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">draft</SelectItem>
+                        <SelectItem value="approved" disabled={!isOwner && p.status !== "approved"}>approved {!isOwner && "(owner)"}</SelectItem>
+                        <SelectItem value="paid" disabled={!isOwner}>paid {!isOwner && "(owner)"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!payrolls?.length && <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Belum ada payroll untuk periode ini. Klik <em>Generate</em>.</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent></Card>
     </div>
   );

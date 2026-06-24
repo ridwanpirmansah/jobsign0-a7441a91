@@ -53,29 +53,56 @@ function UsersPage() {
     <div className="space-y-6 max-w-5xl">
       <div><h1 className="text-2xl font-bold text-slate-900">Kelola User & Role</h1><p className="text-sm text-slate-500">Tetapkan akses owner, admin, atau karyawan</p></div>
       <Card><CardContent className="p-0">
-        <Table>
-          <TableHeader><TableRow><TableHead>Nama</TableHead><TableHead>User ID</TableHead><TableHead>Role saat ini</TableHead><TableHead>Ubah role</TableHead></TableRow></TableHeader>
-          <TableBody>
-            {rows?.map((u) => (
-              <TableRow key={u.id}>
-                <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
-                <TableCell className="font-mono text-xs text-slate-500">{u.id.slice(0, 8)}…</TableCell>
-                <TableCell><Badge variant={u.role === "owner" ? "default" : u.role === "admin" ? "secondary" : "outline"}>{u.role}</Badge></TableCell>
-                <TableCell>
-                  <Select value={u.role} onValueChange={(v) => setRole.mutate({ user_id: u.id, role: v as Role })} disabled={u.id === me!.user.id}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="owner">owner</SelectItem>
-                      <SelectItem value="admin">admin</SelectItem>
-                      <SelectItem value="karyawan">karyawan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!rows?.length && <TableRow><TableCell colSpan={4} className="text-center py-8 text-slate-500">Belum ada user</TableCell></TableRow>}
-          </TableBody>
-        </Table>
+        {/* Mobile: cards */}
+        <div className="md:hidden space-y-3 p-3">
+          {rows?.map((u) => (
+            <div key={u.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-900 truncate">{u.full_name || "—"}</div>
+                  <div className="font-mono text-xs text-slate-400">{u.id.slice(0, 8)}…</div>
+                </div>
+                <Badge variant={u.role === "owner" ? "default" : u.role === "admin" ? "secondary" : "outline"}>{u.role}</Badge>
+              </div>
+              <Select value={u.role} onValueChange={(v) => setRole.mutate({ user_id: u.id, role: v as Role })} disabled={u.id === me!.user.id}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="owner">owner</SelectItem>
+                  <SelectItem value="admin">admin</SelectItem>
+                  <SelectItem value="karyawan">karyawan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+          {!rows?.length && <div className="text-center py-8 text-slate-500 text-sm">Belum ada user</div>}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader><TableRow><TableHead>Nama</TableHead><TableHead>User ID</TableHead><TableHead>Role saat ini</TableHead><TableHead>Ubah role</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {rows?.map((u) => (
+                <TableRow key={u.id}>
+                  <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
+                  <TableCell className="font-mono text-xs text-slate-500">{u.id.slice(0, 8)}…</TableCell>
+                  <TableCell><Badge variant={u.role === "owner" ? "default" : u.role === "admin" ? "secondary" : "outline"}>{u.role}</Badge></TableCell>
+                  <TableCell>
+                    <Select value={u.role} onValueChange={(v) => setRole.mutate({ user_id: u.id, role: v as Role })} disabled={u.id === me!.user.id}>
+                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="owner">owner</SelectItem>
+                        <SelectItem value="admin">admin</SelectItem>
+                        <SelectItem value="karyawan">karyawan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!rows?.length && <TableRow><TableCell colSpan={4} className="text-center py-8 text-slate-500">Belum ada user</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent></Card>
     </div>
   );
