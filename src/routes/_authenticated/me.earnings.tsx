@@ -10,9 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, ChevronLeft, ChevronRight, Download, CalendarDays } from "lucide-react";
-import { format, startOfWeek, endOfWeek, addWeeks } from "date-fns";
+import { ShieldCheck, ChevronLeft, ChevronRight, Download, CalendarDays, CalendarRange } from "lucide-react";
+import { format, startOfWeek, endOfWeek, addWeeks, startOfMonth, endOfMonth, addMonths, isSameDay } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { generateSlipPdf, type SlipJobBreakdown, type SlipAttendance } from "@/lib/payroll-pdf";
 import { toast } from "sonner";
 
