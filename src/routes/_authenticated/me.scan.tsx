@@ -33,11 +33,17 @@ function ScanPage() {
       return data as { action: string; time: string };
     },
     onSuccess: (res) => {
-      const action = res.action === "check_in" ? "Check-IN" : "Check-OUT";
-      setLast({ ok: true, message: `${action} berhasil dicatat`, action: res.action });
-      toast.success(`${action} tercatat`);
+      const label =
+        res.action === "check_in" ? "Check-IN"
+        : res.action === "check_out" ? "Check-OUT (sementara)"
+        : res.action === "break_end" ? "Selesai Istirahat — lanjut kerja"
+        : res.action === "check_out_final" ? "Check-OUT (pulang)"
+        : res.action;
+      setLast({ ok: true, message: `${label} berhasil dicatat`, action: res.action });
+      toast.success(`${label} tercatat`);
       qc.invalidateQueries({ queryKey: ["att-today"] });
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
+      qc.invalidateQueries({ queryKey: ["my-att"] });
     },
     onError: (e: Error) => {
       setLast({ ok: false, message: e.message });
