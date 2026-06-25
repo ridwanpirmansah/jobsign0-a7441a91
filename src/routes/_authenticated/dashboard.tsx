@@ -18,6 +18,9 @@ import {
   Timer,
   Hammer,
   Activity,
+  LogIn,
+  LogOut,
+  Coffee,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, subDays, differenceInMinutes } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
