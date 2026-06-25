@@ -47,6 +47,25 @@ function MyEarnings() {
     },
   });
 
+  const { data: empInfo } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-emp", empId],
+    queryFn: async () => {
+      const { data } = await supabase.from("employees").select("id, daily_wage, hourly_rate, pay_unit, type").eq("id", empId!).maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: attendances } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-att", empId, from, to],
+    queryFn: async () => {
+      const { data } = await supabase.from("attendances")
+        .select("*").eq("employee_id", empId!).gte("date", from).lte("date", to).order("date", { ascending: false });
+      return data ?? [];
+    },
+  });
+
   const { data: payrolls } = useQuery({
     enabled: !!empId,
     queryKey: ["my-payrolls", empId],
@@ -56,15 +75,51 @@ function MyEarnings() {
     },
   });
 
+  // Build daily wage entries from attendance
+  const dailyEntries = useMemo(() => {
+    if (!empInfo || !attendances) return [];
+    const wage = Number(empInfo.daily_wage || 0);
+    const hourly = Number(empInfo.hourly_rate || 0);
+    if (wage <= 0 && hourly <= 0) return [];
+    return attendances
+      .filter((a) => !!a.check_in && a.status === "hadir")
+      .map((a) => {
+        let amount = 0;
+        let qtyLabel = "1 hari";
+        if (empInfo.pay_unit === "hour" && hourly > 0 && a.check_out) {
+          const ms = new Date(a.check_out).getTime() - new Date(a.check_in!).getTime();
+          const breakMs = a.break_start && a.break_end
+            ? new Date(a.break_end).getTime() - new Date(a.break_start).getTime() : 0;
+          const hrs = Math.max(0, (ms - breakMs) / 3600000);
+          amount = Math.round(hrs * hourly);
+          qtyLabel = `${hrs.toFixed(2)} jam`;
+        } else {
+          amount = wage;
+        }
+        const isComplete = !!a.check_out;
+        return {
+          id: `att-${a.id}`,
+          log_date: a.date,
+          amount,
+          qty: qtyLabel,
+          status: isComplete ? "approved" : "pending",
+          source: "attendance" as const,
+        };
+      })
+      .filter((e) => e.amount > 0);
+  }, [empInfo, attendances]);
+
   const summary = useMemo(() => {
     const approved = (logs ?? []).filter((l) => l.status === "approved");
     const pending = (logs ?? []).filter((l) => l.status === "pending");
+    const approvedDaily = dailyEntries.filter((e) => e.status === "approved").reduce((s, e) => s + e.amount, 0);
+    const pendingDaily = dailyEntries.filter((e) => e.status === "pending").reduce((s, e) => s + e.amount, 0);
     return {
-      approvedTotal: approved.reduce((s, l) => s + Number(l.amount), 0),
-      pendingTotal: pending.reduce((s, l) => s + Number(l.amount), 0),
-      approvedCount: approved.length,
+      approvedTotal: approved.reduce((s, l) => s + Number(l.amount), 0) + approvedDaily,
+      pendingTotal: pending.reduce((s, l) => s + Number(l.amount), 0) + pendingDaily,
+      approvedCount: approved.length + dailyEntries.filter((e) => e.status === "approved").length,
     };
-  }, [logs]);
+  }, [logs, dailyEntries]);
 
   return (
     <div className="space-y-6 max-w-6xl">
