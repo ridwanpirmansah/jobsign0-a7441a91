@@ -86,6 +86,12 @@ function ScanPage() {
 
   useEffect(() => () => { stop(); }, []);
 
+  useEffect(() => {
+    if (!last) return;
+    const id = setTimeout(() => setLast(null), 3500);
+    return () => clearTimeout(id);
+  }, [last]);
+
   return (
     <div className="space-y-6 max-w-xl">
       <div>
