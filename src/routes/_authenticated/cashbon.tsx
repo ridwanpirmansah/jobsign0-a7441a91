@@ -72,8 +72,10 @@ function CashbonPage() {
 
   const decide = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Status }) => {
-      const patch: Record<string, unknown> = { status, decided_by: me!.user.id, decided_at: new Date().toISOString() };
-      if (status === "paid") patch.paid_at = new Date().toISOString();
+      const nowIso = new Date().toISOString();
+      const patch = status === "paid"
+        ? { status, decided_by: me!.user.id, decided_at: nowIso, paid_at: nowIso }
+        : { status, decided_by: me!.user.id, decided_at: nowIso };
       const { error } = await supabase.from("cashbon").update(patch).eq("id", id);
       if (error) throw error;
     },
