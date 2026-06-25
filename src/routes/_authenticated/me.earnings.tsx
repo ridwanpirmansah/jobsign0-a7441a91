@@ -160,6 +160,65 @@ function MyEarnings() {
     };
   }, [logs, dailyEntries]);
 
+  // Total cashbon yang belum dibayar (status approved) → potongan slip
+  const cashbonDeduction = useMemo(
+    () => (outstandingCashbon ?? []).reduce((s, c) => s + Number(c.amount), 0),
+    [outstandingCashbon],
+  );
+
+  // Rincian garapan per jenis (Potong / Tempel / Solder / Kabel, dst)
+  const jobBreakdown: SlipJobBreakdown[] = useMemo(() => {
+    const map = new Map<string, SlipJobBreakdown>();
+    (logs ?? []).forEach((l) => {
+      const name = l.rate?.name ?? "Lainnya";
+      const unit = l.rate?.unit ?? "pcs";
+      const cur = map.get(name) ?? { name, unit, qty: 0, amount: 0 };
+      cur.qty += Number(l.qty);
+      cur.amount += Number(l.amount);
+      map.set(name, cur);
+    });
+    return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
+  }, [logs]);
+
+  // Attendance per hari + jam kerja
+  const attendanceDetail: SlipAttendance[] = useMemo(() => {
+    return (attendances ?? [])
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((a) => {
+        let hours = 0;
+        if (a.check_in && a.check_out) {
+          const ms = new Date(a.check_out).getTime() - new Date(a.check_in).getTime();
+          const breakMs = a.break_start && a.break_end
+            ? new Date(a.break_end).getTime() - new Date(a.break_start).getTime() : 0;
+          hours = Math.max(0, (ms - breakMs) / 3600000);
+        }
+        return { date: a.date, check_in: a.check_in, check_out: a.check_out, hours };
+      });
+  }, [attendances]);
+
+  const totalHours = useMemo(() => attendanceDetail.reduce((s, a) => s + a.hours, 0), [attendanceDetail]);
+  const baseTotal = summary.approvedTotal + summary.pendingTotal;
+  const netTotal = baseTotal - cashbonDeduction;
+
+  const handleDownloadPdf = () => {
+    if (!empMeta) { toast.error("Data karyawan belum siap"); return; }
+    generateSlipPdf({
+      employeeName: empMeta.full_name,
+      employeeCode: empMeta.employee_code,
+      employeeType: empMeta.type,
+      periodStart: from,
+      periodEnd: to,
+      jobBreakdown,
+      attendance: attendanceDetail,
+      base: baseTotal,
+      bonus: 0,
+      cashbonDeduction,
+      totalHours,
+    });
+    toast.success("Slip gaji PDF berhasil diunduh");
+  };
+
   return (
     <div className="space-y-6 max-w-6xl">
       <div>
