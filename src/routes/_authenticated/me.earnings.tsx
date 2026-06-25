@@ -8,10 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck } from "lucide-react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { ShieldCheck, ChevronLeft, ChevronRight, Download, CalendarDays } from "lucide-react";
+import { format, startOfWeek, endOfWeek, addWeeks } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { generateSlipPdf, type SlipJobBreakdown, type SlipAttendance } from "@/lib/payroll-pdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/me/earnings")({ component: MyEarnings });
 
@@ -19,13 +22,29 @@ function fmtIDR(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 }
 
+// Weekly period: Sunday → Saturday
+const weekStart = (d: Date) => startOfWeek(d, { weekStartsOn: 0 });
+const weekEnd = (d: Date) => endOfWeek(d, { weekStartsOn: 0 });
+
 function MyEarnings() {
   const { data: me } = useCurrentUser();
   const staff = isStaff(me?.role);
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
   const empId = staff && onBehalfEmpId ? onBehalfEmpId : me?.employee?.id;
-  const [from, setFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [to, setTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [from, setFrom] = useState(format(weekStart(new Date()), "yyyy-MM-dd"));
+  const [to, setTo] = useState(format(weekEnd(new Date()), "yyyy-MM-dd"));
+
+  const shiftWeek = (delta: number) => {
+    const base = new Date(from + "T00:00:00");
+    const s = weekStart(addWeeks(base, delta));
+    const e = weekEnd(s);
+    setFrom(format(s, "yyyy-MM-dd"));
+    setTo(format(e, "yyyy-MM-dd"));
+  };
+  const thisWeek = () => {
+    setFrom(format(weekStart(new Date()), "yyyy-MM-dd"));
+    setTo(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  };
 
   const { data: employees } = useQuery({
     enabled: staff,
@@ -75,6 +94,26 @@ function MyEarnings() {
     },
   });
 
+  // Outstanding cashbon (approved tapi belum dibayar) → akan menjadi potongan
+  const { data: outstandingCashbon } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-cashbon", empId],
+    queryFn: async () => {
+      const { data } = await supabase.from("cashbon").select("amount,status,request_date,note")
+        .eq("employee_id", empId!).eq("status", "approved");
+      return data ?? [];
+    },
+  });
+
+  const { data: empMeta } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-emp-meta", empId],
+    queryFn: async () => {
+      const { data } = await supabase.from("employees").select("full_name,employee_code,type").eq("id", empId!).maybeSingle();
+      return data;
+    },
+  });
+
   // Build daily wage entries from attendance
   const dailyEntries = useMemo(() => {
     if (!empInfo || !attendances) return [];
@@ -121,6 +160,65 @@ function MyEarnings() {
     };
   }, [logs, dailyEntries]);
 
+  // Total cashbon yang belum dibayar (status approved) → potongan slip
+  const cashbonDeduction = useMemo(
+    () => (outstandingCashbon ?? []).reduce((s, c) => s + Number(c.amount), 0),
+    [outstandingCashbon],
+  );
+
+  // Rincian garapan per jenis (Potong / Tempel / Solder / Kabel, dst)
+  const jobBreakdown: SlipJobBreakdown[] = useMemo(() => {
+    const map = new Map<string, SlipJobBreakdown>();
+    (logs ?? []).forEach((l) => {
+      const name = l.rate?.name ?? "Lainnya";
+      const unit = l.rate?.unit ?? "pcs";
+      const cur = map.get(name) ?? { name, unit, qty: 0, amount: 0 };
+      cur.qty += Number(l.qty);
+      cur.amount += Number(l.amount);
+      map.set(name, cur);
+    });
+    return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
+  }, [logs]);
+
+  // Attendance per hari + jam kerja
+  const attendanceDetail: SlipAttendance[] = useMemo(() => {
+    return (attendances ?? [])
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((a) => {
+        let hours = 0;
+        if (a.check_in && a.check_out) {
+          const ms = new Date(a.check_out).getTime() - new Date(a.check_in).getTime();
+          const breakMs = a.break_start && a.break_end
+            ? new Date(a.break_end).getTime() - new Date(a.break_start).getTime() : 0;
+          hours = Math.max(0, (ms - breakMs) / 3600000);
+        }
+        return { date: a.date, check_in: a.check_in, check_out: a.check_out, hours };
+      });
+  }, [attendances]);
+
+  const totalHours = useMemo(() => attendanceDetail.reduce((s, a) => s + a.hours, 0), [attendanceDetail]);
+  const baseTotal = summary.approvedTotal + summary.pendingTotal;
+  const netTotal = baseTotal - cashbonDeduction;
+
+  const handleDownloadPdf = () => {
+    if (!empMeta) { toast.error("Data karyawan belum siap"); return; }
+    generateSlipPdf({
+      employeeName: empMeta.full_name,
+      employeeCode: empMeta.employee_code,
+      employeeType: empMeta.type,
+      periodStart: from,
+      periodEnd: to,
+      jobBreakdown,
+      attendance: attendanceDetail,
+      base: baseTotal,
+      bonus: 0,
+      cashbonDeduction,
+      totalHours,
+    });
+    toast.success("Slip gaji PDF berhasil diunduh");
+  };
+
   return (
     <div className="space-y-6 max-w-6xl">
       <div>
@@ -152,12 +250,31 @@ function MyEarnings() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Filter Periode</CardTitle></CardHeader>
-        <CardContent>
-          <div className="flex gap-3 flex-wrap items-end">
-            <div><Label>Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-            <div><Label>Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+      <Card className="border-sky-200/70 bg-gradient-to-br from-sky-50/40 to-white">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-sky-600" /> Periode Mingguan (Minggu – Sabtu)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => shiftWeek(-1)}>
+              <ChevronLeft className="h-4 w-4 mr-1" /> Minggu Lalu
+            </Button>
+            <div className="text-center flex-1 min-w-[180px]">
+              <div className="text-sm font-semibold text-slate-900">
+                {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
+              </div>
+              <div className="text-[11px] text-slate-500">Gajian setiap hari Sabtu</div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => shiftWeek(1)}>
+              Minggu Depan <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          <div className="flex gap-2 flex-wrap items-end">
+            <Button variant="ghost" size="sm" onClick={thisWeek}>Minggu Ini</Button>
+            <div><Label className="text-xs">Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
+            <div><Label className="text-xs">Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
           </div>
         </CardContent>
       </Card>
@@ -165,8 +282,73 @@ function MyEarnings() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Disetujui</div><div className="text-2xl font-bold text-emerald-600">{fmtIDR(summary.approvedTotal)}</div><div className="text-xs text-slate-400">{summary.approvedCount} laporan</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Menunggu Approval</div><div className="text-2xl font-bold text-amber-600">{fmtIDR(summary.pendingTotal)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Total Periode</div><div className="text-2xl font-bold text-slate-900">{fmtIDR(summary.approvedTotal + summary.pendingTotal)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Total Periode</div><div className="text-2xl font-bold text-slate-900">{fmtIDR(baseTotal)}</div></CardContent></Card>
       </div>
+
+      {/* Slip Gaji Mingguan — preview & download */}
+      <Card className="border-emerald-200/70 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <CardTitle className="text-base">Slip Gaji Minggu Ini</CardTitle>
+              <p className="text-xs text-slate-500 mt-1">
+                {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
+              </p>
+            </div>
+            <Button onClick={handleDownloadPdf} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+              <Download className="h-4 w-4 mr-1.5" /> Unduh PDF
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Rincian garapan per jenis */}
+          <div>
+            <div className="text-xs font-semibold uppercase text-slate-500 mb-2">Rincian Garapan</div>
+            {jobBreakdown.length ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {jobBreakdown.map((b) => (
+                  <div key={b.name} className="rounded-lg border border-slate-200 bg-white px-3 py-2 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{b.name}</div>
+                      <div className="text-[11px] text-slate-500">{b.qty} {b.unit}</div>
+                    </div>
+                    <div className="text-sm font-semibold text-sky-700">{fmtIDR(b.amount)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400 italic">Belum ada garapan minggu ini</div>
+            )}
+          </div>
+
+          {/* Jam kerja */}
+          <div className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+            <span className="text-sm text-slate-600">Total Jam Kerja Minggu Ini</span>
+            <span className="text-sm font-bold text-slate-900">{totalHours.toFixed(2)} jam</span>
+          </div>
+
+          {/* Ringkasan */}
+          <div className="rounded-lg border border-slate-200 divide-y">
+            <div className="flex items-center justify-between px-3 py-2 text-sm">
+              <span className="text-slate-600">Penghasilan Pokok</span>
+              <span className="font-semibold">{fmtIDR(baseTotal)}</span>
+            </div>
+            <div className="flex items-center justify-between px-3 py-2 text-sm bg-rose-50/40">
+              <div>
+                <div className="text-slate-700">Potongan Cashbon</div>
+                {cashbonDeduction > 0 && (
+                  <div className="text-[11px] text-rose-600">{outstandingCashbon?.length} cashbon belum dibayar</div>
+                )}
+              </div>
+              <span className="font-semibold text-rose-700">- {fmtIDR(cashbonDeduction)}</span>
+            </div>
+            <div className="flex items-center justify-between px-3 py-2.5 bg-emerald-50">
+              <span className="text-sm font-bold text-emerald-900">Total Diterima</span>
+              <span className="text-lg font-bold text-emerald-700">{fmtIDR(netTotal)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-slate-200/70 shadow-sm">
         <CardHeader className="pb-2 px-3 sm:px-6"><CardTitle className="text-base">Detail Laporan</CardTitle></CardHeader>

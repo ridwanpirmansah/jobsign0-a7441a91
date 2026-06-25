@@ -11,17 +11,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth, differenceInCalendarDays } from "date-fns";
+import { format, startOfWeek, endOfWeek, addWeeks, differenceInCalendarDays } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/payroll")({ component: PayrollPage });
 
 function fmtIDR(n: number) { return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0); }
 
+const weekStart = (d: Date) => startOfWeek(d, { weekStartsOn: 0 });
+const weekEnd = (d: Date) => endOfWeek(d, { weekStartsOn: 0 });
+
 function PayrollPage() {
   const { data: me } = useCurrentUser();
   const qc = useQueryClient();
-  const [from, setFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [to, setTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [from, setFrom] = useState(format(weekStart(new Date()), "yyyy-MM-dd"));
+  const [to, setTo] = useState(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  const shiftWeek = (delta: number) => {
+    const base = new Date(from + "T00:00:00");
+    const s = weekStart(addWeeks(base, delta));
+    setFrom(format(s, "yyyy-MM-dd"));
+    setTo(format(weekEnd(s), "yyyy-MM-dd"));
+  };
 
   const { data: payrolls } = useQuery({
     queryKey: ["payrolls", from, to],
@@ -56,13 +67,18 @@ function PayrollPage() {
             .eq("employee_id", e.id).eq("status", "hadir").gte("date", from).lte("date", to);
           base = (att ?? []).length * Number(e.daily_wage);
         }
+        // Hitung potongan cashbon yang belum dibayar (status approved)
+        const { data: cb } = await supabase.from("cashbon").select("amount")
+          .eq("employee_id", e.id).eq("status", "approved");
+        const deductions = (cb ?? []).reduce((s, c) => s + Number(c.amount), 0);
+        const total = Math.max(0, base - deductions);
         // upsert
         const { data: existing } = await supabase.from("payrolls").select("id")
           .eq("employee_id", e.id).eq("period_start", from).eq("period_end", to).maybeSingle();
         if (existing) {
-          await supabase.from("payrolls").update({ base, total: base }).eq("id", existing.id);
+          await supabase.from("payrolls").update({ base, deductions, total }).eq("id", existing.id);
         } else {
-          await supabase.from("payrolls").insert({ employee_id: e.id, period_start: from, period_end: to, base, total: base, status: "draft" });
+          await supabase.from("payrolls").insert({ employee_id: e.id, period_start: from, period_end: to, base, deductions, total, status: "draft" });
         }
         void days;
       }
@@ -89,12 +105,26 @@ function PayrollPage() {
     <div className="space-y-6 max-w-7xl">
       <div><h1 className="text-2xl font-bold text-slate-900">Payroll</h1><p className="text-sm text-slate-500">Generate & approve slip gaji per periode</p></div>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Periode</CardTitle></CardHeader>
-        <CardContent>
+      <Card className="border-sky-200/70 bg-gradient-to-br from-sky-50/40 to-white">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-sky-600" /> Periode Mingguan (Minggu – Sabtu)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => shiftWeek(-1)}><ChevronLeft className="h-4 w-4 mr-1" /> Minggu Lalu</Button>
+            <div className="text-center flex-1 min-w-[200px]">
+              <div className="text-sm font-semibold text-slate-900">
+                {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
+              </div>
+              <div className="text-[11px] text-slate-500">Gajian setiap Sabtu</div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => shiftWeek(1)}>Minggu Depan <ChevronRight className="h-4 w-4 ml-1" /></Button>
+          </div>
           <div className="flex gap-3 items-end flex-wrap">
-            <div><Label>Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-            <div><Label>Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+            <div><Label className="text-xs">Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
+            <div><Label className="text-xs">Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
             <Button onClick={() => generate.mutate()} disabled={generate.isPending}>Generate / Refresh</Button>
           </div>
         </CardContent>
