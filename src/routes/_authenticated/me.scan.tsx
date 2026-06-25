@@ -40,14 +40,12 @@ function ScanPage() {
         : res.action === "check_out_final" ? "Check-OUT (pulang)"
         : res.action;
       setLast({ ok: true, message: `${label} berhasil dicatat`, action: res.action });
-      toast.success(`${label} tercatat`);
       qc.invalidateQueries({ queryKey: ["att-today"] });
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
       qc.invalidateQueries({ queryKey: ["my-att"] });
     },
     onError: (e: Error) => {
       setLast({ ok: false, message: e.message });
-      toast.error(e.message);
     },
     onSettled: () => {
       setTimeout(() => { processingRef.current = false; lastTokenRef.current = ""; }, 1500);
