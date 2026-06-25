@@ -82,6 +82,56 @@ export type Database = {
           },
         ]
       }
+      cashbon: {
+        Row: {
+          amount: number
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          employee_id: string
+          id: string
+          note: string | null
+          paid_at: string | null
+          request_date: string
+          status: Database["public"]["Enums"]["cashbon_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          employee_id: string
+          id?: string
+          note?: string | null
+          paid_at?: string | null
+          request_date?: string
+          status?: Database["public"]["Enums"]["cashbon_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          employee_id?: string
+          id?: string
+          note?: string | null
+          paid_at?: string | null
+          request_date?: string
+          status?: Database["public"]["Enums"]["cashbon_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashbon_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -722,6 +772,7 @@ export type Database = {
     Enums: {
       app_role: "owner" | "admin" | "karyawan"
       attendance_status: "hadir" | "izin" | "sakit" | "alpa"
+      cashbon_status: "pending" | "approved" | "rejected" | "paid"
       employee_type: "borongan" | "harian"
       job_log_status: "pending" | "approved" | "rejected"
       order_source:
@@ -862,6 +913,7 @@ export const Constants = {
     Enums: {
       app_role: ["owner", "admin", "karyawan"],
       attendance_status: ["hadir", "izin", "sakit", "alpa"],
+      cashbon_status: ["pending", "approved", "rejected", "paid"],
       employee_type: ["borongan", "harian"],
       job_log_status: ["pending", "approved", "rejected"],
       order_source: [
