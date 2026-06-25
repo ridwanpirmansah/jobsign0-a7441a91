@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Save, X, LogIn, LogOut, StickyNote } from "lucide-react";
+import { Pencil, Save, X, LogIn, LogOut, StickyNote, Coffee } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -97,6 +97,23 @@ function MyAttendance() {
                         </div>
                       </div>
                     </div>
+                    {(r.break_start || r.break_end) && (() => {
+                      const bs = r.break_start ? new Date(r.break_start) : null;
+                      const be = r.break_end ? new Date(r.break_end) : null;
+                      const mins = bs && be ? Math.max(0, Math.round((be.getTime() - bs.getTime()) / 60000)) : null;
+                      const dur = mins == null ? "—" : mins >= 60 ? `${Math.floor(mins/60)}j ${mins%60}m` : `${mins}m`;
+                      return (
+                        <div className="mt-2 flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1.5 border border-amber-100">
+                          <Coffee className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                          <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                            <p className="text-[11px] text-amber-700 leading-tight">
+                              Istirahat <span className="font-semibold">{bs ? format(bs, "HH:mm") : "—"}</span> – <span className="font-semibold">{be ? format(be, "HH:mm") : "—"}</span>
+                            </p>
+                            <span className="text-[11px] font-bold text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 shrink-0">{dur}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 

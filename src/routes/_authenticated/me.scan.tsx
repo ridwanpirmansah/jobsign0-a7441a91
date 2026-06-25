@@ -33,11 +33,17 @@ function ScanPage() {
       return data as { action: string; time: string };
     },
     onSuccess: (res) => {
-      const action = res.action === "check_in" ? "Check-IN" : "Check-OUT";
-      setLast({ ok: true, message: `${action} berhasil dicatat`, action: res.action });
-      toast.success(`${action} tercatat`);
+      const label =
+        res.action === "check_in" ? "Check-IN"
+        : res.action === "check_out" ? "Check-OUT (sementara)"
+        : res.action === "break_end" ? "Selesai Istirahat — lanjut kerja"
+        : res.action === "check_out_final" ? "Check-OUT (pulang)"
+        : res.action;
+      setLast({ ok: true, message: `${label} berhasil dicatat`, action: res.action });
+      toast.success(`${label} tercatat`);
       qc.invalidateQueries({ queryKey: ["att-today"] });
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
+      qc.invalidateQueries({ queryKey: ["my-att"] });
     },
     onError: (e: Error) => {
       setLast({ ok: false, message: e.message });
@@ -89,7 +95,7 @@ function ScanPage() {
           <ArrowLeft className="h-3 w-3" /> Kembali ke Dashboard
         </Link>
         <h1 className="text-2xl font-bold text-slate-900 mt-2">Scan QR Absensi</h1>
-        <p className="text-sm text-slate-500">Scan QR yang ditampilkan di workshop. QR berganti tiap 6 detik — pastikan scan QR aktif terkini.</p>
+        <p className="text-sm text-slate-500">Scan QR yang ditampilkan di workshop. Urutan scan: <b>Check-In → Check-Out (sementara) → Istirahat selesai → Check-Out (pulang)</b>. Jeda minimal 10 menit antar scan.</p>
       </div>
 
       {!me?.employee?.id && (
