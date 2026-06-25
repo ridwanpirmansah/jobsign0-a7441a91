@@ -6,13 +6,15 @@ import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, ChevronLeft, ChevronRight, Download, CalendarDays } from "lucide-react";
-import { format, startOfWeek, endOfWeek, addWeeks } from "date-fns";
+import { ShieldCheck, ChevronLeft, ChevronRight, Download, CalendarDays, CalendarRange } from "lucide-react";
+import { format, startOfWeek, endOfWeek, addWeeks, startOfMonth, endOfMonth, addMonths, isSameDay } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { generateSlipPdf, type SlipJobBreakdown, type SlipAttendance } from "@/lib/payroll-pdf";
 import { toast } from "sonner";
 
@@ -31,20 +33,51 @@ function MyEarnings() {
   const staff = isStaff(me?.role);
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
   const empId = staff && onBehalfEmpId ? onBehalfEmpId : me?.employee?.id;
+  const [mode, setMode] = useState<"week" | "month">("week");
   const [from, setFrom] = useState(format(weekStart(new Date()), "yyyy-MM-dd"));
   const [to, setTo] = useState(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const shiftWeek = (delta: number) => {
-    const base = new Date(from + "T00:00:00");
-    const s = weekStart(addWeeks(base, delta));
-    const e = weekEnd(s);
+  const setRange = (s: Date, e: Date) => {
     setFrom(format(s, "yyyy-MM-dd"));
     setTo(format(e, "yyyy-MM-dd"));
   };
-  const thisWeek = () => {
-    setFrom(format(weekStart(new Date()), "yyyy-MM-dd"));
-    setTo(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  const shift = (delta: number) => {
+    const base = new Date(from + "T00:00:00");
+    if (mode === "week") {
+      const s = weekStart(addWeeks(base, delta));
+      setRange(s, weekEnd(s));
+    } else {
+      const s = startOfMonth(addMonths(base, delta));
+      setRange(s, endOfMonth(s));
+    }
   };
+  const goCurrent = () => {
+    const now = new Date();
+    if (mode === "week") setRange(weekStart(now), weekEnd(now));
+    else setRange(startOfMonth(now), endOfMonth(now));
+  };
+  const switchMode = (m: "week" | "month") => {
+    setMode(m);
+    const base = new Date(from + "T00:00:00");
+    if (m === "week") setRange(weekStart(base), weekEnd(base));
+    else setRange(startOfMonth(base), endOfMonth(base));
+  };
+  const onPickDate = (d: Date | undefined) => {
+    if (!d) return;
+    if (mode === "week") setRange(weekStart(d), weekEnd(d));
+    else setRange(startOfMonth(d), endOfMonth(d));
+    setPickerOpen(false);
+  };
+
+  const fromDate = new Date(from + "T00:00:00");
+  const toDate = new Date(to + "T00:00:00");
+  const isCurrent = mode === "week"
+    ? isSameDay(fromDate, weekStart(new Date()))
+    : isSameDay(fromDate, startOfMonth(new Date()));
+  const rangeLabel = mode === "week"
+    ? `${format(fromDate, "dd MMM", { locale: idLocale })} – ${format(toDate, "dd MMM yyyy", { locale: idLocale })}`
+    : format(fromDate, "MMMM yyyy", { locale: idLocale });
 
   const { data: employees } = useQuery({
     enabled: staff,
@@ -250,34 +283,93 @@ function MyEarnings() {
         </Card>
       )}
 
-      <Card className="border-sky-200/70 bg-gradient-to-br from-sky-50/40 to-white">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-sky-600" /> Periode Mingguan (Minggu – Sabtu)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => shiftWeek(-1)}>
-              <ChevronLeft className="h-4 w-4 mr-1" /> Minggu Lalu
-            </Button>
-            <div className="text-center flex-1 min-w-[180px]">
-              <div className="text-sm font-semibold text-slate-900">
-                {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
-              </div>
-              <div className="text-[11px] text-slate-500">Gajian setiap hari Sabtu</div>
+      <Card className="overflow-hidden border-0 shadow-sm bg-gradient-to-br from-sky-50 via-violet-50 to-rose-50">
+        <CardContent className="p-3 sm:p-4 space-y-3">
+          {/* Mode toggle */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="inline-flex rounded-full bg-white/70 backdrop-blur p-0.5 shadow-sm border border-white">
+              {(["week", "month"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => switchMode(m)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-semibold rounded-full transition-all",
+                    mode === m
+                      ? "bg-gradient-to-r from-sky-500 to-violet-500 text-white shadow"
+                      : "text-slate-600 hover:text-slate-900",
+                  )}
+                >
+                  {m === "week" ? "Mingguan" : "Bulanan"}
+                </button>
+              ))}
             </div>
-            <Button variant="outline" size="sm" onClick={() => shiftWeek(1)}>
-              Minggu Depan <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+            <button
+              onClick={goCurrent}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all",
+                isCurrent
+                  ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                  : "bg-white/70 text-slate-600 border border-white hover:bg-white",
+              )}
+            >
+              {mode === "week" ? "Minggu Ini" : "Bulan Ini"}
+            </button>
           </div>
-          <div className="flex gap-2 flex-wrap items-end">
-            <Button variant="ghost" size="sm" onClick={thisWeek}>Minggu Ini</Button>
-            <div><Label className="text-xs">Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
-            <div><Label className="text-xs">Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
+
+          {/* Navigator */}
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => shift(-1)}
+              className="h-10 w-10 rounded-full bg-white/80 hover:bg-white shadow-sm shrink-0"
+              aria-label="Periode sebelumnya"
+            >
+              <ChevronLeft className="h-5 w-5 text-sky-600" />
+            </Button>
+
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <button className="min-w-0 rounded-2xl bg-white/90 backdrop-blur px-3 py-2.5 shadow-sm border border-white hover:bg-white transition-all text-center group">
+                  <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-violet-600">
+                    <CalendarRange className="h-3 w-3" />
+                    {mode === "week" ? "Periode Mingguan" : "Periode Bulanan"}
+                  </div>
+                  <div className="mt-0.5 text-sm sm:text-base font-bold text-slate-900 truncate">
+                    {rangeLabel}
+                  </div>
+                  <div className="text-[10px] text-slate-500">
+                    {mode === "week" ? "Min – Sab · Gajian Sabtu" : "Tap untuk pilih bulan"}
+                  </div>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="center">
+                <Calendar
+                  mode="single"
+                  selected={fromDate}
+                  onSelect={onPickDate}
+                  weekStartsOn={0}
+                  locale={idLocale}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => shift(1)}
+              className="h-10 w-10 rounded-full bg-white/80 hover:bg-white shadow-sm shrink-0"
+              aria-label="Periode berikutnya"
+            >
+              <ChevronRight className="h-5 w-5 text-sky-600" />
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Disetujui</div><div className="text-2xl font-bold text-emerald-600">{fmtIDR(summary.approvedTotal)}</div><div className="text-xs text-slate-400">{summary.approvedCount} laporan</div></CardContent></Card>
