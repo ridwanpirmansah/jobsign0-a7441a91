@@ -18,6 +18,9 @@ import {
   Timer,
   Hammer,
   Activity,
+  LogIn,
+  LogOut,
+  Coffee,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, subDays, differenceInMinutes } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -335,49 +338,102 @@ function Dashboard() {
       </div>
 
       {/* Check-in card */}
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="border-0 shadow-none bg-transparent sm:border sm:shadow-sm sm:bg-card">
+        <CardHeader className="pb-3 px-0 sm:px-6">
           <CardTitle className="flex items-center gap-2 text-base"><CalendarCheck className="h-4 w-4" /> Absensi Hari Ini</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-0 sm:px-6">
           {!empId ? (
             <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
               Akun Anda belum terhubung ke data karyawan. Minta admin/owner menambahkan Anda di menu <strong>Karyawan</strong> dan menyambungkan ke akun ini.
             </p>
-          ) : (
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="text-sm">
-                <div className="text-slate-500">Check-in</div>
-                <div className="font-semibold">{attToday?.check_in ? format(new Date(attToday.check_in), "HH:mm") : "—"}</div>
-              </div>
-              <div className="text-sm">
-                <div className="text-slate-500">Check-out</div>
-                <div className="font-semibold">{attToday?.check_out ? format(new Date(attToday.check_out), "HH:mm") : "—"}</div>
-              </div>
-              {attToday?.check_in && (
-                <div className="text-sm">
-                  <div className="text-slate-500">Durasi</div>
-                  <div className="font-semibold">
-                    {attToday.check_out
-                      ? fmtJam(differenceInMinutes(new Date(attToday.check_out), new Date(attToday.check_in)))
-                      : fmtJam(differenceInMinutes(new Date(), new Date(attToday.check_in))) + " (berjalan)"}
+          ) : (() => {
+            const att = attToday as {
+              check_in: string | null;
+              check_out: string | null;
+              break_start: string | null;
+              break_end: string | null;
+            } | null | undefined;
+            const ci = att?.check_in ? new Date(att.check_in) : null;
+            const co = att?.check_out ? new Date(att.check_out) : null;
+            const bs = att?.break_start ? new Date(att.break_start) : null;
+            const be = att?.break_end ? new Date(att.break_end) : null;
+            // 4 scans done = check_in + break_start + break_end + check_out
+            const fullyDone = !!(ci && bs && be && co);
+            // Net working duration
+            let workMin = 0;
+            let isRunning = false;
+            if (ci) {
+              const end = co ?? new Date();
+              workMin = Math.max(0, differenceInMinutes(end, ci));
+              if (bs && be) workMin -= Math.max(0, differenceInMinutes(be, bs));
+              else if (bs && !be) workMin -= Math.max(0, differenceInMinutes(new Date(), bs));
+              isRunning = !co;
+            }
+            const breakMin = bs && be ? Math.max(0, differenceInMinutes(be, bs)) : bs && !be ? Math.max(0, differenceInMinutes(new Date(), bs)) : 0;
+            // Button label by stage
+            let btnLabel = "Scan untuk Check-In";
+            if (ci && !co && !bs) btnLabel = "Scan Check-Out / Istirahat";
+            else if (ci && co && !bs) btnLabel = "Scan Mulai Kerja Lagi";
+            else if (ci && bs && be && !co) btnLabel = "Scan Check-Out (Pulang)";
+
+            return (
+              <div className="rounded-xl border border-slate-200 bg-white p-2.5 sm:p-4 shadow-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1.5 min-w-0">
+                    <LogIn className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-emerald-700/70 leading-none">Check In</p>
+                      <p className="text-sm font-bold text-emerald-700 leading-tight">{ci ? format(ci, "HH:mm") : "—"}</p>
+                    </div>
                   </div>
+                  <div className="flex items-center gap-1.5 rounded-md bg-rose-50 px-2 py-1.5 min-w-0">
+                    <LogOut className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-rose-700/70 leading-none">Check Out</p>
+                      <p className="text-sm font-bold text-rose-700 leading-tight">{co ? format(co, "HH:mm") : "—"}</p>
+                    </div>
+                  </div>
+                  {ci && (
+                    <div className="flex items-center gap-1.5 rounded-md bg-indigo-50 px-2 py-1.5 min-w-0 col-span-2">
+                      <Timer className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-indigo-700/70 leading-none">Durasi Kerja</p>
+                        <p className="text-sm font-bold text-indigo-700 leading-tight">
+                          {fmtJam(workMin)}{isRunning ? " (berjalan)" : ""}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {(bs || be) && (
+                    <div className="flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1.5 min-w-0 col-span-2 border border-amber-100">
+                      <Coffee className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                      <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                        <p className="text-[11px] text-amber-700 leading-tight">
+                          Istirahat <span className="font-semibold">{bs ? format(bs, "HH:mm") : "—"}</span> – <span className="font-semibold">{be ? format(be, "HH:mm") : "(berjalan)"}</span>
+                        </p>
+                        <span className="text-[11px] font-bold text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 shrink-0">
+                          {breakMin >= 60 ? `${Math.floor(breakMin/60)}j ${breakMin%60}m` : `${breakMin}m`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="ml-auto">
-                {attToday?.check_in && attToday?.check_out ? (
-                  <Badge variant="secondary">Selesai hari ini</Badge>
-                ) : (
-                  <Button asChild size="lg">
-                    <Link to="/me/scan">
-                      <ScanLine className="h-4 w-4 mr-2" />
-                      {attToday?.check_in ? "Scan untuk Check-Out" : "Scan untuk Check-In"}
-                    </Link>
-                  </Button>
-                )}
+                <div className="mt-3 pt-3 border-t border-dashed border-slate-200 flex justify-end">
+                  {fullyDone ? (
+                    <Badge variant="secondary">Selesai hari ini</Badge>
+                  ) : (
+                    <Button asChild size="lg">
+                      <Link to="/me/scan">
+                        <ScanLine className="h-4 w-4 mr-2" />
+                        {btnLabel}
+                      </Link>
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </CardContent>
       </Card>
 
