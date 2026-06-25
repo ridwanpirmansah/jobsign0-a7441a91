@@ -94,6 +94,26 @@ function MyEarnings() {
     },
   });
 
+  // Outstanding cashbon (approved tapi belum dibayar) → akan menjadi potongan
+  const { data: outstandingCashbon } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-cashbon", empId],
+    queryFn: async () => {
+      const { data } = await supabase.from("cashbon").select("amount,status,request_date,note")
+        .eq("employee_id", empId!).eq("status", "approved");
+      return data ?? [];
+    },
+  });
+
+  const { data: empMeta } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-emp-meta", empId],
+    queryFn: async () => {
+      const { data } = await supabase.from("employees").select("full_name,employee_code,type").eq("id", empId!).maybeSingle();
+      return data;
+    },
+  });
+
   // Build daily wage entries from attendance
   const dailyEntries = useMemo(() => {
     if (!empInfo || !attendances) return [];
