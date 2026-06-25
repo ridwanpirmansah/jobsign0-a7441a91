@@ -67,13 +67,18 @@ function PayrollPage() {
             .eq("employee_id", e.id).eq("status", "hadir").gte("date", from).lte("date", to);
           base = (att ?? []).length * Number(e.daily_wage);
         }
+        // Hitung potongan cashbon yang belum dibayar (status approved)
+        const { data: cb } = await supabase.from("cashbon").select("amount")
+          .eq("employee_id", e.id).eq("status", "approved");
+        const deductions = (cb ?? []).reduce((s, c) => s + Number(c.amount), 0);
+        const total = Math.max(0, base - deductions);
         // upsert
         const { data: existing } = await supabase.from("payrolls").select("id")
           .eq("employee_id", e.id).eq("period_start", from).eq("period_end", to).maybeSingle();
         if (existing) {
-          await supabase.from("payrolls").update({ base, total: base }).eq("id", existing.id);
+          await supabase.from("payrolls").update({ base, deductions, total }).eq("id", existing.id);
         } else {
-          await supabase.from("payrolls").insert({ employee_id: e.id, period_start: from, period_end: to, base, total: base, status: "draft" });
+          await supabase.from("payrolls").insert({ employee_id: e.id, period_start: from, period_end: to, base, deductions, total, status: "draft" });
         }
         void days;
       }
