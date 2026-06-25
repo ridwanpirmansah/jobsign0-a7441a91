@@ -34,20 +34,51 @@ function MyEarnings() {
   const staff = isStaff(me?.role);
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
   const empId = staff && onBehalfEmpId ? onBehalfEmpId : me?.employee?.id;
+  const [mode, setMode] = useState<"week" | "month">("week");
   const [from, setFrom] = useState(format(weekStart(new Date()), "yyyy-MM-dd"));
   const [to, setTo] = useState(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const shiftWeek = (delta: number) => {
-    const base = new Date(from + "T00:00:00");
-    const s = weekStart(addWeeks(base, delta));
-    const e = weekEnd(s);
+  const setRange = (s: Date, e: Date) => {
     setFrom(format(s, "yyyy-MM-dd"));
     setTo(format(e, "yyyy-MM-dd"));
   };
-  const thisWeek = () => {
-    setFrom(format(weekStart(new Date()), "yyyy-MM-dd"));
-    setTo(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  const shift = (delta: number) => {
+    const base = new Date(from + "T00:00:00");
+    if (mode === "week") {
+      const s = weekStart(addWeeks(base, delta));
+      setRange(s, weekEnd(s));
+    } else {
+      const s = startOfMonth(addMonths(base, delta));
+      setRange(s, endOfMonth(s));
+    }
   };
+  const goCurrent = () => {
+    const now = new Date();
+    if (mode === "week") setRange(weekStart(now), weekEnd(now));
+    else setRange(startOfMonth(now), endOfMonth(now));
+  };
+  const switchMode = (m: "week" | "month") => {
+    setMode(m);
+    const base = new Date(from + "T00:00:00");
+    if (m === "week") setRange(weekStart(base), weekEnd(base));
+    else setRange(startOfMonth(base), endOfMonth(base));
+  };
+  const onPickDate = (d: Date | undefined) => {
+    if (!d) return;
+    if (mode === "week") setRange(weekStart(d), weekEnd(d));
+    else setRange(startOfMonth(d), endOfMonth(d));
+    setPickerOpen(false);
+  };
+
+  const fromDate = new Date(from + "T00:00:00");
+  const toDate = new Date(to + "T00:00:00");
+  const isCurrent = mode === "week"
+    ? isSameDay(fromDate, weekStart(new Date()))
+    : isSameDay(fromDate, startOfMonth(new Date()));
+  const rangeLabel = mode === "week"
+    ? `${format(fromDate, "dd MMM", { locale: idLocale })} – ${format(toDate, "dd MMM yyyy", { locale: idLocale })}`
+    : format(fromDate, "MMMM yyyy", { locale: idLocale });
 
   const { data: employees } = useQuery({
     enabled: staff,
