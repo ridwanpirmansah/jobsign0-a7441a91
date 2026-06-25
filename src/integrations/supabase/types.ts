@@ -34,6 +34,8 @@ export type Database = {
       }
       attendances: {
         Row: {
+          break_end: string | null
+          break_start: string | null
           check_in: string | null
           check_out: string | null
           created_at: string
@@ -45,6 +47,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          break_end?: string | null
+          break_start?: string | null
           check_in?: string | null
           check_out?: string | null
           created_at?: string
@@ -56,6 +60,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          break_end?: string | null
+          break_start?: string | null
           check_in?: string | null
           check_out?: string | null
           created_at?: string
