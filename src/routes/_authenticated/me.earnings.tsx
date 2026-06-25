@@ -8,10 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck } from "lucide-react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { ShieldCheck, ChevronLeft, ChevronRight, Download, CalendarDays } from "lucide-react";
+import { format, startOfWeek, endOfWeek, addWeeks } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { generateSlipPdf, type SlipJobBreakdown, type SlipAttendance } from "@/lib/payroll-pdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/me/earnings")({ component: MyEarnings });
 
@@ -19,13 +22,29 @@ function fmtIDR(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 }
 
+// Weekly period: Sunday → Saturday
+const weekStart = (d: Date) => startOfWeek(d, { weekStartsOn: 0 });
+const weekEnd = (d: Date) => endOfWeek(d, { weekStartsOn: 0 });
+
 function MyEarnings() {
   const { data: me } = useCurrentUser();
   const staff = isStaff(me?.role);
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
   const empId = staff && onBehalfEmpId ? onBehalfEmpId : me?.employee?.id;
-  const [from, setFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [to, setTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [from, setFrom] = useState(format(weekStart(new Date()), "yyyy-MM-dd"));
+  const [to, setTo] = useState(format(weekEnd(new Date()), "yyyy-MM-dd"));
+
+  const shiftWeek = (delta: number) => {
+    const base = new Date(from + "T00:00:00");
+    const s = weekStart(addWeeks(base, delta));
+    const e = weekEnd(s);
+    setFrom(format(s, "yyyy-MM-dd"));
+    setTo(format(e, "yyyy-MM-dd"));
+  };
+  const thisWeek = () => {
+    setFrom(format(weekStart(new Date()), "yyyy-MM-dd"));
+    setTo(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  };
 
   const { data: employees } = useQuery({
     enabled: staff,
