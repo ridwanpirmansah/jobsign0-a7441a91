@@ -11,17 +11,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth, differenceInCalendarDays } from "date-fns";
+import { format, startOfWeek, endOfWeek, addWeeks, differenceInCalendarDays } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/payroll")({ component: PayrollPage });
 
 function fmtIDR(n: number) { return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0); }
 
+const weekStart = (d: Date) => startOfWeek(d, { weekStartsOn: 0 });
+const weekEnd = (d: Date) => endOfWeek(d, { weekStartsOn: 0 });
+
 function PayrollPage() {
   const { data: me } = useCurrentUser();
   const qc = useQueryClient();
-  const [from, setFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [to, setTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [from, setFrom] = useState(format(weekStart(new Date()), "yyyy-MM-dd"));
+  const [to, setTo] = useState(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  const shiftWeek = (delta: number) => {
+    const base = new Date(from + "T00:00:00");
+    const s = weekStart(addWeeks(base, delta));
+    setFrom(format(s, "yyyy-MM-dd"));
+    setTo(format(weekEnd(s), "yyyy-MM-dd"));
+  };
 
   const { data: payrolls } = useQuery({
     queryKey: ["payrolls", from, to],
