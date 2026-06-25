@@ -250,12 +250,31 @@ function MyEarnings() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Filter Periode</CardTitle></CardHeader>
-        <CardContent>
-          <div className="flex gap-3 flex-wrap items-end">
-            <div><Label>Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-            <div><Label>Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+      <Card className="border-sky-200/70 bg-gradient-to-br from-sky-50/40 to-white">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-sky-600" /> Periode Mingguan (Minggu – Sabtu)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => shiftWeek(-1)}>
+              <ChevronLeft className="h-4 w-4 mr-1" /> Minggu Lalu
+            </Button>
+            <div className="text-center flex-1 min-w-[180px]">
+              <div className="text-sm font-semibold text-slate-900">
+                {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
+              </div>
+              <div className="text-[11px] text-slate-500">Gajian setiap hari Sabtu</div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => shiftWeek(1)}>
+              Minggu Depan <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          <div className="flex gap-2 flex-wrap items-end">
+            <Button variant="ghost" size="sm" onClick={thisWeek}>Minggu Ini</Button>
+            <div><Label className="text-xs">Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
+            <div><Label className="text-xs">Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
           </div>
         </CardContent>
       </Card>
@@ -263,8 +282,73 @@ function MyEarnings() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Disetujui</div><div className="text-2xl font-bold text-emerald-600">{fmtIDR(summary.approvedTotal)}</div><div className="text-xs text-slate-400">{summary.approvedCount} laporan</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Menunggu Approval</div><div className="text-2xl font-bold text-amber-600">{fmtIDR(summary.pendingTotal)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Total Periode</div><div className="text-2xl font-bold text-slate-900">{fmtIDR(summary.approvedTotal + summary.pendingTotal)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Total Periode</div><div className="text-2xl font-bold text-slate-900">{fmtIDR(baseTotal)}</div></CardContent></Card>
       </div>
+
+      {/* Slip Gaji Mingguan — preview & download */}
+      <Card className="border-emerald-200/70 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <CardTitle className="text-base">Slip Gaji Minggu Ini</CardTitle>
+              <p className="text-xs text-slate-500 mt-1">
+                {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
+              </p>
+            </div>
+            <Button onClick={handleDownloadPdf} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+              <Download className="h-4 w-4 mr-1.5" /> Unduh PDF
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Rincian garapan per jenis */}
+          <div>
+            <div className="text-xs font-semibold uppercase text-slate-500 mb-2">Rincian Garapan</div>
+            {jobBreakdown.length ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {jobBreakdown.map((b) => (
+                  <div key={b.name} className="rounded-lg border border-slate-200 bg-white px-3 py-2 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{b.name}</div>
+                      <div className="text-[11px] text-slate-500">{b.qty} {b.unit}</div>
+                    </div>
+                    <div className="text-sm font-semibold text-sky-700">{fmtIDR(b.amount)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400 italic">Belum ada garapan minggu ini</div>
+            )}
+          </div>
+
+          {/* Jam kerja */}
+          <div className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+            <span className="text-sm text-slate-600">Total Jam Kerja Minggu Ini</span>
+            <span className="text-sm font-bold text-slate-900">{totalHours.toFixed(2)} jam</span>
+          </div>
+
+          {/* Ringkasan */}
+          <div className="rounded-lg border border-slate-200 divide-y">
+            <div className="flex items-center justify-between px-3 py-2 text-sm">
+              <span className="text-slate-600">Penghasilan Pokok</span>
+              <span className="font-semibold">{fmtIDR(baseTotal)}</span>
+            </div>
+            <div className="flex items-center justify-between px-3 py-2 text-sm bg-rose-50/40">
+              <div>
+                <div className="text-slate-700">Potongan Cashbon</div>
+                {cashbonDeduction > 0 && (
+                  <div className="text-[11px] text-rose-600">{outstandingCashbon?.length} cashbon belum dibayar</div>
+                )}
+              </div>
+              <span className="font-semibold text-rose-700">- {fmtIDR(cashbonDeduction)}</span>
+            </div>
+            <div className="flex items-center justify-between px-3 py-2.5 bg-emerald-50">
+              <span className="text-sm font-bold text-emerald-900">Total Diterima</span>
+              <span className="text-lg font-bold text-emerald-700">{fmtIDR(netTotal)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-slate-200/70 shadow-sm">
         <CardHeader className="pb-2 px-3 sm:px-6"><CardTitle className="text-base">Detail Laporan</CardTitle></CardHeader>
