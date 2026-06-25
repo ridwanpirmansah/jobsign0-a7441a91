@@ -105,12 +105,26 @@ function PayrollPage() {
     <div className="space-y-6 max-w-7xl">
       <div><h1 className="text-2xl font-bold text-slate-900">Payroll</h1><p className="text-sm text-slate-500">Generate & approve slip gaji per periode</p></div>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Periode</CardTitle></CardHeader>
-        <CardContent>
+      <Card className="border-sky-200/70 bg-gradient-to-br from-sky-50/40 to-white">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-sky-600" /> Periode Mingguan (Minggu – Sabtu)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => shiftWeek(-1)}><ChevronLeft className="h-4 w-4 mr-1" /> Minggu Lalu</Button>
+            <div className="text-center flex-1 min-w-[200px]">
+              <div className="text-sm font-semibold text-slate-900">
+                {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
+              </div>
+              <div className="text-[11px] text-slate-500">Gajian setiap Sabtu</div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => shiftWeek(1)}>Minggu Depan <ChevronRight className="h-4 w-4 ml-1" /></Button>
+          </div>
           <div className="flex gap-3 items-end flex-wrap">
-            <div><Label>Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-            <div><Label>Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+            <div><Label className="text-xs">Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
+            <div><Label className="text-xs">Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
             <Button onClick={() => generate.mutate()} disabled={generate.isPending}>Generate / Refresh</Button>
           </div>
         </CardContent>
