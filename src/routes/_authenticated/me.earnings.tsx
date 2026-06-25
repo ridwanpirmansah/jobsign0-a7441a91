@@ -47,6 +47,25 @@ function MyEarnings() {
     },
   });
 
+  const { data: empInfo } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-emp", empId],
+    queryFn: async () => {
+      const { data } = await supabase.from("employees").select("id, daily_wage, hourly_rate, pay_unit, type").eq("id", empId!).maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: attendances } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-att", empId, from, to],
+    queryFn: async () => {
+      const { data } = await supabase.from("attendances")
+        .select("*").eq("employee_id", empId!).gte("date", from).lte("date", to).order("date", { ascending: false });
+      return data ?? [];
+    },
+  });
+
   const { data: payrolls } = useQuery({
     enabled: !!empId,
     queryKey: ["my-payrolls", empId],
@@ -56,15 +75,51 @@ function MyEarnings() {
     },
   });
 
+  // Build daily wage entries from attendance
+  const dailyEntries = useMemo(() => {
+    if (!empInfo || !attendances) return [];
+    const wage = Number(empInfo.daily_wage || 0);
+    const hourly = Number(empInfo.hourly_rate || 0);
+    if (wage <= 0 && hourly <= 0) return [];
+    return attendances
+      .filter((a) => !!a.check_in && a.status === "hadir")
+      .map((a) => {
+        let amount = 0;
+        let qtyLabel = "1 hari";
+        if (empInfo.pay_unit === "hour" && hourly > 0 && a.check_out) {
+          const ms = new Date(a.check_out).getTime() - new Date(a.check_in!).getTime();
+          const breakMs = a.break_start && a.break_end
+            ? new Date(a.break_end).getTime() - new Date(a.break_start).getTime() : 0;
+          const hrs = Math.max(0, (ms - breakMs) / 3600000);
+          amount = Math.round(hrs * hourly);
+          qtyLabel = `${hrs.toFixed(2)} jam`;
+        } else {
+          amount = wage;
+        }
+        const isComplete = !!a.check_out;
+        return {
+          id: `att-${a.id}`,
+          log_date: a.date,
+          amount,
+          qty: qtyLabel,
+          status: isComplete ? "approved" : "pending",
+          source: "attendance" as const,
+        };
+      })
+      .filter((e) => e.amount > 0);
+  }, [empInfo, attendances]);
+
   const summary = useMemo(() => {
     const approved = (logs ?? []).filter((l) => l.status === "approved");
     const pending = (logs ?? []).filter((l) => l.status === "pending");
+    const approvedDaily = dailyEntries.filter((e) => e.status === "approved").reduce((s, e) => s + e.amount, 0);
+    const pendingDaily = dailyEntries.filter((e) => e.status === "pending").reduce((s, e) => s + e.amount, 0);
     return {
-      approvedTotal: approved.reduce((s, l) => s + Number(l.amount), 0),
-      pendingTotal: pending.reduce((s, l) => s + Number(l.amount), 0),
-      approvedCount: approved.length,
+      approvedTotal: approved.reduce((s, l) => s + Number(l.amount), 0) + approvedDaily,
+      pendingTotal: pending.reduce((s, l) => s + Number(l.amount), 0) + pendingDaily,
+      approvedCount: approved.length + dailyEntries.filter((e) => e.status === "approved").length,
     };
-  }, [logs]);
+  }, [logs, dailyEntries]);
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -142,7 +197,28 @@ function MyEarnings() {
                 </div>
               );
             })}
-            {!logs?.length && <div className="text-center text-slate-500 py-6 text-sm">Tidak ada data pada periode ini</div>}
+            {dailyEntries.map((e) => {
+              const tone = e.status === "approved"
+                ? { stripe: "bg-sky-400", chip: "bg-sky-100 text-sky-700 border-sky-200", amount: "text-sky-700", bg: "from-sky-50/60 to-white" }
+                : { stripe: "bg-amber-400", chip: "bg-amber-100 text-amber-800 border-amber-200", amount: "text-amber-700", bg: "from-amber-50/60 to-white" };
+              return (
+                <div key={e.id} className={`relative overflow-hidden rounded-lg border border-slate-200/70 bg-gradient-to-br ${tone.bg} px-2.5 py-2 pl-3`}>
+                  <span className={`absolute left-0 top-0 h-full w-1 ${tone.stripe}`} />
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500">{format(new Date(e.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</div>
+                      <div className="text-sm font-semibold text-slate-900">Upah Harian {empInfo?.pay_unit === "hour" ? "(Jam)" : "(Hari)"}</div>
+                    </div>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${tone.chip}`}>{e.status}</span>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 truncate">Kehadiran <span className="text-slate-400">× {e.qty}</span></span>
+                    <span className={`font-bold ${tone.amount}`}>{fmtIDR(e.amount)}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {!logs?.length && !dailyEntries.length && <div className="text-center text-slate-500 py-6 text-sm">Tidak ada data pada periode ini</div>}
           </div>
           {/* Desktop: table */}
           <div className="hidden md:block">
@@ -169,7 +245,17 @@ function MyEarnings() {
                     <TableCell><Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"}>{l.status}</Badge></TableCell>
                   </TableRow>
                 ))}
-                {!logs?.length && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-6">Tidak ada data pada periode ini</TableCell></TableRow>}
+                {dailyEntries.map((e) => (
+                  <TableRow key={e.id} className="bg-sky-50/30">
+                    <TableCell>{format(new Date(e.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</TableCell>
+                    <TableCell className="italic text-slate-500">Upah Harian (kehadiran)</TableCell>
+                    <TableCell>—</TableCell>
+                    <TableCell className="text-right">{e.qty}</TableCell>
+                    <TableCell className="text-right">{fmtIDR(e.amount)}</TableCell>
+                    <TableCell><Badge variant={e.status === "approved" ? "default" : "secondary"}>{e.status}</Badge></TableCell>
+                  </TableRow>
+                ))}
+                {!logs?.length && !dailyEntries.length && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-6">Tidak ada data pada periode ini</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
