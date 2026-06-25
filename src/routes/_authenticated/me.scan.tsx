@@ -122,17 +122,39 @@ function ScanPage() {
       </Card>
 
       {last && (
-        <Card className={last.ok ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50"}>
-          <CardContent className="p-4 flex items-start gap-3">
-            {last.ok ? <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" /> : <XCircle className="h-5 w-5 text-rose-600 mt-0.5" />}
-            <div className="text-sm">
-              <div className={`font-semibold ${last.ok ? "text-emerald-800" : "text-rose-800"}`}>
-                {last.ok ? "Berhasil" : "Gagal"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <Card className={last.ok ? "border-emerald-300 bg-emerald-50 shadow-xl w-full max-w-sm" : "border-rose-300 bg-rose-50 shadow-xl w-full max-w-sm"}>
+            <CardContent className="p-6 flex flex-col items-center text-center gap-4">
+              {last.ok ? (
+                <div className="rounded-full bg-emerald-100 p-4">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+                </div>
+              ) : (
+                <div className="rounded-full bg-rose-100 p-4">
+                  <XCircle className="h-10 w-10 text-rose-600" />
+                </div>
+              )}
+              <div>
+                <div className={`text-xl font-bold ${last.ok ? "text-emerald-800" : "text-rose-800"}`}>
+                  {last.ok ? "Berhasil" : "Gagal"}
+                </div>
+                <div className={`text-base mt-1 ${last.ok ? "text-emerald-700" : "text-rose-700"}`}>
+                  {last.message}
+                </div>
               </div>
-              <div className={last.ok ? "text-emerald-700" : "text-rose-700"}>{last.message}</div>
-            </div>
-          </CardContent>
-        </Card>
+              <button
+                onClick={() => setLast(null)}
+                className={`mt-2 px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  last.ok
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "bg-rose-600 text-white hover:bg-rose-700"
+                }`}
+              >
+                Tutup
+              </button>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
