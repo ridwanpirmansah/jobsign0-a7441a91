@@ -52,8 +52,6 @@ const orderSchema = z.object({
   adaptor: z.number().min(0).default(0),
   adaptor_type: z.string().optional().nullable(),
   modul: z.number().min(0).default(0),
-  print_cost: z.number().min(0).default(0),
-  karet_seal: z.number().min(0).default(0),
   socket_dc: z.number().min(0).default(0),
   baut_fischer: z.number().min(0).default(0),
   outdoor_cost: z.number().min(0).default(0),
