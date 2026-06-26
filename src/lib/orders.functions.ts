@@ -54,7 +54,7 @@ const orderSchema = z.object({
   modul: z.number().min(0).default(0),
   socket_dc: z.number().min(0).default(0),
   baut_fischer: z.number().min(0).default(0),
-  outdoor_cost: z.number().min(0).default(0),
+  outdoor_cost: z.number().min(0).nullable().optional(),
   notes: z.string().optional().nullable(),
 });
 
