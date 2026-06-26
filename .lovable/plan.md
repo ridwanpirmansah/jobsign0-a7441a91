@@ -1,28 +1,46 @@
-## Rencana: Sembunyikan Badge Lovable + Tambah Tombol Install PWA
+# Ganti `print_cost` + `karet_seal` → `biaya_lainnya` (1% HPP)
 
-### Tujuan
-1. Menyembunyikan badge "Edit with Lovable" dari publikasi.
-2. Menambahkan tombol floating "Install Web App" agar karyawan bisa menginstall PWA dengan mudah (khususnya Android/Chrome).
+## Tujuan
 
-### Detail Implementasi
+Hilangkan komponen biaya **Print** dan **Karet Seal** di seluruh aplikasi, ganti satu komponen baru **"Biaya Lainnya"** sebesar **1% dari HPP dasar** (HPP tanpa biaya lainnya itu sendiri). Komponen ini muncul di **Kalkulasi Live** di form popup Order sehingga angka HPP di popup = HPP di tabel orderan.
 
-#### 1. Badge Lovable
-- Gunakan `publish_settings--set_badge_visibility` dengan `hide_badge: true`.
-- Ini menghilangkan badge di pojok kanan bawah saat app dipublish.
+## 1. Migration database
 
-#### 2. Floating Tombol Install PWA
-- **Hook baru** `src/hooks/usePwaInstall.ts`: menangkap event `beforeinstallprompt` dari browser, menyimpannya, dan menyediakan fungsi `promptInstall()` serta state `canInstall`.
-- **Komponen baru** `src/components/PwaInstallButton.tsx`: tombol floating fixed di pojok kanan bawah (bottom-4 right-4) dengan style pill/teal yang soft. Muncul hanya ketika `canInstall === true`. Saat diklik, memanggil `promptInstall()` dan menyembunyikan tombol setelah user merespons.
-- **Integrasi**: pasang komponen di `src/routes/__root.tsx` (sebelum/di dalam `<Outlet />` atau setelahnya) agar tombol muncul di semua halaman.
+- `ALTER TABLE public.orders` → tambah kolom `biaya_lainnya numeric NOT NULL DEFAULT 0`, lalu `DROP COLUMN print_cost`, `DROP COLUMN karet_seal`.
+- Bersihkan key terkait di `material_prices`: hapus row `print_default` dan `karet_seal_default` (jika ada).
+- Update trigger `calc_order_costs`:
+  - Hilangkan `print_cost` & `karet_seal` dari hitungan.
+  - Hitung `base_hpp` = jumlah semua komponen (LED, akrilik, solder, tempel, kabel, kabel_socket, adaptor, modul, socket_dc, baut_fischer, outdoor_cost).
+  - `NEW.biaya_lainnya := ROUND(base_hpp * 0.01)`.
+  - `NEW.hpp := base_hpp + NEW.biaya_lainnya`.
+  - `NEW.profit := payment + split − hpp` (tetap).
 
-#### 3. Fallback iOS
-- Karena iOS tidak support `beforeinstallprompt`, tombol tidak akan muncul di Safari iOS — user tetap install via Share → Add to Home Screen (sudah didukung manifest & apple-touch-icon yang sudah ada).
+## 2. Frontend — `src/routes/_authenticated/orders.tsx`
 
-### File yang akan diubah/dibuat
-- `src/hooks/usePwaInstall.ts` (baru)
-- `src/components/PwaInstallButton.tsx` (baru)
-- `src/routes/__root.tsx` (edit: tambah komponen floating)
+- Hapus field & input UI `print_cost` dan `karet_seal` dari `FormState`, `emptyForm`, `toForm`, dan grid biaya manual.
+- Hapus key-nya di payload save.
+- Update fungsi `calc` (live preview) supaya identik dengan trigger:
+  - Hitung `base_hpp` tanpa print/karet.
+  - `biaya_lainnya = Math.round(base_hpp * 0.01)`.
+  - `hpp = base_hpp + biaya_lainnya`.
+- Tampilkan baris baru **"Biaya Lainnya (1% HPP)"** di panel "Kalkulasi Live" tepat di atas baris HPP.
 
-### Catatan
-- Tidak menambahkan service worker / offline support (manifest-only PWA sudah cukup untuk install).
-- Badge hanya disembunyikan di published deployment, tidak di preview editor.
+## 3. Schema server function — `src/lib/orders.functions.ts`
+
+- Ganti field `print_cost` / `karet_seal` di Zod schema dengan `biaya_lainnya: z.number().min(0).default(0).optional()` (nilai server tetap dihitung trigger; field opsional supaya kompatibel).
+- Hapus keduanya dari objek insert/update yang dikirim ke Supabase.
+
+## 4. Owner analytics — `src/routes/_authenticated/owner.analytics.tsx`
+
+- Ganti kolom select `print_cost,karet_seal` → `biaya_lainnya`.
+- Ganti dua entry breakdown `{ k: "print_cost", name: "Print" }` dan `{ k: "karet_seal", name: "Karet Seal" }` menjadi satu entry `{ k: "biaya_lainnya", name: "Biaya Lainnya" }`.
+
+## 5. PDF/laporan lain
+
+Tidak ada referensi `print_cost`/`karet_seal` di payroll-pdf atau reports — tidak perlu diubah. Setelah migrasi, `src/integrations/supabase/types.ts` di-regenerate otomatis.
+
+## Verifikasi
+
+- Buka order existing → angka HPP di popup form (Kalkulasi Live) **persis sama** dengan kolom HPP di tabel.
+- Buat order baru, ubah angka LED/akrilik/dll → baris "Biaya Lainnya (1% HPP)" ikut berubah real-time; setelah save, nilai HPP tabel = nilai HPP yang tadi terlihat di popup.
+- Halaman Owner Analytics → breakdown biaya menampilkan "Biaya Lainnya" sebagai pengganti Print & Karet Seal, tanpa error.
