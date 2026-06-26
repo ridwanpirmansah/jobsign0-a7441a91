@@ -129,8 +129,6 @@ function toForm(o: any): FormState {
     adaptor_type: o.adaptor_type ?? "adaptor_2a",
     adaptor_manual: !!o.adaptor && !!o.adaptor_type ? false : false,
     modul: String(o.modul ?? 0),
-    print_cost: String(o.print_cost ?? 0),
-    karet_seal: String(o.karet_seal ?? 0),
     socket_dc: String(o.socket_dc ?? 0),
     baut_fischer: String(o.baut_fischer ?? 0),
     use_outdoor: false,
