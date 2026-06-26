@@ -199,6 +199,10 @@
   }
   table { min-width: 560px; }
   .overflow-x-auto > table { min-width: 100%; }
+  [data-slot="calendar"] table,
+  [data-slot="calendar"] .rdp-month_grid {
+    min-width: 0 !important;
+  }
 
   /* Sidebar (mobile sheet) items larger */
   [data-sidebar="menu-button"] {
