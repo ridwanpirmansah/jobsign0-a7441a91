@@ -14,7 +14,7 @@ import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line,
   LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, Wallet, Users, Clock, Sparkles, Award, CalendarRange } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Wallet, Users, Clock, Sparkles, Award, CalendarRange, ChevronDown } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 export const Route = createFileRoute("/_authenticated/owner/analytics")({
