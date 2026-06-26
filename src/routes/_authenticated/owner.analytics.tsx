@@ -21,7 +21,6 @@ export const Route = createFileRoute("/_authenticated/owner/analytics")({
   component: AnalyticsPage,
 });
 
-type Period = "today" | "yesterday" | "7" | "15" | "30" | "60" | "365";
 type Period = "today" | "yesterday" | "7" | "15" | "30" | "60" | "365" | "custom";
 const PERIODS: { value: Exclude<Period, "custom">; label: string }[] = [
   { value: "today", label: "Hari Ini" },
