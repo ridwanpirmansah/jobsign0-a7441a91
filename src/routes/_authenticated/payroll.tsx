@@ -102,32 +102,87 @@ function PayrollPage() {
 
   if (!isStaff(me?.role)) return <p className="text-sm text-slate-500">Akses ditolak.</p>;
   const isOwner = me?.role === "owner";
+  const isCurrent = isSameDay(new Date(from + "T00:00:00"), weekStart(new Date()));
 
   return (
     <div className="space-y-6 max-w-7xl">
       <div><h1 className="text-2xl font-bold text-slate-900">Payroll</h1><p className="text-sm text-slate-500">Generate & approve slip gaji per periode</p></div>
 
-      <Card className="border-sky-200/70 bg-gradient-to-br from-sky-50/40 to-white">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-sky-600" /> Periode Mingguan (Minggu – Sabtu)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => shiftWeek(-1)}><ChevronLeft className="h-4 w-4 mr-1" /> Minggu Lalu</Button>
-            <div className="text-center flex-1 min-w-[200px]">
-              <div className="text-sm font-semibold text-slate-900">
-                {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
-              </div>
-              <div className="text-[11px] text-slate-500">Gajian setiap Sabtu</div>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => shiftWeek(1)}>Minggu Depan <ChevronRight className="h-4 w-4 ml-1" /></Button>
+      <Card className="overflow-hidden border-0 shadow-sm bg-gradient-to-br from-sky-50 via-violet-50 to-rose-50">
+        <CardContent className="p-3 sm:p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => {
+                const now = new Date();
+                setFrom(format(weekStart(now), "yyyy-MM-dd"));
+                setTo(format(weekEnd(now), "yyyy-MM-dd"));
+              }}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all",
+                isCurrent
+                  ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                  : "bg-white/70 text-slate-600 border border-white hover:bg-white",
+              )}
+            >
+              Minggu Ini
+            </button>
+            <Button onClick={() => generate.mutate()} disabled={generate.isPending} size="sm" className="bg-slate-900 hover:bg-slate-800 text-white">
+              Generate / Refresh
+            </Button>
           </div>
-          <div className="flex gap-3 items-end flex-wrap">
-            <div><Label className="text-xs">Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
-            <div><Label className="text-xs">Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
-            <Button onClick={() => generate.mutate()} disabled={generate.isPending}>Generate / Refresh</Button>
+
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => shiftWeek(-1)}
+              className="h-10 w-10 rounded-full bg-white/80 hover:bg-white shadow-sm shrink-0"
+              aria-label="Minggu lalu"
+            >
+              <ChevronLeft className="h-5 w-5 text-sky-600" />
+            </Button>
+
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <button className="min-w-0 rounded-2xl bg-white/90 backdrop-blur px-3 py-2.5 shadow-sm border border-white hover:bg-white transition-all text-center group">
+                  <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-violet-600">
+                    <CalendarRange className="h-3 w-3" />
+                    Periode Mingguan
+                  </div>
+                  <div className="mt-0.5 text-sm sm:text-base font-bold text-slate-900 truncate">
+                    {format(new Date(from), "dd MMM", { locale: idLocale })} – {format(new Date(to), "dd MMM yyyy", { locale: idLocale })}
+                  </div>
+                  <div className="text-[10px] text-slate-500">Min – Sab · Gajian Sabtu</div>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="center">
+                <Calendar
+                  mode="single"
+                  selected={new Date(from + "T00:00:00")}
+                  onSelect={(d) => {
+                    if (!d) return;
+                    const s = weekStart(d);
+                    setFrom(format(s, "yyyy-MM-dd"));
+                    setTo(format(weekEnd(s), "yyyy-MM-dd"));
+                    setPickerOpen(false);
+                  }}
+                  weekStartsOn={0}
+                  locale={idLocale}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => shiftWeek(1)}
+              className="h-10 w-10 rounded-full bg-white/80 hover:bg-white shadow-sm shrink-0"
+              aria-label="Minggu depan"
+            >
+              <ChevronRight className="h-5 w-5 text-sky-600" />
+            </Button>
           </div>
         </CardContent>
       </Card>
