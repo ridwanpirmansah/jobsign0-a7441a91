@@ -22,7 +22,8 @@ export const Route = createFileRoute("/_authenticated/owner/analytics")({
 });
 
 type Period = "today" | "yesterday" | "7" | "15" | "30" | "60" | "365";
-const PERIODS: { value: Period; label: string }[] = [
+type Period = "today" | "yesterday" | "7" | "15" | "30" | "60" | "365" | "custom";
+const PERIODS: { value: Exclude<Period, "custom">; label: string }[] = [
   { value: "today", label: "Hari Ini" },
   { value: "yesterday", label: "Kemarin" },
   { value: "7", label: "7 Hari" },
@@ -44,21 +45,32 @@ function fmtShortIDR(n: number) {
   return String(n);
 }
 
-function periodRange(p: Period): { from: Date; to: Date; days: number } {
+function presetRange(p: Exclude<Period, "custom">): { from: Date; to: Date } {
   const now = new Date();
-  if (p === "today") return { from: startOfDay(now), to: endOfDay(now), days: 1 };
+  if (p === "today") return { from: startOfDay(now), to: endOfDay(now) };
   if (p === "yesterday") {
     const y = subDays(now, 1);
-    return { from: startOfDay(y), to: endOfDay(y), days: 1 };
+    return { from: startOfDay(y), to: endOfDay(y) };
   }
   const n = parseInt(p, 10);
-  return { from: startOfDay(subDays(now, n - 1)), to: endOfDay(now), days: n };
+  return { from: startOfDay(subDays(now, n - 1)), to: endOfDay(now) };
 }
 
 function AnalyticsPage() {
   const { data: me } = useCurrentUser();
   const [period, setPeriod] = useState<Period>("30");
-  const range = useMemo(() => periodRange(period), [period]);
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const range = useMemo(() => {
+    if (period === "custom" && customRange?.from && customRange?.to) {
+      const from = startOfDay(customRange.from);
+      const to = endOfDay(customRange.to);
+      return { from, to, days: differenceInCalendarDays(to, from) + 1 };
+    }
+    const presetVal = period === "custom" ? "30" : period;
+    const r = presetRange(presetVal as Exclude<Period, "custom">);
+    return { ...r, days: differenceInCalendarDays(r.to, r.from) + 1 };
+  }, [period, customRange]);
   const prevRange = useMemo(() => {
     const len = range.to.getTime() - range.from.getTime();
     return { from: new Date(range.from.getTime() - len - 1), to: new Date(range.from.getTime() - 1) };
