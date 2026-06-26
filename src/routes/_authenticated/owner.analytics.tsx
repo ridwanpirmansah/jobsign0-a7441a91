@@ -60,6 +60,7 @@ function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("30");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerOpenMobile, setPickerOpenMobile] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const range = useMemo(() => {
     if (period === "custom" && customRange?.from && customRange?.to) {
@@ -296,18 +297,19 @@ function AnalyticsPage() {
 
           {/* Mobile layout (below sm) */}
           <div className="sm:hidden flex items-center gap-3">
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <Popover open={pickerOpenMobile} onOpenChange={setPickerOpenMobile}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className={`h-10 w-10 shrink-0 rounded-xl bg-white/70 backdrop-blur flex items-center justify-center shadow-sm transition-all ${
+                  aria-label="Pilih rentang tanggal custom"
+                  className={`h-10 w-10 shrink-0 rounded-xl bg-white/70 backdrop-blur flex items-center justify-center shadow-sm transition-all active:scale-95 ${
                     period === "custom" ? "ring-2 ring-emerald-400 bg-white" : ""
                   }`}
                 >
                   <CalendarRange className="h-5 w-5 text-emerald-600" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start" sideOffset={8}>
                 <Calendar
                   mode="range"
                   selected={customRange}
@@ -315,7 +317,7 @@ function AnalyticsPage() {
                     setCustomRange(r);
                     if (r?.from && r?.to) {
                       setPeriod("custom");
-                      setPickerOpen(false);
+                      setPickerOpenMobile(false);
                     }
                   }}
                   numberOfMonths={1}
