@@ -311,7 +311,7 @@ function AnalyticsPage() {
               </PopoverTrigger>
               <PopoverContent className="w-fit max-w-[calc(100vw-1rem)] overflow-hidden p-0 pointer-events-auto" align="start" sideOffset={8}>
                 <Calendar
-                  className="max-sm:[--cell-size:1.1rem] max-sm:p-0.5 max-sm:text-[10px]"
+                  className="max-sm:[--cell-size:calc((100vw-2.5rem)/7)] max-sm:p-2 max-sm:text-xs"
                   mode="range"
                   selected={customRange}
                   onSelect={(r) => {
