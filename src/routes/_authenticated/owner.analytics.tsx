@@ -229,7 +229,8 @@ function AnalyticsPage() {
       {/* Period selector — soft gradient card */}
       <Card className="border-0 shadow-sm overflow-hidden bg-gradient-to-br from-emerald-50 via-sky-50 to-violet-50">
         <CardContent className="p-4 sm:p-5 space-y-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          {/* Desktop / Tablet layout (sm and up) */}
+          <div className="hidden sm:flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 min-w-0">
               <div className="h-9 w-9 shrink-0 rounded-xl bg-white/70 backdrop-blur flex items-center justify-center shadow-sm">
                 <CalendarRange className="h-4 w-4 text-emerald-600" />
@@ -266,14 +267,14 @@ function AnalyticsPage() {
                       setPickerOpen(false);
                     }
                   }}
-                  numberOfMonths={1}
+                  numberOfMonths={2}
                   locale={idLocale}
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="hidden sm:flex flex-wrap gap-1.5">
             {PERIODS.map((p) => {
               const active = period === p.value;
               return (
@@ -292,6 +293,97 @@ function AnalyticsPage() {
               );
             })}
           </div>
+
+          {/* Mobile layout (below sm) */}
+          <div className="sm:hidden flex items-center gap-3">
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={`h-10 w-10 shrink-0 rounded-xl bg-white/70 backdrop-blur flex items-center justify-center shadow-sm transition-all ${
+                    period === "custom" ? "ring-2 ring-emerald-400 bg-white" : ""
+                  }`}
+                >
+                  <CalendarRange className="h-5 w-5 text-emerald-600" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                <Calendar
+                  mode="range"
+                  selected={customRange}
+                  onSelect={(r) => {
+                    setCustomRange(r);
+                    if (r?.from && r?.to) {
+                      setPeriod("custom");
+                      setPickerOpen(false);
+                    }
+                  }}
+                  numberOfMonths={1}
+                  locale={idLocale}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Periode</div>
+              <div className="text-sm font-semibold text-slate-800 truncate">
+                {format(range.from, "d MMM yyyy", { locale: idLocale })} – {format(range.to, "d MMM yyyy", { locale: idLocale })}
+                <span className="ml-1.5 text-xs font-normal text-slate-500">({range.days} h)</span>
+              </div>
+            </div>
+          </div>
+          <div className="sm:hidden flex flex-wrap gap-1.5">
+            {PERIODS.slice(0, 3).map((p) => {
+              const active = period === p.value;
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => { setPeriod(p.value); setShowMore(false); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                    active
+                      ? "bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-200"
+                      : "bg-white/50 text-slate-600 hover:bg-white/80"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setShowMore((s) => !s)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1 ${
+                showMore
+                  ? "bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-200"
+                  : "bg-white/50 text-slate-600 hover:bg-white/80"
+              }`}
+            >
+              Lainnya
+              <ChevronDown className={`h-3 w-3 transition-transform ${showMore ? "rotate-180" : ""}`} />
+            </button>
+          </div>
+          {showMore && (
+            <div className="sm:hidden flex flex-wrap gap-1.5 pt-1 border-t border-white/40">
+              {PERIODS.slice(3).map((p) => {
+                const active = period === p.value;
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setPeriod(p.value)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      active
+                        ? "bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-200"
+                        : "bg-white/50 text-slate-600 hover:bg-white/80"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
