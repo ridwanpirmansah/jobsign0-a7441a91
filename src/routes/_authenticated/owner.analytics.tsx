@@ -5,21 +5,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, startOfDay, endOfDay, subDays, eachDayOfInterval } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, startOfDay, endOfDay, subDays, eachDayOfInterval, differenceInCalendarDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line,
   LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, Wallet, Users, Clock, Sparkles, Award } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Wallet, Users, Clock, Sparkles, Award, CalendarRange } from "lucide-react";
+import type { DateRange } from "react-day-picker";
 
 export const Route = createFileRoute("/_authenticated/owner/analytics")({
   component: AnalyticsPage,
 });
 
-type Period = "today" | "yesterday" | "7" | "15" | "30" | "60" | "365";
-const PERIODS: { value: Period; label: string }[] = [
+type Period = "today" | "yesterday" | "7" | "15" | "30" | "60" | "365" | "custom";
+const PERIODS: { value: Exclude<Period, "custom">; label: string }[] = [
   { value: "today", label: "Hari Ini" },
   { value: "yesterday", label: "Kemarin" },
   { value: "7", label: "7 Hari" },
@@ -41,21 +44,32 @@ function fmtShortIDR(n: number) {
   return String(n);
 }
 
-function periodRange(p: Period): { from: Date; to: Date; days: number } {
+function presetRange(p: Exclude<Period, "custom">): { from: Date; to: Date } {
   const now = new Date();
-  if (p === "today") return { from: startOfDay(now), to: endOfDay(now), days: 1 };
+  if (p === "today") return { from: startOfDay(now), to: endOfDay(now) };
   if (p === "yesterday") {
     const y = subDays(now, 1);
-    return { from: startOfDay(y), to: endOfDay(y), days: 1 };
+    return { from: startOfDay(y), to: endOfDay(y) };
   }
   const n = parseInt(p, 10);
-  return { from: startOfDay(subDays(now, n - 1)), to: endOfDay(now), days: n };
+  return { from: startOfDay(subDays(now, n - 1)), to: endOfDay(now) };
 }
 
 function AnalyticsPage() {
   const { data: me } = useCurrentUser();
   const [period, setPeriod] = useState<Period>("30");
-  const range = useMemo(() => periodRange(period), [period]);
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const range = useMemo(() => {
+    if (period === "custom" && customRange?.from && customRange?.to) {
+      const from = startOfDay(customRange.from);
+      const to = endOfDay(customRange.to);
+      return { from, to, days: differenceInCalendarDays(to, from) + 1 };
+    }
+    const presetVal = period === "custom" ? "30" : period;
+    const r = presetRange(presetVal as Exclude<Period, "custom">);
+    return { ...r, days: differenceInCalendarDays(r.to, r.from) + 1 };
+  }, [period, customRange]);
   const prevRange = useMemo(() => {
     const len = range.to.getTime() - range.from.getTime();
     return { from: new Date(range.from.getTime() - len - 1), to: new Date(range.from.getTime() - 1) };
@@ -203,20 +217,83 @@ function AnalyticsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-emerald-600" />
-            Analitik Keuangan & Performa
-          </h1>
-          <p className="text-sm text-slate-500">Ringkasan omset, margin, biaya tenaga kerja, dan performa karyawan.</p>
-        </div>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-          <TabsList className="flex-wrap h-auto">
-            {PERIODS.map((p) => <TabsTrigger key={p.value} value={p.value}>{p.label}</TabsTrigger>)}
-          </TabsList>
-        </Tabs>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <Sparkles className="h-6 w-6 text-emerald-600" />
+          Analitik Keuangan & Performa
+        </h1>
+        <p className="text-sm text-slate-500">Ringkasan omset, margin, biaya tenaga kerja, dan performa karyawan.</p>
       </div>
+
+      {/* Period selector — soft gradient card */}
+      <Card className="border-0 shadow-sm overflow-hidden bg-gradient-to-br from-emerald-50 via-sky-50 to-violet-50">
+        <CardContent className="p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-9 w-9 shrink-0 rounded-xl bg-white/70 backdrop-blur flex items-center justify-center shadow-sm">
+                <CalendarRange className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Periode</div>
+                <div className="text-sm font-semibold text-slate-800 truncate">
+                  {format(range.from, "d MMM yyyy", { locale: idLocale })} – {format(range.to, "d MMM yyyy", { locale: idLocale })}
+                  <span className="ml-2 text-xs font-normal text-slate-500">({range.days} hari)</span>
+                </div>
+              </div>
+            </div>
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant={period === "custom" ? "default" : "outline"}
+                  className={period === "custom"
+                    ? "bg-gradient-to-r from-emerald-500 to-sky-500 text-white border-0 shadow-sm hover:opacity-90"
+                    : "bg-white/80 backdrop-blur border-slate-200 text-slate-700 hover:bg-white"}
+                >
+                  <CalendarRange className="h-3.5 w-3.5 mr-1.5" />
+                  Custom
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="end">
+                <Calendar
+                  mode="range"
+                  selected={customRange}
+                  onSelect={(r) => {
+                    setCustomRange(r);
+                    if (r?.from && r?.to) {
+                      setPeriod("custom");
+                      setPickerOpen(false);
+                    }
+                  }}
+                  numberOfMonths={1}
+                  locale={idLocale}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {PERIODS.map((p) => {
+              const active = period === p.value;
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPeriod(p.value)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                    active
+                      ? "bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-200"
+                      : "bg-white/50 text-slate-600 hover:bg-white/80"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
 
       {isLoading && <p className="text-sm text-slate-500">Memuat data…</p>}
 
