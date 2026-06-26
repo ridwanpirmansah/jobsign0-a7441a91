@@ -169,7 +169,7 @@ function PayrollPage() {
                   weekStartsOn={0}
                   locale={idLocale}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto max-sm:[--cell-size:1.65rem] max-sm:p-2 max-sm:text-[11px]")}
+                  className={cn("p-3 pointer-events-auto max-sm:[--cell-size:1.25rem] max-sm:p-1 max-sm:text-[10px]")}
                 />
               </PopoverContent>
             </Popover>
