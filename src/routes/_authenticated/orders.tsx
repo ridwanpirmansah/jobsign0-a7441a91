@@ -241,8 +241,6 @@ function OrdersPage() {
           adaptor: adaptorCost,
           adaptor_type: adaptorVariantKey,
           modul: num(form.modul),
-          print_cost: num(form.print_cost),
-          karet_seal: num(form.karet_seal),
           socket_dc: num(form.socket_dc),
           baut_fischer: num(form.baut_fischer),
           outdoor_cost: form.use_outdoor ? num(form.outdoor_cost) : 0,
