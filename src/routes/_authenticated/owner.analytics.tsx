@@ -309,8 +309,9 @@ function AnalyticsPage() {
                   <CalendarRange className="h-5 w-5 text-emerald-600" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start" sideOffset={8}>
+              <PopoverContent className="w-auto max-w-[92vw] p-0 pointer-events-auto" align="start" sideOffset={8}>
                 <Calendar
+                  className="max-sm:[--cell-size:1.65rem] max-sm:p-2 max-sm:text-[11px]"
                   mode="range"
                   selected={customRange}
                   onSelect={(r) => {
