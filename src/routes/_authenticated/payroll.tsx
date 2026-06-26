@@ -155,7 +155,7 @@ function PayrollPage() {
                   <div className="text-[10px] text-slate-500">Min – Sab · Gajian Sabtu</div>
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto max-w-[92vw] p-0 pointer-events-auto" align="center">
+              <PopoverContent className="w-fit max-w-[calc(100vw-1rem)] overflow-hidden p-0 pointer-events-auto" align="center">
                 <Calendar
                   mode="single"
                   selected={new Date(from + "T00:00:00")}
@@ -169,7 +169,7 @@ function PayrollPage() {
                   weekStartsOn={0}
                   locale={idLocale}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto max-sm:[--cell-size:1.25rem] max-sm:p-1 max-sm:text-[10px]")}
+                  className={cn("p-3 pointer-events-auto max-sm:[--cell-size:1.1rem] max-sm:p-0.5 max-sm:text-[10px]")}
                 />
               </PopoverContent>
             </Popover>
