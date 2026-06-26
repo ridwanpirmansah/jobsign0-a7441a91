@@ -5,14 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, startOfDay, endOfDay, subDays, eachDayOfInterval } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, startOfDay, endOfDay, subDays, eachDayOfInterval, differenceInCalendarDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line,
   LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, Wallet, Users, Clock, Sparkles, Award } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Wallet, Users, Clock, Sparkles, Award, CalendarRange } from "lucide-react";
+import type { DateRange } from "react-day-picker";
 
 export const Route = createFileRoute("/_authenticated/owner/analytics")({
   component: AnalyticsPage,
