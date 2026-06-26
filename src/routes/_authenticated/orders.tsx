@@ -98,8 +98,6 @@ function emptyForm(defaults: Record<string, number>, nextOrderNo: string = ""): 
     adaptor_type: "adaptor_2a",
     adaptor_manual: false,
     modul: String(defaults.modul_default ?? 0),
-    print_cost: String(defaults.print_default ?? 0),
-    karet_seal: String(defaults.karet_seal_default ?? 0),
     socket_dc: String(defaults.socket_dc_default ?? 0),
     baut_fischer: String(defaults.baut_fischer_default ?? 0),
     use_outdoor: false,
