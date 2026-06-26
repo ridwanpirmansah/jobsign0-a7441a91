@@ -311,7 +311,7 @@ function AnalyticsPage() {
               </PopoverTrigger>
               <PopoverContent className="w-auto max-w-[92vw] p-0 pointer-events-auto" align="start" sideOffset={8}>
                 <Calendar
-                  className="max-sm:[--cell-size:1.65rem] max-sm:p-2 max-sm:text-[11px]"
+                  className="max-sm:[--cell-size:1.25rem] max-sm:p-1 max-sm:text-[10px]"
                   mode="range"
                   selected={customRange}
                   onSelect={(r) => {
