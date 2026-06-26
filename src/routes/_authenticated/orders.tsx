@@ -69,8 +69,6 @@ type FormState = {
   adaptor_type: string; // variant key, or "manual"
   adaptor_manual: boolean;
   modul: string;
-  print_cost: string;
-  karet_seal: string;
   socket_dc: string;
   baut_fischer: string;
   use_outdoor: boolean;
