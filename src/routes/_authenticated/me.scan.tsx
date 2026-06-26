@@ -99,7 +99,7 @@ function ScanPage() {
           <ArrowLeft className="h-3 w-3" /> Kembali ke Dashboard
         </Link>
         <h1 className="text-2xl font-bold text-slate-900 mt-2">Scan QR Absensi</h1>
-        <p className="text-sm text-slate-500">Scan QR yang ditampilkan di workshop. Urutan scan: <b>Check-In → Check-Out (sementara) → Istirahat selesai → Check-Out (pulang)</b>. Jeda minimal 10 menit antar scan.</p>
+        <p className="text-sm text-slate-500">Scan QR yang ditampilkan di Workshop. Jeda minimal 10 menit antar scan.</p>
       </div>
 
       {!me?.employee?.id && (
