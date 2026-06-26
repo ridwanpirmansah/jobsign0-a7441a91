@@ -28,6 +28,7 @@ function PayrollPage() {
   const qc = useQueryClient();
   const [from, setFrom] = useState(format(weekStart(new Date()), "yyyy-MM-dd"));
   const [to, setTo] = useState(format(weekEnd(new Date()), "yyyy-MM-dd"));
+  const [pickerOpen, setPickerOpen] = useState(false);
   const shiftWeek = (delta: number) => {
     const base = new Date(from + "T00:00:00");
     const s = weekStart(addWeeks(base, delta));
