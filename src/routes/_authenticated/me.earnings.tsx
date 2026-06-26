@@ -351,7 +351,7 @@ function MyEarnings() {
                   weekStartsOn={0}
                   locale={idLocale}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto max-sm:[--cell-size:1.1rem] max-sm:p-0.5 max-sm:text-[10px]")}
+                  className={cn("p-3 pointer-events-auto max-sm:[--cell-size:calc((100vw-2.5rem)/7)] max-sm:p-2 max-sm:text-xs")}
                 />
               </PopoverContent>
             </Popover>
