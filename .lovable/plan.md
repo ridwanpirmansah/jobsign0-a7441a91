@@ -1,46 +1,22 @@
-# Ganti `print_cost` + `karet_seal` → `biaya_lainnya` (1% HPP)
+## Penyebab
 
-## Tujuan
+HPP di tabel selalu lebih besar dari Kalkulasi Live ketika order **tanpa Outdoor**.
 
-Hilangkan komponen biaya **Print** dan **Karet Seal** di seluruh aplikasi, ganti satu komponen baru **"Biaya Lainnya"** sebesar **1% dari HPP dasar** (HPP tanpa biaya lainnya itu sendiri). Komponen ini muncul di **Kalkulasi Live** di form popup Order sehingga angka HPP di popup = HPP di tabel orderan.
+Trigger database `calc_order_costs` punya aturan:
+```
+IF outdoor_cost IS NULL OR outdoor_cost = 0 THEN
+  outdoor_cost := titik * 2000;
+```
+Artinya: walaupun frontend mengirim `outdoor_cost = 0` (karena toggle "Outdoor" OFF), database tetap memaksa mengisi `titik × 2000`. Sementara Kalkulasi Live di form menghormati toggle dan memakai 0. Itu sebabnya nilai HPP di tabel jauh lebih besar — selisihnya kira-kira `titik × 2000 × 1.01`.
 
-## 1. Migration database
+(Aturan serupa juga ada untuk `kabel_meter`, tapi di sana frontend & DB sama-sama auto-fill saat 0, jadi tidak menimbulkan beda.)
 
-- `ALTER TABLE public.orders` → tambah kolom `biaya_lainnya numeric NOT NULL DEFAULT 0`, lalu `DROP COLUMN print_cost`, `DROP COLUMN karet_seal`.
-- Bersihkan key terkait di `material_prices`: hapus row `print_default` dan `karet_seal_default` (jika ada).
-- Update trigger `calc_order_costs`:
-  - Hilangkan `print_cost` & `karet_seal` dari hitungan.
-  - Hitung `base_hpp` = jumlah semua komponen (LED, akrilik, solder, tempel, kabel, kabel_socket, adaptor, modul, socket_dc, baut_fischer, outdoor_cost).
-  - `NEW.biaya_lainnya := ROUND(base_hpp * 0.01)`.
-  - `NEW.hpp := base_hpp + NEW.biaya_lainnya`.
-  - `NEW.profit := payment + split − hpp` (tetap).
+## Rencana Perbaikan
 
-## 2. Frontend — `src/routes/_authenticated/orders.tsx`
+1. **Migrasi DB** — ubah `calc_order_costs`:
+   - `outdoor_cost`: hanya auto-isi `titik × 2000` saat `IS NULL` (bukan saat `= 0`). Sehingga nilai 0 yang dikirim user benar-benar dihormati.
+   - `kabel_meter`: ubah jadi `IS NULL` only juga, biar konsisten.
+2. **Frontend `orders.tsx`** — saat toggle Outdoor OFF, kirim `outdoor_cost: null` (bukan 0) agar maknanya jelas "tidak ada outdoor", bukan "auto-hitung".
+3. **Verifikasi** — tambah order baru tanpa outdoor → HPP tabel == HPP kalkulasi live. Edit order lama existing yang nilainya sudah ter-hitung tidak akan berubah otomatis (perlu re-save bila ingin sinkron).
 
-- Hapus field & input UI `print_cost` dan `karet_seal` dari `FormState`, `emptyForm`, `toForm`, dan grid biaya manual.
-- Hapus key-nya di payload save.
-- Update fungsi `calc` (live preview) supaya identik dengan trigger:
-  - Hitung `base_hpp` tanpa print/karet.
-  - `biaya_lainnya = Math.round(base_hpp * 0.01)`.
-  - `hpp = base_hpp + biaya_lainnya`.
-- Tampilkan baris baru **"Biaya Lainnya (1% HPP)"** di panel "Kalkulasi Live" tepat di atas baris HPP.
-
-## 3. Schema server function — `src/lib/orders.functions.ts`
-
-- Ganti field `print_cost` / `karet_seal` di Zod schema dengan `biaya_lainnya: z.number().min(0).default(0).optional()` (nilai server tetap dihitung trigger; field opsional supaya kompatibel).
-- Hapus keduanya dari objek insert/update yang dikirim ke Supabase.
-
-## 4. Owner analytics — `src/routes/_authenticated/owner.analytics.tsx`
-
-- Ganti kolom select `print_cost,karet_seal` → `biaya_lainnya`.
-- Ganti dua entry breakdown `{ k: "print_cost", name: "Print" }` dan `{ k: "karet_seal", name: "Karet Seal" }` menjadi satu entry `{ k: "biaya_lainnya", name: "Biaya Lainnya" }`.
-
-## 5. PDF/laporan lain
-
-Tidak ada referensi `print_cost`/`karet_seal` di payroll-pdf atau reports — tidak perlu diubah. Setelah migrasi, `src/integrations/supabase/types.ts` di-regenerate otomatis.
-
-## Verifikasi
-
-- Buka order existing → angka HPP di popup form (Kalkulasi Live) **persis sama** dengan kolom HPP di tabel.
-- Buat order baru, ubah angka LED/akrilik/dll → baris "Biaya Lainnya (1% HPP)" ikut berubah real-time; setelah save, nilai HPP tabel = nilai HPP yang tadi terlihat di popup.
-- Halaman Owner Analytics → breakdown biaya menampilkan "Biaya Lainnya" sebagai pengganti Print & Karet Seal, tanpa error.
+Tidak ada perubahan pada logika kalkulasi lain (LED, akrilik, biaya lainnya 1%, dsb).

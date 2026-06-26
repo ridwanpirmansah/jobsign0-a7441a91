@@ -245,7 +245,7 @@ function OrdersPage() {
           modul: num(form.modul),
           socket_dc: num(form.socket_dc),
           baut_fischer: num(form.baut_fischer),
-          outdoor_cost: form.use_outdoor ? num(form.outdoor_cost) : 0,
+          outdoor_cost: !form.use_outdoor ? 0 : (form.outdoor_cost === "" ? null : num(form.outdoor_cost)),
           notes: form.notes || null,
         },
       });

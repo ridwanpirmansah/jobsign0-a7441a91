@@ -361,7 +361,7 @@ export type Database = {
           hpp: number
           id: string
           kabel_cost: number
-          kabel_meter: number
+          kabel_meter: number | null
           kabel_socket_cost: number
           kabel_socket_meter: number
           kota: string | null
@@ -370,7 +370,7 @@ export type Database = {
           modul: number
           notes: string | null
           order_no: string
-          outdoor_cost: number
+          outdoor_cost: number | null
           paket: string | null
           payment: number
           profit: number
@@ -401,7 +401,7 @@ export type Database = {
           hpp?: number
           id?: string
           kabel_cost?: number
-          kabel_meter?: number
+          kabel_meter?: number | null
           kabel_socket_cost?: number
           kabel_socket_meter?: number
           kota?: string | null
@@ -410,7 +410,7 @@ export type Database = {
           modul?: number
           notes?: string | null
           order_no: string
-          outdoor_cost?: number
+          outdoor_cost?: number | null
           paket?: string | null
           payment?: number
           profit?: number
@@ -441,7 +441,7 @@ export type Database = {
           hpp?: number
           id?: string
           kabel_cost?: number
-          kabel_meter?: number
+          kabel_meter?: number | null
           kabel_socket_cost?: number
           kabel_socket_meter?: number
           kota?: string | null
@@ -450,7 +450,7 @@ export type Database = {
           modul?: number
           notes?: string | null
           order_no?: string
-          outdoor_cost?: number
+          outdoor_cost?: number | null
           paket?: string | null
           payment?: number
           profit?: number
