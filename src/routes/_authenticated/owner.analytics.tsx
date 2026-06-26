@@ -60,6 +60,7 @@ function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("30");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const range = useMemo(() => {
     if (period === "custom" && customRange?.from && customRange?.to) {
       const from = startOfDay(customRange.from);
