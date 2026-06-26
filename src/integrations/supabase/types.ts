@@ -353,6 +353,7 @@ export type Database = {
           akrilik_l: number
           akrilik_p: number
           baut_fischer: number
+          biaya_lainnya: number
           co_date: string | null
           created_at: string
           created_by: string | null
@@ -363,7 +364,6 @@ export type Database = {
           kabel_meter: number
           kabel_socket_cost: number
           kabel_socket_meter: number
-          karet_seal: number
           kota: string | null
           led_cost: number
           led_meter: number
@@ -373,7 +373,6 @@ export type Database = {
           outdoor_cost: number
           paket: string | null
           payment: number
-          print_cost: number
           profit: number
           project_id: string | null
           socket_dc: number
@@ -394,6 +393,7 @@ export type Database = {
           akrilik_l?: number
           akrilik_p?: number
           baut_fischer?: number
+          biaya_lainnya?: number
           co_date?: string | null
           created_at?: string
           created_by?: string | null
@@ -404,7 +404,6 @@ export type Database = {
           kabel_meter?: number
           kabel_socket_cost?: number
           kabel_socket_meter?: number
-          karet_seal?: number
           kota?: string | null
           led_cost?: number
           led_meter?: number
@@ -414,7 +413,6 @@ export type Database = {
           outdoor_cost?: number
           paket?: string | null
           payment?: number
-          print_cost?: number
           profit?: number
           project_id?: string | null
           socket_dc?: number
@@ -435,6 +433,7 @@ export type Database = {
           akrilik_l?: number
           akrilik_p?: number
           baut_fischer?: number
+          biaya_lainnya?: number
           co_date?: string | null
           created_at?: string
           created_by?: string | null
@@ -445,7 +444,6 @@ export type Database = {
           kabel_meter?: number
           kabel_socket_cost?: number
           kabel_socket_meter?: number
-          karet_seal?: number
           kota?: string | null
           led_cost?: number
           led_meter?: number
@@ -455,7 +453,6 @@ export type Database = {
           outdoor_cost?: number
           paket?: string | null
           payment?: number
-          print_cost?: number
           profit?: number
           project_id?: string | null
           socket_dc?: number

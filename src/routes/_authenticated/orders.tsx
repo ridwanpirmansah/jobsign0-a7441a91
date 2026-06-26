@@ -69,8 +69,6 @@ type FormState = {
   adaptor_type: string; // variant key, or "manual"
   adaptor_manual: boolean;
   modul: string;
-  print_cost: string;
-  karet_seal: string;
   socket_dc: string;
   baut_fischer: string;
   use_outdoor: boolean;
@@ -100,8 +98,6 @@ function emptyForm(defaults: Record<string, number>, nextOrderNo: string = ""): 
     adaptor_type: "adaptor_2a",
     adaptor_manual: false,
     modul: String(defaults.modul_default ?? 0),
-    print_cost: String(defaults.print_default ?? 0),
-    karet_seal: String(defaults.karet_seal_default ?? 0),
     socket_dc: String(defaults.socket_dc_default ?? 0),
     baut_fischer: String(defaults.baut_fischer_default ?? 0),
     use_outdoor: false,
@@ -133,8 +129,6 @@ function toForm(o: any): FormState {
     adaptor_type: o.adaptor_type ?? "adaptor_2a",
     adaptor_manual: !!o.adaptor && !!o.adaptor_type ? false : false,
     modul: String(o.modul ?? 0),
-    print_cost: String(o.print_cost ?? 0),
-    karet_seal: String(o.karet_seal ?? 0),
     socket_dc: String(o.socket_dc ?? 0),
     baut_fischer: String(o.baut_fischer ?? 0),
     use_outdoor: false,
@@ -203,14 +197,16 @@ function OrdersPage() {
     const kabel_meter = num(form.kabel_meter) || (((led_meter / 4) * 3) + 1.5 + ((titik * 5) / 100));
     const kabel_socket_meter = form.kabel_socket_meter === "" ? 1 : num(form.kabel_socket_meter);
     const outdoor_cost = form.use_outdoor ? (num(form.outdoor_cost) || titik * 2000) : 0;
-    const led_cost = led_meter * (priceMap.led_per_meter ?? 0);
-    const akrilik_cost = p * l * (priceMap.akrilik_per_cm2 ?? 0);
-    const solder_cost = titik * (priceMap.solder_per_titik ?? 0);
-    const tempel_cost = titik * (priceMap.tempel_per_titik ?? 0);
-    const kabel_cost = kabel_meter * (priceMap.kabel_per_meter ?? 0);
-    const kabel_socket_cost = kabel_socket_meter * (priceMap.kabel_socket_per_meter ?? 2500);
-    const hpp = led_cost + akrilik_cost + solder_cost + tempel_cost + kabel_cost + kabel_socket_cost +
+    const led_cost = Math.round(led_meter * (priceMap.led_per_meter ?? 0));
+    const akrilik_cost = Math.round(p * l * (priceMap.akrilik_per_cm2 ?? 0));
+    const solder_cost = Math.round(titik * (priceMap.solder_per_titik ?? 0));
+    const tempel_cost = Math.round(titik * (priceMap.tempel_per_titik ?? 0));
+    const kabel_cost = Math.round(kabel_meter * (priceMap.kabel_per_meter ?? 0));
+    const kabel_socket_cost = Math.round(kabel_socket_meter * (priceMap.kabel_socket_per_meter ?? 0));
+    const base_hpp = led_cost + akrilik_cost + solder_cost + tempel_cost + kabel_cost + kabel_socket_cost +
       adaptorCost + num(form.modul) + num(form.socket_dc) + num(form.baut_fischer) + outdoor_cost;
+    const biaya_lainnya = Math.round(base_hpp * 0.01);
+    const hpp = base_hpp + biaya_lainnya;
     const totalPay = num(form.payment) + num(form.split);
     const profit = totalPay - hpp;
     const profit_pct = totalPay > 0 ? (profit / totalPay) * 100 : 0;
@@ -219,7 +215,7 @@ function OrdersPage() {
     const rec_max = Math.round(hpp * 2);
     const marketplacePct = Number(priceMap.marketplace_markup_pct ?? 22);
     const rec_marketplace = Math.round((totalPay > 0 ? totalPay : hpp) * (1 + marketplacePct / 100));
-    return { kabel_meter, kabel_socket_meter, outdoor_cost, led_cost, akrilik_cost, solder_cost, tempel_cost, kabel_cost, kabel_socket_cost, adaptor_cost: adaptorCost, hpp, profit, profit_pct, sisa, rec_min, rec_max, rec_marketplace, marketplacePct, totalPay };
+    return { kabel_meter, kabel_socket_meter, outdoor_cost, led_cost, akrilik_cost, solder_cost, tempel_cost, kabel_cost, kabel_socket_cost, adaptor_cost: adaptorCost, biaya_lainnya, hpp, profit, profit_pct, sisa, rec_min, rec_max, rec_marketplace, marketplacePct, totalPay };
   }, [form, priceMap, adaptorCost]);
 
   const saveMut = useMutation({
@@ -247,8 +243,6 @@ function OrdersPage() {
           adaptor: adaptorCost,
           adaptor_type: adaptorVariantKey,
           modul: num(form.modul),
-          print_cost: num(form.print_cost),
-          karet_seal: num(form.karet_seal),
           socket_dc: num(form.socket_dc),
           baut_fischer: num(form.baut_fischer),
           outdoor_cost: form.use_outdoor ? num(form.outdoor_cost) : 0,
@@ -423,6 +417,7 @@ function OrdersPage() {
                   <Row k="Kabel Socket" v={`Rp ${rp(calc.kabel_socket_cost)}`}/>
                   <Row k="Adaptor" v={`Rp ${rp(calc.adaptor_cost)}`}/>
                   <Row k="Outdoor" v={`Rp ${rp(calc.outdoor_cost)}`}/>
+                  <Row k="Biaya Lainnya (1% HPP)" v={`Rp ${rp(calc.biaya_lainnya)}`}/>
                   <div className="border-t my-2"/>
                   <Row k="HPP" v={`Rp ${rp(calc.hpp)}`} bold/>
                   <Row k={`Rekom. Marketplace (+${calc.marketplacePct}%)`} v={`Rp ${rp(calc.rec_marketplace)}`} bold positive />
