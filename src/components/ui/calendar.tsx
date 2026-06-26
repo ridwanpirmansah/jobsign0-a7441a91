@@ -73,7 +73,7 @@ function Calendar({
             : "[&>svg]:text-muted-foreground flex h-8 items-center gap-1 rounded-md pl-2 pr-1 text-sm [&>svg]:size-3.5",
           defaultClassNames.caption_label,
         ),
-        month_grid: cn("block !w-[calc(var(--cell-size)*7)] max-w-full border-collapse table-fixed", defaultClassNames.month_grid),
+        month_grid: cn("block !w-[calc(var(--cell-size)*7)] !min-w-0 max-w-full border-collapse table-fixed", defaultClassNames.month_grid),
         weekdays: cn("flex !w-[calc(var(--cell-size)*7)]", defaultClassNames.weekdays),
         weekday: cn(
           "text-muted-foreground flex h-(--cell-size) w-(--cell-size) shrink-0 items-center justify-center select-none rounded-md text-[0.8rem] max-sm:text-[0.62rem] font-normal",
