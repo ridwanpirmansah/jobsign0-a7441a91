@@ -27,7 +27,7 @@ function OwnerAttendanceHistory() {
   const { data: employees } = useQuery({
     queryKey: ["all-employees-att"],
     queryFn: async () => {
-      const { data } = await supabase.from("employees").select("id,name,active").order("name");
+      const { data } = await supabase.from("employees").select("id,full_name,active").order("name");
       return data ?? [];
     },
   });
@@ -37,7 +37,7 @@ function OwnerAttendanceHistory() {
     queryFn: async () => {
       let q = supabase
         .from("attendances")
-        .select("*, employees(id,name)")
+        .select("*, employees(id,full_name)")
         .order("date", { ascending: false })
         .order("check_in", { ascending: false })
         .limit(300);
@@ -76,7 +76,7 @@ function OwnerAttendanceHistory() {
                 <SelectItem value="all">Semua Karyawan</SelectItem>
                 {employees?.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
-                    {e.name}{!e.active && " (nonaktif)"}
+                    {e.full_name}{!e.active && " (nonaktif)"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -121,7 +121,7 @@ function OwnerAttendanceHistory() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{r.employees?.name ?? "—"}</p>
+                        <p className="text-sm font-semibold text-slate-900 truncate">{r.employees?.full_name ?? "—"}</p>
                         <p className="text-[11px] text-slate-500 capitalize">{wk}</p>
                       </div>
                       <Badge variant="outline" className={`text-[10px] uppercase tracking-wide ${statusColor}`}>{r.status}</Badge>
