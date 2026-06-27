@@ -97,21 +97,36 @@ function MyAttendance() {
                         </div>
                       </div>
                     </div>
-                    {(r.break_start || r.break_end) && (() => {
+                    {(() => {
+                      const ci = r.check_in ? new Date(r.check_in) : null;
+                      const co = r.check_out ? new Date(r.check_out) : null;
                       const bs = r.break_start ? new Date(r.break_start) : null;
                       const be = r.break_end ? new Date(r.break_end) : null;
-                      const mins = bs && be ? Math.max(0, Math.round((be.getTime() - bs.getTime()) / 60000)) : null;
-                      const dur = mins == null ? "—" : mins >= 60 ? `${Math.floor(mins/60)}j ${mins%60}m` : `${mins}m`;
+                      const breakMins = bs && be ? Math.max(0, Math.round((be.getTime() - bs.getTime()) / 60000)) : null;
+                      const grossMins = ci && co ? Math.max(0, Math.round((co.getTime() - ci.getTime()) / 60000)) : null;
+                      const workMins = grossMins != null ? Math.max(0, grossMins - (breakMins ?? 0)) : null;
+                      const fmt = (m: number | null) => m == null ? "—" : m >= 60 ? `${Math.floor(m/60)}j ${m%60}m` : `${m}m`;
                       return (
-                        <div className="mt-2 flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1.5 border border-amber-100">
-                          <Coffee className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                          <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                            <p className="text-[11px] text-amber-700 leading-tight">
-                              Istirahat <span className="font-semibold">{bs ? format(bs, "HH:mm") : "—"}</span> – <span className="font-semibold">{be ? format(be, "HH:mm") : "—"}</span>
-                            </p>
-                            <span className="text-[11px] font-bold text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 shrink-0">{dur}</span>
+                        <>
+                          <div className="mt-2 flex items-center gap-1.5 rounded-md bg-indigo-50 px-2 py-1.5 border border-indigo-100">
+                            <Clock className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                              <p className="text-[11px] text-indigo-700 leading-tight">Durasi Kerja</p>
+                              <span className="text-[11px] font-bold text-indigo-800 bg-indigo-100 rounded px-1.5 py-0.5 shrink-0">{fmt(workMins)}</span>
+                            </div>
                           </div>
-                        </div>
+                          {(bs || be) && (
+                            <div className="mt-2 flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1.5 border border-amber-100">
+                              <Coffee className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                              <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                                <p className="text-[11px] text-amber-700 leading-tight">
+                                  Istirahat <span className="font-semibold">{bs ? format(bs, "HH:mm") : "—"}</span> – <span className="font-semibold">{be ? format(be, "HH:mm") : "—"}</span>
+                                </p>
+                                <span className="text-[11px] font-bold text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 shrink-0">{fmt(breakMins)}</span>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       );
                     })()}
                   </div>
