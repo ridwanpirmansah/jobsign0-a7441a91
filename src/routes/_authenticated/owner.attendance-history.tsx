@@ -27,7 +27,7 @@ function OwnerAttendanceHistory() {
   const { data: employees } = useQuery({
     queryKey: ["all-employees-att"],
     queryFn: async () => {
-      const { data } = await supabase.from("employees").select("id,full_name,active").order("name");
+      const { data } = await supabase.from("employees").select("id,full_name,active").order("full_name");
       return data ?? [];
     },
   });
