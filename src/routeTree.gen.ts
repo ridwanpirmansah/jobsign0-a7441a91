@@ -27,6 +27,7 @@ import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
 import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
 import { Route as AuthenticatedOwnerAttendanceQrRouteImport } from './routes/_authenticated/owner.attendance-qr'
+import { Route as AuthenticatedOwnerAttendanceHistoryRouteImport } from './routes/_authenticated/owner.attendance-history'
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner.analytics'
 import { Route as AuthenticatedMeScanRouteImport } from './routes/_authenticated/me.scan'
 import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
@@ -125,6 +126,12 @@ const AuthenticatedOwnerAttendanceQrRoute =
     path: '/owner/attendance-qr',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOwnerAttendanceHistoryRoute =
+  AuthenticatedOwnerAttendanceHistoryRouteImport.update({
+    id: '/owner/attendance-history',
+    path: '/owner/attendance-history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOwnerAnalyticsRoute =
   AuthenticatedOwnerAnalyticsRouteImport.update({
     id: '/owner/analytics',
@@ -178,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/me/jobs': typeof AuthenticatedMeJobsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
   '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
   '/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
@@ -203,6 +211,7 @@ export interface FileRoutesByTo {
   '/me/jobs': typeof AuthenticatedMeJobsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
   '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
   '/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
@@ -230,6 +239,7 @@ export interface FileRoutesById {
   '/_authenticated/me/jobs': typeof AuthenticatedMeJobsRoute
   '/_authenticated/me/scan': typeof AuthenticatedMeScanRoute
   '/_authenticated/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/_authenticated/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
   '/_authenticated/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
   '/_authenticated/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/_authenticated/owner/sync': typeof AuthenticatedOwnerSyncRoute
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/me/jobs'
     | '/me/scan'
     | '/owner/analytics'
+    | '/owner/attendance-history'
     | '/owner/attendance-qr'
     | '/owner/prices'
     | '/owner/sync'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/me/jobs'
     | '/me/scan'
     | '/owner/analytics'
+    | '/owner/attendance-history'
     | '/owner/attendance-qr'
     | '/owner/prices'
     | '/owner/sync'
@@ -308,6 +320,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me/jobs'
     | '/_authenticated/me/scan'
     | '/_authenticated/owner/analytics'
+    | '/_authenticated/owner/attendance-history'
     | '/_authenticated/owner/attendance-qr'
     | '/_authenticated/owner/prices'
     | '/_authenticated/owner/sync'
@@ -450,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnerAttendanceQrRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/owner/attendance-history': {
+      id: '/_authenticated/owner/attendance-history'
+      path: '/owner/attendance-history'
+      fullPath: '/owner/attendance-history'
+      preLoaderRoute: typeof AuthenticatedOwnerAttendanceHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/owner/analytics': {
       id: '/_authenticated/owner/analytics'
       path: '/owner/analytics'
@@ -525,6 +545,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeJobsRoute: typeof AuthenticatedMeJobsRoute
   AuthenticatedMeScanRoute: typeof AuthenticatedMeScanRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
+  AuthenticatedOwnerAttendanceHistoryRoute: typeof AuthenticatedOwnerAttendanceHistoryRoute
   AuthenticatedOwnerAttendanceQrRoute: typeof AuthenticatedOwnerAttendanceQrRoute
   AuthenticatedOwnerPricesRoute: typeof AuthenticatedOwnerPricesRoute
   AuthenticatedOwnerSyncRoute: typeof AuthenticatedOwnerSyncRoute
@@ -547,6 +568,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeJobsRoute: AuthenticatedMeJobsRoute,
   AuthenticatedMeScanRoute: AuthenticatedMeScanRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
+  AuthenticatedOwnerAttendanceHistoryRoute:
+    AuthenticatedOwnerAttendanceHistoryRoute,
   AuthenticatedOwnerAttendanceQrRoute: AuthenticatedOwnerAttendanceQrRoute,
   AuthenticatedOwnerPricesRoute: AuthenticatedOwnerPricesRoute,
   AuthenticatedOwnerSyncRoute: AuthenticatedOwnerSyncRoute,

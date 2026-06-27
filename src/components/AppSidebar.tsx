@@ -33,6 +33,7 @@ const adminItems = [
 ];
 const ownerItems = [
   { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
+  { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },
   { title: "Master Harga", url: "/owner/prices", icon: Tags },
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
   { title: "Kelola User", url: "/users", icon: UserCog },
