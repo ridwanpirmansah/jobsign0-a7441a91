@@ -270,6 +270,26 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     onError: (e: any) => toast.error(e?.message ?? "Gagal hapus"),
   });
 
+  const convertMut = useMutation({
+    mutationFn: (o: any) => saveOrder({ data: {
+      id: o.id, source: o.source, status: "active", order_no: o.order_no,
+      co_date: o.co_date ?? new Date().toISOString().slice(0, 10),
+      username: o.username, kota: o.kota, text_neon: o.text_neon,
+      akrilik_p: Number(o.akrilik_p ?? 0), akrilik_l: Number(o.akrilik_l ?? 0),
+      led_meter: Number(o.led_meter ?? 0), titik: Math.floor(Number(o.titik ?? 0)),
+      kabel_meter: Number(o.kabel_meter ?? 0),
+      kabel_socket_meter: Number(o.kabel_socket_meter ?? 1),
+      payment: Number(o.payment ?? 0), dp: Number(o.dp ?? 0), split: Number(o.split ?? 0),
+      adaptor: Number(o.adaptor ?? 0), adaptor_type: o.adaptor_type ?? null,
+      modul: Number(o.modul ?? 0), socket_dc: Number(o.socket_dc ?? 0),
+      baut_fischer: Number(o.baut_fischer ?? 0),
+      outdoor_cost: o.outdoor_cost == null ? null : Number(o.outdoor_cost),
+      notes: o.notes ?? null,
+    } }),
+    onSuccess: () => { toast.success("Ready stock dikonversi ke Order"); qc.invalidateQueries({ queryKey: ["orders"] }); },
+    onError: (e: any) => toast.error(e?.message ?? "Gagal konversi"),
+  });
+
   const filtered = useMemo(() => {
     const list = ordersQ.data ?? [];
     return list.filter((o: any) => {
