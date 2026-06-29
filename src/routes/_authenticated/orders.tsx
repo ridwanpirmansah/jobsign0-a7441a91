@@ -350,8 +350,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   </Select>
                 </div>
                 <div>
-                  <Label>No. Order * <span className="text-xs text-muted-foreground">— otomatis, bisa diubah</span></Label>
-                  <Input value={form.order_no} onChange={(e) => setForm((f) => ({ ...f, order_no: e.target.value }))}/>
+                  <Label>No. Order {(form.status === "draft" || form.status === "ready_stock") ? <span className="text-xs text-muted-foreground">— opsional, otomatis terisi saat jadi Aktif</span> : <span className="text-xs text-muted-foreground">— otomatis, bisa diubah</span>}</Label>
+                  <Input value={form.order_no} placeholder={(form.status === "draft" || form.status === "ready_stock") ? "Kosongkan saja" : ""} onChange={(e) => setForm((f) => ({ ...f, order_no: e.target.value }))}/>
                 </div>
                 <div><Label>Tgl CO</Label><Input type="date" value={form.co_date} onChange={(e) => setForm((f) => ({ ...f, co_date: e.target.value }))}/></div>
                 <div><Label>User Pembeli</Label><Input value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}/></div>
