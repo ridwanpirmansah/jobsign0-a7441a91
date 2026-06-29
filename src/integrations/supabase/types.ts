@@ -223,12 +223,15 @@ export type Database = {
           created_at: string
           employee_id: string
           id: string
+          is_repair: boolean
           log_date: string
           note: string | null
           photo_url: string | null
           project_id: string | null
           qty: number
           rate_id: string
+          repair_reason: string | null
+          source_order_id: string | null
           status: Database["public"]["Enums"]["job_log_status"]
           updated_at: string
         }
@@ -239,12 +242,15 @@ export type Database = {
           created_at?: string
           employee_id: string
           id?: string
+          is_repair?: boolean
           log_date?: string
           note?: string | null
           photo_url?: string | null
           project_id?: string | null
           qty: number
           rate_id: string
+          repair_reason?: string | null
+          source_order_id?: string | null
           status?: Database["public"]["Enums"]["job_log_status"]
           updated_at?: string
         }
@@ -255,12 +261,15 @@ export type Database = {
           created_at?: string
           employee_id?: string
           id?: string
+          is_repair?: boolean
           log_date?: string
           note?: string | null
           photo_url?: string | null
           project_id?: string | null
           qty?: number
           rate_id?: string
+          repair_reason?: string | null
+          source_order_id?: string | null
           status?: Database["public"]["Enums"]["job_log_status"]
           updated_at?: string
         }
@@ -284,6 +293,13 @@ export type Database = {
             columns: ["rate_id"]
             isOneToOne: false
             referencedRelation: "job_rates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_logs_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -375,6 +391,7 @@ export type Database = {
           payment: number
           profit: number
           project_id: string | null
+          repair_cost: number
           socket_dc: number
           solder_cost: number
           source: Database["public"]["Enums"]["order_source"]
@@ -415,6 +432,7 @@ export type Database = {
           payment?: number
           profit?: number
           project_id?: string | null
+          repair_cost?: number
           socket_dc?: number
           solder_cost?: number
           source?: Database["public"]["Enums"]["order_source"]
@@ -455,6 +473,7 @@ export type Database = {
           payment?: number
           profit?: number
           project_id?: string | null
+          repair_cost?: number
           socket_dc?: number
           solder_cost?: number
           source?: Database["public"]["Enums"]["order_source"]
@@ -725,6 +744,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_job_log: {
+        Args: { _amount?: number; _id: string; _qty?: number; _status: string }
+        Returns: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          is_repair: boolean
+          log_date: string
+          note: string | null
+          photo_url: string | null
+          project_id: string | null
+          qty: number
+          rate_id: string
+          repair_reason: string | null
+          source_order_id: string | null
+          status: Database["public"]["Enums"]["job_log_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "job_logs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       attendance_check_in: { Args: { _token: string }; Returns: Json }
       get_attendance_secret: { Args: never; Returns: string }
       get_available_projects: {
@@ -750,6 +797,18 @@ export type Database = {
           remaining_points: number
           total_points: number
           unit: string
+        }[]
+      }
+      get_repairable_orders: {
+        Args: never
+        Returns: {
+          id: string
+          kota: string
+          order_no: string
+          project_id: string
+          status: string
+          text_neon: string
+          username: string
         }[]
       }
       has_role: {

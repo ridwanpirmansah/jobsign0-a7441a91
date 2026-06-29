@@ -31,6 +31,7 @@ import { Route as AuthenticatedOwnerAttendanceQrRouteImport } from './routes/_au
 import { Route as AuthenticatedOwnerAttendanceHistoryRouteImport } from './routes/_authenticated/owner.attendance-history'
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner.analytics'
 import { Route as AuthenticatedMeScanRouteImport } from './routes/_authenticated/me.scan'
+import { Route as AuthenticatedMeRepairsRouteImport } from './routes/_authenticated/me.repairs'
 import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
 import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
 import { Route as AuthenticatedMeAttendanceRouteImport } from './routes/_authenticated/me.attendance'
@@ -149,6 +150,11 @@ const AuthenticatedMeScanRoute = AuthenticatedMeScanRouteImport.update({
   path: '/me/scan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMeRepairsRoute = AuthenticatedMeRepairsRouteImport.update({
+  id: '/me/repairs',
+  path: '/me/repairs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMeJobsRoute = AuthenticatedMeJobsRouteImport.update({
   id: '/me/jobs',
   path: '/me/jobs',
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
   '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
   '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/_authenticated/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/_authenticated/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/_authenticated/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/_authenticated/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/_authenticated/me/scan': typeof AuthenticatedMeScanRoute
   '/_authenticated/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/_authenticated/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/me/attendance'
     | '/me/earnings'
     | '/me/jobs'
+    | '/me/repairs'
     | '/me/scan'
     | '/owner/analytics'
     | '/owner/attendance-history'
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/me/attendance'
     | '/me/earnings'
     | '/me/jobs'
+    | '/me/repairs'
     | '/me/scan'
     | '/owner/analytics'
     | '/owner/attendance-history'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me/attendance'
     | '/_authenticated/me/earnings'
     | '/_authenticated/me/jobs'
+    | '/_authenticated/me/repairs'
     | '/_authenticated/me/scan'
     | '/_authenticated/owner/analytics'
     | '/_authenticated/owner/attendance-history'
@@ -503,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeScanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/me/repairs': {
+      id: '/_authenticated/me/repairs'
+      path: '/me/repairs'
+      fullPath: '/me/repairs'
+      preLoaderRoute: typeof AuthenticatedMeRepairsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/me/jobs': {
       id: '/_authenticated/me/jobs'
       path: '/me/jobs'
@@ -563,6 +582,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeAttendanceRoute: typeof AuthenticatedMeAttendanceRoute
   AuthenticatedMeEarningsRoute: typeof AuthenticatedMeEarningsRoute
   AuthenticatedMeJobsRoute: typeof AuthenticatedMeJobsRoute
+  AuthenticatedMeRepairsRoute: typeof AuthenticatedMeRepairsRoute
   AuthenticatedMeScanRoute: typeof AuthenticatedMeScanRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
   AuthenticatedOwnerAttendanceHistoryRoute: typeof AuthenticatedOwnerAttendanceHistoryRoute
@@ -587,6 +607,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeAttendanceRoute: AuthenticatedMeAttendanceRoute,
   AuthenticatedMeEarningsRoute: AuthenticatedMeEarningsRoute,
   AuthenticatedMeJobsRoute: AuthenticatedMeJobsRoute,
+  AuthenticatedMeRepairsRoute: AuthenticatedMeRepairsRoute,
   AuthenticatedMeScanRoute: AuthenticatedMeScanRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
   AuthenticatedOwnerAttendanceHistoryRoute:
@@ -608,13 +629,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

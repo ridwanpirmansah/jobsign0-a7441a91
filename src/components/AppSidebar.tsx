@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -19,6 +19,7 @@ const meItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Scan Absensi", url: "/me/scan", icon: ScanLine },
   { title: "Input Garapan", url: "/me/jobs", icon: ClipboardList },
+  { title: "Klaim Reparasi", url: "/me/repairs", icon: Wrench },
   { title: "Absensi Saya", url: "/me/attendance", icon: CalendarCheck },
   { title: "Pendapatan Saya", url: "/me/earnings", icon: Wallet },
   { title: "Cashbon", url: "/cashbon", icon: BadgeDollarSign },
