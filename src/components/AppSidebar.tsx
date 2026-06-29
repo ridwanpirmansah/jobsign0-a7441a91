@@ -25,6 +25,7 @@ const meItems = [
 ];
 const adminItems = [
   { title: "Order", url: "/orders", icon: ShoppingBag },
+  { title: "Ready Stock", url: "/ready-stock", icon: Package },
   { title: "Project", url: "/projects", icon: FolderKanban },
   { title: "Karyawan", url: "/employees", icon: Users },
   { title: "Tarif Borongan", url: "/rates", icon: DollarSign },
