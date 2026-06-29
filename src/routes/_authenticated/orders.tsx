@@ -296,15 +296,17 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     <div className="p-2 sm:p-4 space-y-4">
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><ShoppingBag className="h-6 w-6"/> Order Neon Sign</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2"><ShoppingBag className="h-6 w-6"/> {isReady ? "Ready Stock" : "Order Neon Sign"}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Input pesanan custom. HPP & profit dihitung otomatis. Setiap order otomatis membuat Project.
+            {isReady
+              ? "Produk ready stock — tidak masuk laporan penjualan, tapi tetap muncul di Project untuk dikerjakan. Ubah status ke 'Aktif' saat ada pembeli."
+              : "Input pesanan custom. HPP & profit dihitung otomatis. Setiap order otomatis membuat Project."}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button onClick={openNew}><Plus className="h-4 w-4 mr-1"/> Order Baru</Button></DialogTrigger>
+          <DialogTrigger asChild><Button onClick={openNew}><Plus className="h-4 w-4 mr-1"/> {isReady ? "Ready Stock Baru" : "Order Baru"}</Button></DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{form.id ? "Edit Order" : "Order Baru"}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{form.id ? (isReady ? "Edit Ready Stock" : "Edit Order") : (isReady ? "Ready Stock Baru" : "Order Baru")}</DialogTitle></DialogHeader>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-2 grid sm:grid-cols-2 gap-3">
                 <div>
