@@ -172,7 +172,12 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     return String(max + 1);
   }, [ordersQ.data]);
 
-  const openNew = () => { setForm(emptyForm(priceMap, nextOrderNo)); setOpen(true); };
+  const openNew = () => {
+    const f = emptyForm(priceMap, nextOrderNo);
+    if (isReady) f.status = "ready_stock";
+    setForm(f);
+    setOpen(true);
+  };
   const openEdit = (o: any) => { setForm(toForm(o)); setOpen(true); };
 
   const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
