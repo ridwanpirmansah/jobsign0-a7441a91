@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedReadyStockRouteImport } from './routes/_authenticated/ready-stock'
 import { Route as AuthenticatedRatesRouteImport } from './routes/_authenticated/rates'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
@@ -57,6 +58,11 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReadyStockRoute = AuthenticatedReadyStockRouteImport.update({
+  id: '/ready-stock',
+  path: '/ready-stock',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRatesRoute = AuthenticatedRatesRouteImport.update({
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/payroll': typeof AuthenticatedPayrollRoute
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/rates': typeof AuthenticatedRatesRoute
+  '/ready-stock': typeof AuthenticatedReadyStockRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/users': typeof AuthenticatedUsersRoute
   '/me/attendance': typeof AuthenticatedMeAttendanceRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/payroll': typeof AuthenticatedPayrollRoute
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/rates': typeof AuthenticatedRatesRoute
+  '/ready-stock': typeof AuthenticatedReadyStockRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/users': typeof AuthenticatedUsersRoute
   '/me/attendance': typeof AuthenticatedMeAttendanceRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/rates': typeof AuthenticatedRatesRoute
+  '/_authenticated/ready-stock': typeof AuthenticatedReadyStockRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/me/attendance': typeof AuthenticatedMeAttendanceRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/projects'
     | '/rates'
+    | '/ready-stock'
     | '/reports'
     | '/users'
     | '/me/attendance'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/projects'
     | '/rates'
+    | '/ready-stock'
     | '/reports'
     | '/users'
     | '/me/attendance'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/_authenticated/payroll'
     | '/_authenticated/projects'
     | '/_authenticated/rates'
+    | '/_authenticated/ready-stock'
     | '/_authenticated/reports'
     | '/_authenticated/users'
     | '/_authenticated/me/attendance'
@@ -370,6 +382,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ready-stock': {
+      id: '/_authenticated/ready-stock'
+      path: '/ready-stock'
+      fullPath: '/ready-stock'
+      preLoaderRoute: typeof AuthenticatedReadyStockRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rates': {
@@ -538,6 +557,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedRatesRoute: typeof AuthenticatedRatesRoute
+  AuthenticatedReadyStockRoute: typeof AuthenticatedReadyStockRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedMeAttendanceRoute: typeof AuthenticatedMeAttendanceRoute
@@ -561,6 +581,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedRatesRoute: AuthenticatedRatesRoute,
+  AuthenticatedReadyStockRoute: AuthenticatedReadyStockRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedMeAttendanceRoute: AuthenticatedMeAttendanceRoute,
