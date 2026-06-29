@@ -174,7 +174,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const openNew = () => {
     const f = emptyForm(priceMap, nextOrderNo);
-    if (isReady) f.status = "ready_stock";
+    if (isReady) { f.status = "ready_stock"; f.order_no = ""; }
     setForm(f);
     setOpen(true);
   };
