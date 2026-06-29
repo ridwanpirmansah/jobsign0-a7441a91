@@ -89,7 +89,7 @@ function AnalyticsPage() {
       const [orders, logs, attendances, employees, prevOrders, prevLogs] = await Promise.all([
         supabase.from("orders")
           .select("co_date,created_at,payment,split,hpp,profit,led_cost,akrilik_cost,solder_cost,tempel_cost,kabel_cost,kabel_socket_cost,adaptor,modul,biaya_lainnya,socket_dc,baut_fischer,outdoor_cost,status")
-          .neq("status", "draft")
+          .not("status", "in", "(draft,ready_stock)")
           .gte("co_date", fromStr).lte("co_date", toStr),
         supabase.from("job_logs")
           .select("amount,status,log_date,employee_id,employee:employees(full_name,type)")
