@@ -137,7 +137,8 @@ function toForm(o: any): FormState {
   };
 }
 
-function OrdersPage() {
+export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock" }) {
+  const isReady = mode === "ready_stock";
   const fetchOrders = useServerFn(listOrders);
   const fetchPrices = useServerFn(listPrices);
   const saveOrder = useServerFn(upsertOrder);
