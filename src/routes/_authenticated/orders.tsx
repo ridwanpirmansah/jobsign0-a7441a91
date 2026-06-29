@@ -526,8 +526,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     <TableCell className="text-right">{rp(Number(o.payment) + Number(o.split))}</TableCell>
                     <TableCell className={`text-right font-medium ${Number(o.profit) >= 0 ? "text-emerald-600" : "text-destructive"}`}>{rp(Number(o.profit))}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
+                      {isReady && (
+                        <Button size="sm" variant="outline" className="mr-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                          disabled={convertMut.isPending}
+                          onClick={() => { if (confirm(`Konversi ${o.order_no} jadi Order penjualan?`)) convertMut.mutate(o); }}>
+                          Jadikan Order
+                        </Button>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => openEdit(o)}><Pencil className="h-4 w-4"/></Button>
-                      <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Hapus order ${o.order_no}?`)) delMut.mutate(o.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                      <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Hapus ${o.order_no}?`)) delMut.mutate(o.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                     </TableCell>
                   </TableRow>
                 ))}
