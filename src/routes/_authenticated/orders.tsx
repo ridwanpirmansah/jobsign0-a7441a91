@@ -23,16 +23,16 @@ import { ShoppingBag, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/orders")({
-  component: OrdersPage,
+  component: () => <OrdersPage mode="orders" />,
   head: () => ({ meta: [{ title: "Daftar Order Neon Sign" }] }),
 });
 
 const SOURCES = ["shopee", "tiktok", "tokopedia", "lazada", "direct", "lainnya"] as const;
 type Source = (typeof SOURCES)[number];
 
-const STATUSES = ["active", "return", "draft"] as const;
+const STATUSES = ["active", "return", "draft", "ready_stock"] as const;
 type OrderStatus = (typeof STATUSES)[number];
-const STATUS_LABEL: Record<OrderStatus, string> = { active: "Aktif", return: "Retur", draft: "Draft" };
+const STATUS_LABEL: Record<OrderStatus, string> = { active: "Aktif", return: "Retur", draft: "Draft", ready_stock: "Ready Stock" };
 
 const ADAPTOR_VARIANTS = [
   { key: "adaptor_2a", label: "Adaptor 2A", maxLed: 3, defaultPrice: 8000 },
