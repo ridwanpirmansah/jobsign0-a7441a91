@@ -226,7 +226,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const saveMut = useMutation({
     mutationFn: async () => {
-      if (!form.order_no.trim() || !form.text_neon.trim()) throw new Error("No. Order dan TEXT wajib diisi");
+      const isDraftLike = form.status === "draft" || form.status === "ready_stock";
+      if (!form.text_neon.trim()) throw new Error("TEXT wajib diisi");
+      if (!isDraftLike && !form.order_no.trim()) throw new Error("No. Order wajib diisi untuk status Aktif/Retur");
       return saveOrder({
         data: {
           id: form.id,
