@@ -34,7 +34,7 @@ export const listPrices = createServerFn({ method: "GET" })
 const orderSchema = z.object({
   id: z.string().uuid().optional(),
   source: z.enum(["shopee", "tiktok", "tokopedia", "lazada", "direct", "lainnya"]),
-  status: z.enum(["active", "return", "draft"]).default("active"),
+  status: z.enum(["active", "return", "draft", "ready_stock"]).default("active"),
   order_no: z.string().min(1),
   co_date: z.string().nullable().optional(),
   username: z.string().optional().nullable(),

@@ -23,16 +23,16 @@ import { ShoppingBag, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/orders")({
-  component: OrdersPage,
+  component: () => <OrdersPage mode="orders" />,
   head: () => ({ meta: [{ title: "Daftar Order Neon Sign" }] }),
 });
 
 const SOURCES = ["shopee", "tiktok", "tokopedia", "lazada", "direct", "lainnya"] as const;
 type Source = (typeof SOURCES)[number];
 
-const STATUSES = ["active", "return", "draft"] as const;
+const STATUSES = ["active", "return", "draft", "ready_stock"] as const;
 type OrderStatus = (typeof STATUSES)[number];
-const STATUS_LABEL: Record<OrderStatus, string> = { active: "Aktif", return: "Retur", draft: "Draft" };
+const STATUS_LABEL: Record<OrderStatus, string> = { active: "Aktif", return: "Retur", draft: "Draft", ready_stock: "Ready Stock" };
 
 const ADAPTOR_VARIANTS = [
   { key: "adaptor_2a", label: "Adaptor 2A", maxLed: 3, defaultPrice: 8000 },
@@ -137,7 +137,8 @@ function toForm(o: any): FormState {
   };
 }
 
-function OrdersPage() {
+export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock" }) {
+  const isReady = mode === "ready_stock";
   const fetchOrders = useServerFn(listOrders);
   const fetchPrices = useServerFn(listPrices);
   const saveOrder = useServerFn(upsertOrder);
@@ -171,7 +172,12 @@ function OrdersPage() {
     return String(max + 1);
   }, [ordersQ.data]);
 
-  const openNew = () => { setForm(emptyForm(priceMap, nextOrderNo)); setOpen(true); };
+  const openNew = () => {
+    const f = emptyForm(priceMap, nextOrderNo);
+    if (isReady) f.status = "ready_stock";
+    setForm(f);
+    setOpen(true);
+  };
   const openEdit = (o: any) => { setForm(toForm(o)); setOpen(true); };
 
   const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
@@ -264,15 +270,36 @@ function OrdersPage() {
     onError: (e: any) => toast.error(e?.message ?? "Gagal hapus"),
   });
 
+  const convertMut = useMutation({
+    mutationFn: (o: any) => saveOrder({ data: {
+      id: o.id, source: o.source, status: "active", order_no: o.order_no,
+      co_date: o.co_date ?? new Date().toISOString().slice(0, 10),
+      username: o.username, kota: o.kota, text_neon: o.text_neon,
+      akrilik_p: Number(o.akrilik_p ?? 0), akrilik_l: Number(o.akrilik_l ?? 0),
+      led_meter: Number(o.led_meter ?? 0), titik: Math.floor(Number(o.titik ?? 0)),
+      kabel_meter: Number(o.kabel_meter ?? 0),
+      kabel_socket_meter: Number(o.kabel_socket_meter ?? 1),
+      payment: Number(o.payment ?? 0), dp: Number(o.dp ?? 0), split: Number(o.split ?? 0),
+      adaptor: Number(o.adaptor ?? 0), adaptor_type: o.adaptor_type ?? null,
+      modul: Number(o.modul ?? 0), socket_dc: Number(o.socket_dc ?? 0),
+      baut_fischer: Number(o.baut_fischer ?? 0),
+      outdoor_cost: o.outdoor_cost == null ? null : Number(o.outdoor_cost),
+      notes: o.notes ?? null,
+    } }),
+    onSuccess: () => { toast.success("Ready stock dikonversi ke Order"); qc.invalidateQueries({ queryKey: ["orders"] }); },
+    onError: (e: any) => toast.error(e?.message ?? "Gagal konversi"),
+  });
+
   const filtered = useMemo(() => {
     const list = ordersQ.data ?? [];
     return list.filter((o: any) => {
+      if (isReady ? o.status !== "ready_stock" : o.status === "ready_stock") return false;
       if (srcFilter !== "all" && o.source !== srcFilter) return false;
       if (!filter.trim()) return true;
       const q = filter.toLowerCase();
       return [o.order_no, o.username, o.kota, o.text_neon].some((v) => String(v ?? "").toLowerCase().includes(q));
     });
-  }, [ordersQ.data, filter, srcFilter]);
+  }, [ordersQ.data, filter, srcFilter, isReady]);
 
   const totals = useMemo(() => {
     return filtered.reduce(
@@ -289,15 +316,17 @@ function OrdersPage() {
     <div className="p-2 sm:p-4 space-y-4">
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><ShoppingBag className="h-6 w-6"/> Order Neon Sign</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2"><ShoppingBag className="h-6 w-6"/> {isReady ? "Ready Stock" : "Order Neon Sign"}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Input pesanan custom. HPP & profit dihitung otomatis. Setiap order otomatis membuat Project.
+            {isReady
+              ? "Produk ready stock — tidak masuk laporan penjualan, tapi tetap muncul di Project untuk dikerjakan. Ubah status ke 'Aktif' saat ada pembeli."
+              : "Input pesanan custom. HPP & profit dihitung otomatis. Setiap order otomatis membuat Project."}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button onClick={openNew}><Plus className="h-4 w-4 mr-1"/> Order Baru</Button></DialogTrigger>
+          <DialogTrigger asChild><Button onClick={openNew}><Plus className="h-4 w-4 mr-1"/> {isReady ? "Ready Stock Baru" : "Order Baru"}</Button></DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{form.id ? "Edit Order" : "Order Baru"}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{form.id ? (isReady ? "Edit Ready Stock" : "Edit Order") : (isReady ? "Ready Stock Baru" : "Order Baru")}</DialogTitle></DialogHeader>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-2 grid sm:grid-cols-2 gap-3">
                 <div>
@@ -497,8 +526,15 @@ function OrdersPage() {
                     <TableCell className="text-right">{rp(Number(o.payment) + Number(o.split))}</TableCell>
                     <TableCell className={`text-right font-medium ${Number(o.profit) >= 0 ? "text-emerald-600" : "text-destructive"}`}>{rp(Number(o.profit))}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
+                      {isReady && (
+                        <Button size="sm" variant="outline" className="mr-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                          disabled={convertMut.isPending}
+                          onClick={() => { if (confirm(`Konversi ${o.order_no} jadi Order penjualan?`)) convertMut.mutate(o); }}>
+                          Jadikan Order
+                        </Button>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => openEdit(o)}><Pencil className="h-4 w-4"/></Button>
-                      <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Hapus order ${o.order_no}?`)) delMut.mutate(o.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                      <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Hapus ${o.order_no}?`)) delMut.mutate(o.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                     </TableCell>
                   </TableRow>
                 ))}
