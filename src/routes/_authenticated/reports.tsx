@@ -22,18 +22,20 @@ function ReportsPage() {
     enabled: me?.role === "owner",
     queryKey: ["reports", from, to],
     queryFn: async () => {
-      const [projects, logs, payrolls] = await Promise.all([
-        supabase.from("projects").select("id,code,title,status,contract_value,created_at").gte("created_at", from).lte("created_at", to + "T23:59:59"),
+      const [orders, logs, payrolls] = await Promise.all([
+        supabase.from("orders").select("payment,split,status,co_date")
+          .not("status", "in", "(draft,ready_stock)")
+          .gte("co_date", from).lte("co_date", to),
         supabase.from("job_logs").select("amount,status,log_date,project_id,employee_id,employee:employees(full_name)").gte("log_date", from).lte("log_date", to),
         supabase.from("payrolls").select("total,status,period_start").gte("period_start", from).lte("period_end", to),
       ]);
-      return { projects: projects.data ?? [], logs: logs.data ?? [], payrolls: payrolls.data ?? [] };
+      return { orders: orders.data ?? [], logs: logs.data ?? [], payrolls: payrolls.data ?? [] };
     },
   });
 
   if (me?.role !== "owner") return <p className="text-sm text-slate-500">Hanya owner yang bisa lihat laporan.</p>;
 
-  const omzet = (data?.projects ?? []).reduce((s, p) => s + Number(p.contract_value), 0);
+  const omzet = (data?.orders ?? []).reduce((s, o) => s + Number(o.payment ?? 0) + Number(o.split ?? 0), 0);
   const tenagaKerja = (data?.logs ?? []).filter((l) => l.status === "approved").reduce((s, l) => s + Number(l.amount), 0);
   const payrollPaid = (data?.payrolls ?? []).filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.total), 0);
 
