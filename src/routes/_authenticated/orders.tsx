@@ -174,7 +174,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const openNew = () => {
     const f = emptyForm(priceMap, nextOrderNo);
-    if (isReady) f.status = "ready_stock";
+    if (isReady) { f.status = "ready_stock"; f.order_no = ""; }
     setForm(f);
     setOpen(true);
   };
@@ -226,7 +226,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const saveMut = useMutation({
     mutationFn: async () => {
-      if (!form.order_no.trim() || !form.text_neon.trim()) throw new Error("No. Order dan TEXT wajib diisi");
+      const isDraftLike = form.status === "draft" || form.status === "ready_stock";
+      if (!form.text_neon.trim()) throw new Error("TEXT wajib diisi");
+      if (!isDraftLike && !form.order_no.trim()) throw new Error("No. Order wajib diisi untuk status Aktif/Retur");
       return saveOrder({
         data: {
           id: form.id,
@@ -272,7 +274,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const convertMut = useMutation({
     mutationFn: (o: any) => saveOrder({ data: {
-      id: o.id, source: o.source, status: "active", order_no: o.order_no,
+      id: o.id, source: o.source, status: "active", order_no: (!o.order_no || String(o.order_no).trim() === "" || String(o.order_no).trim() === "0") ? "" : o.order_no,
       co_date: o.co_date ?? new Date().toISOString().slice(0, 10),
       username: o.username, kota: o.kota, text_neon: o.text_neon,
       akrilik_p: Number(o.akrilik_p ?? 0), akrilik_l: Number(o.akrilik_l ?? 0),
@@ -348,8 +350,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   </Select>
                 </div>
                 <div>
-                  <Label>No. Order * <span className="text-xs text-muted-foreground">— otomatis, bisa diubah</span></Label>
-                  <Input value={form.order_no} onChange={(e) => setForm((f) => ({ ...f, order_no: e.target.value }))}/>
+                  <Label>No. Order {(form.status === "draft" || form.status === "ready_stock") ? <span className="text-xs text-muted-foreground">— opsional, otomatis terisi saat jadi Aktif</span> : <span className="text-xs text-muted-foreground">— otomatis, bisa diubah</span>}</Label>
+                  <Input value={form.order_no} placeholder={(form.status === "draft" || form.status === "ready_stock") ? "Kosongkan saja" : ""} onChange={(e) => setForm((f) => ({ ...f, order_no: e.target.value }))}/>
                 </div>
                 <div><Label>Tgl CO</Label><Input type="date" value={form.co_date} onChange={(e) => setForm((f) => ({ ...f, co_date: e.target.value }))}/></div>
                 <div><Label>User Pembeli</Label><Input value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}/></div>

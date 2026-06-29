@@ -35,7 +35,7 @@ const orderSchema = z.object({
   id: z.string().uuid().optional(),
   source: z.enum(["shopee", "tiktok", "tokopedia", "lazada", "direct", "lainnya"]),
   status: z.enum(["active", "return", "draft", "ready_stock"]).default("active"),
-  order_no: z.string().min(1),
+  order_no: z.string().default(""),
   co_date: z.string().nullable().optional(),
   username: z.string().optional().nullable(),
   kota: z.string().optional().nullable(),
