@@ -273,12 +273,13 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const filtered = useMemo(() => {
     const list = ordersQ.data ?? [];
     return list.filter((o: any) => {
+      if (isReady ? o.status !== "ready_stock" : o.status === "ready_stock") return false;
       if (srcFilter !== "all" && o.source !== srcFilter) return false;
       if (!filter.trim()) return true;
       const q = filter.toLowerCase();
       return [o.order_no, o.username, o.kota, o.text_neon].some((v) => String(v ?? "").toLowerCase().includes(q));
     });
-  }, [ordersQ.data, filter, srcFilter]);
+  }, [ordersQ.data, filter, srcFilter, isReady]);
 
   const totals = useMemo(() => {
     return filtered.reduce(
