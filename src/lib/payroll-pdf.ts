@@ -93,6 +93,33 @@ export function generateSlipPdf(d: SlipData) {
   // @ts-expect-error autotable injects lastAutoTable
   y = doc.lastAutoTable.finalY + 16;
 
+  // Rincian Reparasi (opsional)
+  const repairs = d.repairBreakdown ?? [];
+  if (repairs.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Rincian Pekerjaan Reparasi", margin, y);
+    y += 4;
+    autoTable(doc, {
+      startY: y + 4,
+      head: [["Jenis Reparasi", "Satuan", "Jumlah", "Upah"]],
+      body: repairs.map((b) => [b.name, b.unit, b.qty.toString(), fmtIDR(b.amount)]),
+      foot: [[
+        "Subtotal Reparasi",
+        "",
+        repairs.reduce((s, b) => s + b.qty, 0).toString(),
+        fmtIDR(repairs.reduce((s, b) => s + b.amount, 0)),
+      ]],
+      styles: { fontSize: 9, cellPadding: 5 },
+      headStyles: { fillColor: [234, 88, 12], textColor: 255 },
+      footStyles: { fillColor: [255, 237, 213], textColor: 15, fontStyle: "bold" },
+      columnStyles: { 2: { halign: "right" }, 3: { halign: "right" } },
+      margin: { left: margin, right: margin },
+    });
+    // @ts-expect-error autotable injects lastAutoTable
+    y = doc.lastAutoTable.finalY + 16;
+  }
+
   // Rincian Kehadiran / Jam Kerja
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
