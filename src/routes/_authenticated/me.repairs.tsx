@@ -83,7 +83,7 @@ function MyRepairs() {
     mutationFn: async () => {
       if (!effectiveEmpId) throw new Error("Pilih karyawan terlebih dahulu");
       if (!orderId) throw new Error("Pilih order asal");
-      if (!rateId) throw new Error("Pilih jenis tarif reparasi");
+      if (!rateId) throw new Error("Pilih jenis pekerjaan reparasi");
       if (qtyNum <= 0) throw new Error("Qty harus lebih dari 0");
       if (!reason.trim()) throw new Error("Wajib isi alasan/penjelasan kerusakan");
       const { error } = await supabase.from("job_logs").insert({
