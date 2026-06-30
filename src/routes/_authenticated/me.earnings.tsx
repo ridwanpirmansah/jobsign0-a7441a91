@@ -199,10 +199,10 @@ function MyEarnings() {
     [outstandingCashbon],
   );
 
-  // Rincian garapan per jenis (Potong / Tempel / Solder / Kabel, dst)
+  // Rincian garapan per jenis (Potong / Tempel / Solder / Kabel, dst) — non-reparasi
   const jobBreakdown: SlipJobBreakdown[] = useMemo(() => {
     const map = new Map<string, SlipJobBreakdown>();
-    (logs ?? []).forEach((l) => {
+    (logs ?? []).filter((l) => !l.is_repair).forEach((l) => {
       const name = l.rate?.name ?? "Lainnya";
       const unit = l.rate?.unit ?? "pcs";
       const cur = map.get(name) ?? { name, unit, qty: 0, amount: 0 };
@@ -212,6 +212,23 @@ function MyEarnings() {
     });
     return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
   }, [logs]);
+
+  // Rincian khusus reparasi
+  const repairBreakdown: SlipJobBreakdown[] = useMemo(() => {
+    const map = new Map<string, SlipJobBreakdown>();
+    (logs ?? []).filter((l) => l.is_repair).forEach((l) => {
+      const name = l.rate?.name ?? "Reparasi";
+      const unit = l.rate?.unit ?? "pcs";
+      const cur = map.get(name) ?? { name, unit, qty: 0, amount: 0 };
+      cur.qty += Number(l.qty);
+      cur.amount += Number(l.amount);
+      map.set(name, cur);
+    });
+    return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
+  }, [logs]);
+
+  const repairTotalCount = useMemo(() => repairBreakdown.reduce((s, b) => s + b.qty, 0), [repairBreakdown]);
+  const repairTotalAmount = useMemo(() => repairBreakdown.reduce((s, b) => s + b.amount, 0), [repairBreakdown]);
 
   // Attendance per hari + jam kerja
   const attendanceDetail: SlipAttendance[] = useMemo(() => {
