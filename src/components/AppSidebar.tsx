@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -41,6 +41,7 @@ const ownerItems = [
   { title: "Kelola User", url: "/users", icon: UserCog },
   { title: "Payroll", url: "/payroll", icon: Wallet },
   { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
+  { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
   { title: "Laporan", url: "/reports", icon: BarChart3 },
 ];
 
