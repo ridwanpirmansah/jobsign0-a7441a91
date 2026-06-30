@@ -32,6 +32,7 @@ import { id as idLocale } from "date-fns/locale";
 import {
   CalendarRange, ChevronDown, Plus, Pencil, Trash2, Wallet, TrendingDown, Tag,
   Megaphone, Package2, Boxes, Wrench, Banknote, Zap, Car, MoreHorizontal, Receipt,
+  Archive,
 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
