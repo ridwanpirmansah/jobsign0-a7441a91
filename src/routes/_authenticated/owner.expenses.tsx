@@ -53,7 +53,7 @@ const PERIODS: { value: Exclude<Period, "custom">; label: string }[] = [
 
 type Category =
   | "iklan" | "bahan_pokok" | "bahan_penunjang" | "operasional"
-  | "gaji" | "utilitas" | "transportasi" | "lainnya";
+  | "gaji" | "utilitas" | "transportasi" | "packing" | "lainnya";
 
 const CATEGORIES: { value: Category; label: string; color: string; icon: any; affectsPnl: boolean }[] = [
   { value: "iklan",           label: "Iklan & Marketing", color: "#ec4899", icon: Megaphone,    affectsPnl: true },
