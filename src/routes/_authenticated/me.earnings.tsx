@@ -506,7 +506,10 @@ function MyEarnings() {
                     <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${tone.chip}`}>{l.status}</span>
                   </div>
                   <div className="mt-1.5 flex items-center justify-between text-sm">
-                    <span className="text-slate-600 truncate">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
+                    <span className="text-slate-600 truncate flex items-center gap-1.5">
+                      {l.is_repair && <span className="rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase">🔧 Reparasi</span>}
+                      <span className="truncate">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
+                    </span>
                     <span className={`font-bold ${tone.amount}`}>{fmtIDR(Number(l.amount))}</span>
                   </div>
                 </div>
