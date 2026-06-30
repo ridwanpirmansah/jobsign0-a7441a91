@@ -380,7 +380,10 @@ function MyJobs() {
                     {l.project && <div className="text-sm font-medium text-slate-900 truncate">{l.project.title}</div>}
                     {l.project && <div className="font-mono text-[10px] text-slate-400">{l.project.code}</div>}
                   </div>
-                  <Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"} className="shrink-0">{l.status}</Badge>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {l.is_repair && <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 text-[10px]">🔧 Reparasi</Badge>}
+                    <Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"}>{l.status}</Badge>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between text-sm border-t border-dashed border-slate-200 pt-2">
                   <span className="text-slate-600">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
