@@ -431,6 +431,29 @@ function MyEarnings() {
             )}
           </div>
 
+          {/* Rincian reparasi (jika ada) */}
+          {repairBreakdown.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold uppercase text-orange-600 mb-2 flex items-center gap-1.5">
+                🔧 Rincian Pekerjaan Reparasi
+                <span className="text-[10px] font-normal normal-case text-orange-500">
+                  ({repairTotalCount} pekerjaan · {fmtIDR(repairTotalAmount)})
+                </span>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {repairBreakdown.map((b) => (
+                  <div key={b.name} className="rounded-lg border border-orange-200 bg-orange-50/40 px-3 py-2 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{b.name}</div>
+                      <div className="text-[11px] text-slate-500">{b.qty} {b.unit}</div>
+                    </div>
+                    <div className="text-sm font-semibold text-orange-700">{fmtIDR(b.amount)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Jam kerja */}
           <div className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
             <span className="text-sm text-slate-600">Total Jam Kerja Minggu Ini</span>
