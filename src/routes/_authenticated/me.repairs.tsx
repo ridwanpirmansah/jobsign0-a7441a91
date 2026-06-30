@@ -83,7 +83,7 @@ function MyRepairs() {
     mutationFn: async () => {
       if (!effectiveEmpId) throw new Error("Pilih karyawan terlebih dahulu");
       if (!orderId) throw new Error("Pilih order asal");
-      if (!rateId) throw new Error("Pilih jenis tarif reparasi");
+      if (!rateId) throw new Error("Pilih jenis pekerjaan reparasi");
       if (qtyNum <= 0) throw new Error("Qty harus lebih dari 0");
       if (!reason.trim()) throw new Error("Wajib isi alasan/penjelasan kerusakan");
       const { error } = await supabase.from("job_logs").insert({
@@ -167,23 +167,23 @@ function MyRepairs() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>Jenis Tarif Reparasi</Label>
+              <Label>Jenis Pekerjaan Reparasi</Label>
               <Select value={rateId} onValueChange={setRateId}>
-                <SelectTrigger><SelectValue placeholder="Pilih tarif" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih jenis pekerjaan" /></SelectTrigger>
                 <SelectContent>
                   {rates?.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>{r.name} · {fmtIDR(Number(r.rate_per_unit))}/{r.unit}</SelectItem>
+                    <SelectItem key={r.id} value={r.id}>{r.name} ({r.unit})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs mt-1 text-slate-500">Owner dapat menambah tarif khusus reparasi pada menu Tarif Borongan.</p>
+              <p className="text-xs mt-1 text-slate-500">Upah akan ditentukan manual oleh admin/owner saat approval.</p>
             </div>
             <div>
               <Label>Qty</Label>
               <Input type="number" step="0.01" min="0" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="0" />
-              {selectedRate && (
+              {selectedRate && qtyNum > 0 && (
                 <p className="text-xs mt-1 text-slate-500">
-                  Estimasi upah: <span className="font-semibold text-slate-900">{fmtIDR(preview)}</span>
+                  {qtyNum} {selectedRate.unit} {selectedRate.name}
                 </p>
               )}
             </div>

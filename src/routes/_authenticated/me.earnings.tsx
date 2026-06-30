@@ -199,10 +199,10 @@ function MyEarnings() {
     [outstandingCashbon],
   );
 
-  // Rincian garapan per jenis (Potong / Tempel / Solder / Kabel, dst)
+  // Rincian garapan per jenis (Potong / Tempel / Solder / Kabel, dst) — non-reparasi
   const jobBreakdown: SlipJobBreakdown[] = useMemo(() => {
     const map = new Map<string, SlipJobBreakdown>();
-    (logs ?? []).forEach((l) => {
+    (logs ?? []).filter((l) => !l.is_repair).forEach((l) => {
       const name = l.rate?.name ?? "Lainnya";
       const unit = l.rate?.unit ?? "pcs";
       const cur = map.get(name) ?? { name, unit, qty: 0, amount: 0 };
@@ -212,6 +212,23 @@ function MyEarnings() {
     });
     return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
   }, [logs]);
+
+  // Rincian khusus reparasi
+  const repairBreakdown: SlipJobBreakdown[] = useMemo(() => {
+    const map = new Map<string, SlipJobBreakdown>();
+    (logs ?? []).filter((l) => l.is_repair).forEach((l) => {
+      const name = l.rate?.name ?? "Reparasi";
+      const unit = l.rate?.unit ?? "pcs";
+      const cur = map.get(name) ?? { name, unit, qty: 0, amount: 0 };
+      cur.qty += Number(l.qty);
+      cur.amount += Number(l.amount);
+      map.set(name, cur);
+    });
+    return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
+  }, [logs]);
+
+  const repairTotalCount = useMemo(() => repairBreakdown.reduce((s, b) => s + b.qty, 0), [repairBreakdown]);
+  const repairTotalAmount = useMemo(() => repairBreakdown.reduce((s, b) => s + b.amount, 0), [repairBreakdown]);
 
   // Attendance per hari + jam kerja
   const attendanceDetail: SlipAttendance[] = useMemo(() => {
@@ -243,6 +260,7 @@ function MyEarnings() {
       periodStart: from,
       periodEnd: to,
       jobBreakdown,
+      repairBreakdown,
       attendance: attendanceDetail,
       base: baseTotal,
       bonus: 0,
@@ -413,6 +431,29 @@ function MyEarnings() {
             )}
           </div>
 
+          {/* Rincian reparasi (jika ada) */}
+          {repairBreakdown.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold uppercase text-orange-600 mb-2 flex items-center gap-1.5">
+                🔧 Rincian Pekerjaan Reparasi
+                <span className="text-[10px] font-normal normal-case text-orange-500">
+                  ({repairTotalCount} pekerjaan · {fmtIDR(repairTotalAmount)})
+                </span>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {repairBreakdown.map((b) => (
+                  <div key={b.name} className="rounded-lg border border-orange-200 bg-orange-50/40 px-3 py-2 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{b.name}</div>
+                      <div className="text-[11px] text-slate-500">{b.qty} {b.unit}</div>
+                    </div>
+                    <div className="text-sm font-semibold text-orange-700">{fmtIDR(b.amount)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Jam kerja */}
           <div className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
             <span className="text-sm text-slate-600">Total Jam Kerja Minggu Ini</span>
@@ -465,7 +506,10 @@ function MyEarnings() {
                     <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${tone.chip}`}>{l.status}</span>
                   </div>
                   <div className="mt-1.5 flex items-center justify-between text-sm">
-                    <span className="text-slate-600 truncate">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
+                    <span className="text-slate-600 truncate flex items-center gap-1.5">
+                      {l.is_repair && <span className="rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase">🔧 Reparasi</span>}
+                      <span className="truncate">{l.rate?.name} <span className="text-slate-400">× {l.qty}</span></span>
+                    </span>
                     <span className={`font-bold ${tone.amount}`}>{fmtIDR(Number(l.amount))}</span>
                   </div>
                 </div>
@@ -513,7 +557,12 @@ function MyEarnings() {
                         </div>
                       ) : "—"}
                     </TableCell>
-                    <TableCell>{l.rate?.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <span>{l.rate?.name}</span>
+                        {l.is_repair && <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 text-[10px]">🔧 Reparasi</Badge>}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">{l.qty}</TableCell>
                     <TableCell className="text-right">{fmtIDR(Number(l.amount))}</TableCell>
                     <TableCell><Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"}>{l.status}</Badge></TableCell>
