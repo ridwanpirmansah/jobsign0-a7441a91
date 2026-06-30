@@ -260,6 +260,7 @@ function MyEarnings() {
       periodStart: from,
       periodEnd: to,
       jobBreakdown,
+      repairBreakdown,
       attendance: attendanceDetail,
       base: baseTotal,
       bonus: 0,
