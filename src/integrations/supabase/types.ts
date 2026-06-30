@@ -215,6 +215,48 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          affects_pnl: boolean
+          amount: number
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at: string
+          created_by: string | null
+          description: string
+          expense_date: string
+          id: string
+          note: string | null
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          affects_pnl?: boolean
+          amount: number
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          created_by?: string | null
+          description: string
+          expense_date?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          affects_pnl?: boolean
+          amount?: number
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       job_logs: {
         Row: {
           amount: number
@@ -830,6 +872,15 @@ export type Database = {
       attendance_status: "hadir" | "izin" | "sakit" | "alpa"
       cashbon_status: "pending" | "approved" | "rejected" | "paid"
       employee_type: "borongan" | "harian"
+      expense_category:
+        | "iklan"
+        | "bahan_pokok"
+        | "bahan_penunjang"
+        | "operasional"
+        | "gaji"
+        | "utilitas"
+        | "transportasi"
+        | "lainnya"
       job_log_status: "pending" | "approved" | "rejected"
       order_source:
         | "shopee"
@@ -971,6 +1022,16 @@ export const Constants = {
       attendance_status: ["hadir", "izin", "sakit", "alpa"],
       cashbon_status: ["pending", "approved", "rejected", "paid"],
       employee_type: ["borongan", "harian"],
+      expense_category: [
+        "iklan",
+        "bahan_pokok",
+        "bahan_penunjang",
+        "operasional",
+        "gaji",
+        "utilitas",
+        "transportasi",
+        "lainnya",
+      ],
       job_log_status: ["pending", "approved", "rejected"],
       order_source: [
         "shopee",
