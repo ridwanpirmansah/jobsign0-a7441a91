@@ -17,6 +17,7 @@ export interface SlipData {
   periodStart: string; // yyyy-MM-dd (Sunday)
   periodEnd: string;   // yyyy-MM-dd (Saturday)
   jobBreakdown: SlipJobBreakdown[];
+  repairBreakdown?: SlipJobBreakdown[];
   attendance: SlipAttendance[];
   base: number;
   bonus: number;
