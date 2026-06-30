@@ -41,6 +41,7 @@ const ownerItems = [
   { title: "Kelola User", url: "/users", icon: UserCog },
   { title: "Payroll", url: "/payroll", icon: Wallet },
   { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
+  { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
   { title: "Laporan", url: "/reports", icon: BarChart3 },
 ];
 
