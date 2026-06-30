@@ -443,7 +443,12 @@ function MyJobs() {
                         </div>
                       ) : "—"}
                     </TableCell>
-                    <TableCell>{l.rate?.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <span>{l.rate?.name}</span>
+                        {l.is_repair && <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 text-[10px]">🔧 Reparasi</Badge>}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">{l.qty}</TableCell>
                     <TableCell className="text-right font-medium">{fmtIDR(Number(l.amount))}</TableCell>
                     <TableCell>
