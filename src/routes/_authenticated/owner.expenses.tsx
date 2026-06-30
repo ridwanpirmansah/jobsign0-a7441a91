@@ -32,6 +32,7 @@ import { id as idLocale } from "date-fns/locale";
 import {
   CalendarRange, ChevronDown, Plus, Pencil, Trash2, Wallet, TrendingDown, Tag,
   Megaphone, Package2, Boxes, Wrench, Banknote, Zap, Car, MoreHorizontal, Receipt,
+  Archive,
 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
@@ -52,7 +53,7 @@ const PERIODS: { value: Exclude<Period, "custom">; label: string }[] = [
 
 type Category =
   | "iklan" | "bahan_pokok" | "bahan_penunjang" | "operasional"
-  | "gaji" | "utilitas" | "transportasi" | "lainnya";
+  | "gaji" | "utilitas" | "transportasi" | "packing" | "lainnya";
 
 const CATEGORIES: { value: Category; label: string; color: string; icon: any; affectsPnl: boolean }[] = [
   { value: "iklan",           label: "Iklan & Marketing", color: "#ec4899", icon: Megaphone,    affectsPnl: true },
@@ -62,6 +63,7 @@ const CATEGORIES: { value: Category; label: string; color: string; icon: any; af
   { value: "gaji",            label: "Gaji & Upah",       color: "#10b981", icon: Banknote,     affectsPnl: true },
   { value: "utilitas",        label: "Listrik / Air / Internet", color: "#8b5cf6", icon: Zap, affectsPnl: true },
   { value: "transportasi",    label: "Transportasi",      color: "#ef4444", icon: Car,          affectsPnl: true },
+  { value: "packing",         label: "Packing",            color: "#d97706", icon: Archive,      affectsPnl: true },
   { value: "lainnya",         label: "Lainnya",           color: "#64748b", icon: MoreHorizontal, affectsPnl: true },
 ];
 const catMap = Object.fromEntries(CATEGORIES.map((c) => [c.value, c])) as Record<Category, typeof CATEGORIES[number]>;
