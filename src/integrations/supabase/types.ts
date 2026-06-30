@@ -881,6 +881,7 @@ export type Database = {
         | "utilitas"
         | "transportasi"
         | "lainnya"
+        | "packing"
       job_log_status: "pending" | "approved" | "rejected"
       order_source:
         | "shopee"
@@ -1031,6 +1032,7 @@ export const Constants = {
         "utilitas",
         "transportasi",
         "lainnya",
+        "packing",
       ],
       job_log_status: ["pending", "approved", "rejected"],
       order_source: [
