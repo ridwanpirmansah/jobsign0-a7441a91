@@ -176,7 +176,7 @@ function MyRepairs() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs mt-1 text-slate-500">Upah akan ditentukan manual oleh admin/owner saat approval.</p>
+              <p className="text-xs mt-1 text-slate-500">Upah akan ditentukan oleh admin</p>
             </div>
             <div>
               <Label>Qty</Label>
