@@ -63,6 +63,7 @@ const CATEGORIES: { value: Category; label: string; color: string; icon: any; af
   { value: "gaji",            label: "Gaji & Upah",       color: "#10b981", icon: Banknote,     affectsPnl: true },
   { value: "utilitas",        label: "Listrik / Air / Internet", color: "#8b5cf6", icon: Zap, affectsPnl: true },
   { value: "transportasi",    label: "Transportasi",      color: "#ef4444", icon: Car,          affectsPnl: true },
+  { value: "packing",         label: "Packing",            color: "#d97706", icon: Archive,      affectsPnl: true },
   { value: "lainnya",         label: "Lainnya",           color: "#64748b", icon: MoreHorizontal, affectsPnl: true },
 ];
 const catMap = Object.fromEntries(CATEGORIES.map((c) => [c.value, c])) as Record<Category, typeof CATEGORIES[number]>;
