@@ -298,7 +298,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const convertMut = useMutation({
     mutationFn: (o: any) => saveOrder({ data: {
-      id: o.id, source: o.source, status: "active", order_no: (!o.order_no || String(o.order_no).trim() === "" || String(o.order_no).trim() === "0") ? "" : o.order_no,
+      id: o.id, source: o.source, status: "active", order_no: "",
       co_date: o.co_date ?? new Date().toISOString().slice(0, 10),
       username: o.username, kota: o.kota, text_neon: o.text_neon,
       akrilik_p: Number(o.akrilik_p ?? 0), akrilik_l: Number(o.akrilik_l ?? 0),
