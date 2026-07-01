@@ -19,7 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, Plus, Pencil, Trash2 } from "lucide-react";
+import { ShoppingBag, Plus, Pencil, Trash2, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/orders")({
@@ -163,6 +163,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     const list = ordersQ.data ?? [];
     let max = 0;
     for (const o of list) {
+      if (o.status === "ready_stock" || o.status === "draft") continue;
+      if (/^RS-/i.test(String(o.order_no ?? ""))) continue;
       const m = String(o.order_no ?? "").match(/(\d+)/g);
       if (m) {
         const n = parseInt(m[m.length - 1], 10);
@@ -172,13 +174,35 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     return String(max + 1);
   }, [ordersQ.data]);
 
+  const nextReadyStockNo = useMemo(() => {
+    const list = ordersQ.data ?? [];
+    let max = 0;
+    for (const o of list) {
+      const s = String(o.order_no ?? "");
+      const m = s.match(/^RS-(\d+)$/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+    }
+    return `RS-${max + 1}`;
+  }, [ordersQ.data]);
+
   const openNew = () => {
-    const f = emptyForm(priceMap, nextOrderNo);
-    if (isReady) { f.status = "ready_stock"; f.order_no = ""; }
+    const f = emptyForm(priceMap, isReady ? nextReadyStockNo : nextOrderNo);
+    if (isReady) { f.status = "ready_stock"; }
     setForm(f);
     setOpen(true);
   };
   const openEdit = (o: any) => { setForm(toForm(o)); setOpen(true); };
+  const openDuplicate = (o: any) => {
+    const f = toForm(o);
+    delete f.id;
+    f.order_no = isReady ? nextReadyStockNo : nextOrderNo;
+    f.co_date = new Date().toISOString().slice(0, 10);
+    setForm(f);
+    setOpen(true);
+  };
 
   const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
 
@@ -274,7 +298,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const convertMut = useMutation({
     mutationFn: (o: any) => saveOrder({ data: {
-      id: o.id, source: o.source, status: "active", order_no: (!o.order_no || String(o.order_no).trim() === "" || String(o.order_no).trim() === "0") ? "" : o.order_no,
+      id: o.id, source: o.source, status: "active", order_no: "",
       co_date: o.co_date ?? new Date().toISOString().slice(0, 10),
       username: o.username, kota: o.kota, text_neon: o.text_neon,
       akrilik_p: Number(o.akrilik_p ?? 0), akrilik_l: Number(o.akrilik_l ?? 0),
@@ -529,11 +553,17 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     <TableCell className={`text-right font-medium ${Number(o.profit) >= 0 ? "text-emerald-600" : "text-destructive"}`}>{rp(Number(o.profit))}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {isReady && (
-                        <Button size="sm" variant="outline" className="mr-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                          disabled={convertMut.isPending}
-                          onClick={() => { if (confirm(`Konversi ${o.order_no} jadi Order penjualan?`)) convertMut.mutate(o); }}>
-                          Jadikan Order
-                        </Button>
+                        <>
+                          <Button size="sm" variant="outline" className="mr-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                            disabled={convertMut.isPending}
+                            onClick={() => { if (confirm(`Konversi ${o.order_no} jadi Order penjualan? Nomor RS akan diganti nomor order berikutnya.`)) convertMut.mutate(o); }}>
+                            Jadikan Order
+                          </Button>
+                          <Button size="icon" variant="ghost" title="Duplikat" onClick={() => openDuplicate(o)}><Copy className="h-4 w-4"/></Button>
+                        </>
+                      )}
+                      {!isReady && (
+                        <Button size="icon" variant="ghost" title="Duplikat" onClick={() => openDuplicate(o)}><Copy className="h-4 w-4"/></Button>
                       )}
                       <Button size="icon" variant="ghost" onClick={() => openEdit(o)}><Pencil className="h-4 w-4"/></Button>
                       <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Hapus ${o.order_no}?`)) delMut.mutate(o.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
