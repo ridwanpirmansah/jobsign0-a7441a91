@@ -163,6 +163,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     const list = ordersQ.data ?? [];
     let max = 0;
     for (const o of list) {
+      if (o.status === "ready_stock" || o.status === "draft") continue;
+      if (/^RS-/i.test(String(o.order_no ?? ""))) continue;
       const m = String(o.order_no ?? "").match(/(\d+)/g);
       if (m) {
         const n = parseInt(m[m.length - 1], 10);
@@ -172,13 +174,35 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     return String(max + 1);
   }, [ordersQ.data]);
 
+  const nextReadyStockNo = useMemo(() => {
+    const list = ordersQ.data ?? [];
+    let max = 0;
+    for (const o of list) {
+      const s = String(o.order_no ?? "");
+      const m = s.match(/^RS-(\d+)$/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+    }
+    return `RS-${max + 1}`;
+  }, [ordersQ.data]);
+
   const openNew = () => {
-    const f = emptyForm(priceMap, nextOrderNo);
-    if (isReady) { f.status = "ready_stock"; f.order_no = ""; }
+    const f = emptyForm(priceMap, isReady ? nextReadyStockNo : nextOrderNo);
+    if (isReady) { f.status = "ready_stock"; }
     setForm(f);
     setOpen(true);
   };
   const openEdit = (o: any) => { setForm(toForm(o)); setOpen(true); };
+  const openDuplicate = (o: any) => {
+    const f = toForm(o);
+    delete f.id;
+    f.order_no = isReady ? nextReadyStockNo : nextOrderNo;
+    f.co_date = new Date().toISOString().slice(0, 10);
+    setForm(f);
+    setOpen(true);
+  };
 
   const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
 
