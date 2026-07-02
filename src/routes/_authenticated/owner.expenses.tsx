@@ -92,6 +92,7 @@ function presetRange(p: Exclude<Period, "custom">): { from: Date; to: Date } {
   return { from: startOfDay(subDays(now, n - 1)), to: endOfDay(now) };
 }
 
+type PaymentStatus = "lunas" | "hutang";
 type ExpenseRow = {
   id: string;
   expense_date: string;
@@ -101,6 +102,7 @@ type ExpenseRow = {
   vendor: string | null;
   note: string | null;
   affects_pnl: boolean;
+  payment_status: PaymentStatus;
   created_at: string;
 };
 
