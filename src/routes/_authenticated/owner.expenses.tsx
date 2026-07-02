@@ -547,12 +547,13 @@ function ExpensesPage() {
   );
 }
 
-function KpiCard({ label, value, hint, tone, icon }: { label: string; value: string; hint?: string; tone: "rose"|"amber"|"indigo"|"emerald"; icon: React.ReactNode }) {
+function KpiCard({ label, value, hint, tone, icon }: { label: string; value: string; hint?: string; tone: "rose"|"amber"|"indigo"|"emerald"|"orange"; icon: React.ReactNode }) {
   const tones: Record<string, string> = {
     rose: "from-rose-50 to-rose-100 text-rose-700",
     amber: "from-amber-50 to-amber-100 text-amber-700",
     indigo: "from-indigo-50 to-indigo-100 text-indigo-700",
     emerald: "from-emerald-50 to-emerald-100 text-emerald-700",
+    orange: "from-orange-50 to-orange-100 text-orange-700",
   };
   return (
     <Card className={`border-0 shadow-sm bg-gradient-to-br ${tones[tone]}`}>
