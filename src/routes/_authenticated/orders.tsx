@@ -553,16 +553,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No</TableHead>
-                  <TableHead>Tgl</TableHead>
-                  <TableHead>Sumber</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>User / Kota</TableHead>
-                  <TableHead>Text</TableHead>
-                  <TableHead className="text-right">Titik</TableHead>
-                  <TableHead className="text-right">HPP</TableHead>
-                  <TableHead className="text-right">Payment</TableHead>
-                  <TableHead className="text-right">Profit</TableHead>
+                  <SortableHead label="No" col="order_no" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Tgl" col="co_date" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Sumber" col="source" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Status" col="status" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="User / Kota" col="username" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Text" col="text_neon" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Titik" col="titik" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
+                  <SortableHead label="HPP" col="hpp" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
+                  <SortableHead label="Payment" col="payment" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
+                  <SortableHead label="Profit" col="profit" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
