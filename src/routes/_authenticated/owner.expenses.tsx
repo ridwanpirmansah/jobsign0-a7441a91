@@ -138,7 +138,7 @@ function ExpensesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("expenses")
-        .select("id,expense_date,category,amount,description,vendor,note,affects_pnl,created_at")
+        .select("id,expense_date,category,amount,description,vendor,note,affects_pnl,payment_status,created_at")
         .gte("expense_date", fromStr)
         .lte("expense_date", toStr)
         .order("expense_date", { ascending: false })
