@@ -226,6 +226,7 @@ export type Database = {
           expense_date: string
           id: string
           note: string | null
+          payment_status: string
           updated_at: string
           vendor: string | null
         }
@@ -239,6 +240,7 @@ export type Database = {
           expense_date?: string
           id?: string
           note?: string | null
+          payment_status?: string
           updated_at?: string
           vendor?: string | null
         }
@@ -252,6 +254,7 @@ export type Database = {
           expense_date?: string
           id?: string
           note?: string | null
+          payment_status?: string
           updated_at?: string
           vendor?: string | null
         }

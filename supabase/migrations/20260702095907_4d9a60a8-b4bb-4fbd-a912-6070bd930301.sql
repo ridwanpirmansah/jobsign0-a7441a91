@@ -1,0 +1,1 @@
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS payment_status text NOT NULL DEFAULT 'lunas' CHECK (payment_status IN ('lunas','hutang'));
