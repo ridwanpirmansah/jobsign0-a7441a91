@@ -207,6 +207,22 @@ function ExpensesPage() {
     onError: (e: any) => toast.error(e.message ?? "Gagal menghapus"),
   });
 
+  const togglePayMutation = useMutation({
+    mutationFn: async ({ id, next }: { id: string; next: PaymentStatus }) => {
+      const { error } = await supabase.from("expenses").update({ payment_status: next }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(v.next === "lunas" ? "Ditandai Lunas" : "Ditandai Hutang");
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Gagal memperbarui status"),
+  });
+
+  const unpaidTotal = rows.filter((r) => r.payment_status === "hutang").reduce((s, r) => s + Number(r.amount), 0);
+  const unpaidCount = rows.filter((r) => r.payment_status === "hutang").length;
+
+
   if (me && !isStaff(me.role)) {
     return <p className="p-6 text-sm text-rose-600">Akses ditolak. Halaman ini hanya untuk admin/owner.</p>;
   }
