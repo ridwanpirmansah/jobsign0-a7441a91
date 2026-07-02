@@ -159,6 +159,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [srcFilter, setSrcFilter] = useState<string>("all");
   const [form, setForm] = useState<FormState>(emptyForm({}));
 
+  type SortKey = "order_no" | "co_date" | "source" | "status" | "username" | "text_neon" | "titik" | "hpp" | "payment" | "profit";
+  const [sortKey, setSortKey] = useState<SortKey>("co_date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "co_date" || k === "profit" || k === "payment" || k === "hpp" ? "desc" : "asc"); }
+  };
+
+
   const nextOrderNo = useMemo(() => {
     const list = ordersQ.data ?? [];
     let max = 0;
