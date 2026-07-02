@@ -510,6 +510,11 @@ function ExpensesPage() {
                         {!r.affects_pnl && (
                           <Badge variant="outline" className="text-[10px] text-indigo-600 border-indigo-200">HPP</Badge>
                         )}
+                        {r.payment_status === "lunas" ? (
+                          <Badge className="text-[10px] bg-emerald-100 text-emerald-700 border-0 hover:bg-emerald-100">✓ Lunas</Badge>
+                        ) : (
+                          <Badge className="text-[10px] bg-orange-100 text-orange-700 border-0 hover:bg-orange-100">● Hutang</Badge>
+                        )}
                       </div>
                       <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap mt-0.5">
                         <span>{format(new Date(r.expense_date), "EEE, d MMM yyyy", { locale: idLocale })}</span>
@@ -520,6 +525,14 @@ function ExpensesPage() {
                     <div className="text-right shrink-0">
                       <div className="font-bold text-slate-900">{fmtIDR(Number(r.amount))}</div>
                       <div className="flex items-center justify-end gap-1 mt-1">
+                        <Button
+                          size="sm" variant="ghost"
+                          className={`h-7 px-2 text-[10px] font-semibold ${r.payment_status === "lunas" ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50" : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"}`}
+                          disabled={togglePayMutation.isPending}
+                          onClick={() => togglePayMutation.mutate({ id: r.id, next: r.payment_status === "lunas" ? "hutang" : "lunas" })}
+                        >
+                          {r.payment_status === "lunas" ? "→ Hutang" : "→ Lunas"}
+                        </Button>
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditing(r); setDialogOpen(true); }}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -529,6 +542,7 @@ function ExpensesPage() {
                         </Button>
                       </div>
                     </div>
+
                   </div>
                 );
               })}
