@@ -327,14 +327,37 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const filtered = useMemo(() => {
     const list = ordersQ.data ?? [];
-    return list.filter((o: any) => {
+    const out = list.filter((o: any) => {
       if (isReady ? o.status !== "ready_stock" : o.status === "ready_stock") return false;
       if (srcFilter !== "all" && o.source !== srcFilter) return false;
       if (!filter.trim()) return true;
       const q = filter.toLowerCase();
       return [o.order_no, o.username, o.kota, o.text_neon].some((v) => String(v ?? "").toLowerCase().includes(q));
     });
-  }, [ordersQ.data, filter, srcFilter, isReady]);
+    const numericKeys: SortKey[] = ["titik", "hpp", "payment", "profit"];
+    const sorted = [...out].sort((a: any, b: any) => {
+      let av: any; let bv: any;
+      if (sortKey === "order_no") {
+        // natural sort: extract numeric suffix, fallback to string
+        const na = parseInt(String(a.order_no ?? "").replace(/\D/g, ""), 10);
+        const nb = parseInt(String(b.order_no ?? "").replace(/\D/g, ""), 10);
+        av = isNaN(na) ? -1 : na; bv = isNaN(nb) ? -1 : nb;
+      } else if (sortKey === "payment") {
+        av = Number(a.payment || 0) + Number(a.split || 0);
+        bv = Number(b.payment || 0) + Number(b.split || 0);
+      } else if (numericKeys.includes(sortKey)) {
+        av = Number(a[sortKey] || 0); bv = Number(b[sortKey] || 0);
+      } else {
+        av = String(a[sortKey] ?? "").toLowerCase();
+        bv = String(b[sortKey] ?? "").toLowerCase();
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [ordersQ.data, filter, srcFilter, isReady, sortKey, sortDir]);
+
 
   const totals = useMemo(() => {
     return filtered.reduce(
