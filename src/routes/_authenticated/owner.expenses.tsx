@@ -747,6 +747,26 @@ function ExpenseDialog({
           </div>
           <div className="flex items-center justify-between rounded-lg border border-slate-200 p-3 bg-slate-50">
             <div className="min-w-0">
+              <div className="text-sm font-semibold text-slate-800">Status Pembayaran</div>
+              <div className="text-[11px] text-slate-500">
+                Tandai apakah pengeluaran ini sudah dibayar atau masih hutang.
+              </div>
+            </div>
+            <div className="flex rounded-md border border-slate-200 overflow-hidden bg-white shrink-0">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, payment_status: "lunas" }))}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${form.payment_status === "lunas" ? "bg-emerald-500 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >Lunas</button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, payment_status: "hutang" }))}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${form.payment_status === "hutang" ? "bg-orange-500 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >Hutang</button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 p-3 bg-slate-50">
+            <div className="min-w-0">
               <div className="text-sm font-semibold text-slate-800">Masuk Laporan Laba/Rugi</div>
               <div className="text-[11px] text-slate-500">
                 Matikan jika sudah dihitung di HPP (mis. bahan pokok).
@@ -754,6 +774,7 @@ function ExpenseDialog({
             </div>
             <Switch checked={form.affects_pnl} onCheckedChange={(v) => setForm((f) => ({ ...f, affects_pnl: v }))} />
           </div>
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
