@@ -375,12 +375,14 @@ function ExpensesPage() {
       </Card>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <KpiCard label="Total Pengeluaran" value={fmtIDR(total)} hint={`${rows.length} transaksi`} tone="rose" icon={<Wallet className="h-4 w-4" />} />
         <KpiCard label="Beban Usaha (P&L)" value={fmtIDR(pnlTotal)} hint="Masuk laporan laba/rugi" tone="amber" icon={<TrendingDown className="h-4 w-4" />} />
         <KpiCard label="Belanja Bahan Pokok" value={fmtIDR(hppTotal)} hint="Sudah dihitung di HPP" tone="indigo" icon={<Package2 className="h-4 w-4" />} />
         <KpiCard label="Rata-rata / Hari" value={fmtIDR(avgDaily)} hint={`Periode ${range.days} hari`} tone="emerald" icon={<Banknote className="h-4 w-4" />} />
+        <KpiCard label="Belum Dibayar" value={fmtIDR(unpaidTotal)} hint={`${unpaidCount} transaksi hutang`} tone="orange" icon={<Wallet className="h-4 w-4" />} />
       </div>
+
 
       {isLoading && <p className="text-sm text-slate-500">Memuat data…</p>}
 
