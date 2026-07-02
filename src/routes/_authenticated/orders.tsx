@@ -19,7 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, Plus, Pencil, Trash2, Copy } from "lucide-react";
+import { ShoppingBag, Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/orders")({
@@ -158,6 +158,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [filter, setFilter] = useState("");
   const [srcFilter, setSrcFilter] = useState<string>("all");
   const [form, setForm] = useState<FormState>(emptyForm({}));
+
+  type SortKey = "order_no" | "co_date" | "source" | "status" | "username" | "text_neon" | "titik" | "hpp" | "payment" | "profit";
+  const [sortKey, setSortKey] = useState<SortKey>("co_date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "co_date" || k === "profit" || k === "payment" || k === "hpp" ? "desc" : "asc"); }
+  };
+
 
   const nextOrderNo = useMemo(() => {
     const list = ordersQ.data ?? [];
@@ -318,14 +327,37 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const filtered = useMemo(() => {
     const list = ordersQ.data ?? [];
-    return list.filter((o: any) => {
+    const out = list.filter((o: any) => {
       if (isReady ? o.status !== "ready_stock" : o.status === "ready_stock") return false;
       if (srcFilter !== "all" && o.source !== srcFilter) return false;
       if (!filter.trim()) return true;
       const q = filter.toLowerCase();
       return [o.order_no, o.username, o.kota, o.text_neon].some((v) => String(v ?? "").toLowerCase().includes(q));
     });
-  }, [ordersQ.data, filter, srcFilter, isReady]);
+    const numericKeys: SortKey[] = ["titik", "hpp", "payment", "profit"];
+    const sorted = [...out].sort((a: any, b: any) => {
+      let av: any; let bv: any;
+      if (sortKey === "order_no") {
+        // natural sort: extract numeric suffix, fallback to string
+        const na = parseInt(String(a.order_no ?? "").replace(/\D/g, ""), 10);
+        const nb = parseInt(String(b.order_no ?? "").replace(/\D/g, ""), 10);
+        av = isNaN(na) ? -1 : na; bv = isNaN(nb) ? -1 : nb;
+      } else if (sortKey === "payment") {
+        av = Number(a.payment || 0) + Number(a.split || 0);
+        bv = Number(b.payment || 0) + Number(b.split || 0);
+      } else if (numericKeys.includes(sortKey)) {
+        av = Number(a[sortKey] || 0); bv = Number(b[sortKey] || 0);
+      } else {
+        av = String(a[sortKey] ?? "").toLowerCase();
+        bv = String(b[sortKey] ?? "").toLowerCase();
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [ordersQ.data, filter, srcFilter, isReady, sortKey, sortDir]);
+
 
   const totals = useMemo(() => {
     return filtered.reduce(
@@ -521,16 +553,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No</TableHead>
-                  <TableHead>Tgl</TableHead>
-                  <TableHead>Sumber</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>User / Kota</TableHead>
-                  <TableHead>Text</TableHead>
-                  <TableHead className="text-right">Titik</TableHead>
-                  <TableHead className="text-right">HPP</TableHead>
-                  <TableHead className="text-right">Payment</TableHead>
-                  <TableHead className="text-right">Profit</TableHead>
+                  <SortableHead label="No" col="order_no" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Tgl" col="co_date" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Sumber" col="source" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Status" col="status" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="User / Kota" col="username" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Text" col="text_neon" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Titik" col="titik" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
+                  <SortableHead label="HPP" col="hpp" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
+                  <SortableHead label="Payment" col="payment" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
+                  <SortableHead label="Profit" col="profit" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -595,3 +627,30 @@ function StatCard({ label, value, positive }: { label: string; value: string; po
     </CardContent></Card>
   );
 }
+
+function SortableHead({
+  label, col, sortKey, sortDir, onClick, align,
+}: {
+  label: string;
+  col: string;
+  sortKey: string;
+  sortDir: "asc" | "desc";
+  onClick: (k: any) => void;
+  align?: "right";
+}) {
+  const active = sortKey === col;
+  const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <TableHead className={align === "right" ? "text-right" : undefined}>
+      <button
+        type="button"
+        onClick={() => onClick(col)}
+        className={`inline-flex items-center gap-1 select-none hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : ""} ${align === "right" ? "flex-row-reverse" : ""}`}
+      >
+        <span>{label}</span>
+        <Icon className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"}`} />
+      </button>
+    </TableHead>
+  );
+}
+

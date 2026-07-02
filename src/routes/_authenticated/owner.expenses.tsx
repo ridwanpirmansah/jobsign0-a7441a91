@@ -92,6 +92,7 @@ function presetRange(p: Exclude<Period, "custom">): { from: Date; to: Date } {
   return { from: startOfDay(subDays(now, n - 1)), to: endOfDay(now) };
 }
 
+type PaymentStatus = "lunas" | "hutang";
 type ExpenseRow = {
   id: string;
   expense_date: string;
@@ -101,6 +102,7 @@ type ExpenseRow = {
   vendor: string | null;
   note: string | null;
   affects_pnl: boolean;
+  payment_status: PaymentStatus;
   created_at: string;
 };
 
@@ -136,7 +138,7 @@ function ExpensesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("expenses")
-        .select("id,expense_date,category,amount,description,vendor,note,affects_pnl,created_at")
+        .select("id,expense_date,category,amount,description,vendor,note,affects_pnl,payment_status,created_at")
         .gte("expense_date", fromStr)
         .lte("expense_date", toStr)
         .order("expense_date", { ascending: false })
@@ -204,6 +206,22 @@ function ExpensesPage() {
     },
     onError: (e: any) => toast.error(e.message ?? "Gagal menghapus"),
   });
+
+  const togglePayMutation = useMutation({
+    mutationFn: async ({ id, next }: { id: string; next: PaymentStatus }) => {
+      const { error } = await supabase.from("expenses").update({ payment_status: next }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(v.next === "lunas" ? "Ditandai Lunas" : "Ditandai Hutang");
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Gagal memperbarui status"),
+  });
+
+  const unpaidTotal = rows.filter((r) => r.payment_status === "hutang").reduce((s, r) => s + Number(r.amount), 0);
+  const unpaidCount = rows.filter((r) => r.payment_status === "hutang").length;
+
 
   if (me && !isStaff(me.role)) {
     return <p className="p-6 text-sm text-rose-600">Akses ditolak. Halaman ini hanya untuk admin/owner.</p>;
@@ -357,12 +375,14 @@ function ExpensesPage() {
       </Card>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <KpiCard label="Total Pengeluaran" value={fmtIDR(total)} hint={`${rows.length} transaksi`} tone="rose" icon={<Wallet className="h-4 w-4" />} />
         <KpiCard label="Beban Usaha (P&L)" value={fmtIDR(pnlTotal)} hint="Masuk laporan laba/rugi" tone="amber" icon={<TrendingDown className="h-4 w-4" />} />
         <KpiCard label="Belanja Bahan Pokok" value={fmtIDR(hppTotal)} hint="Sudah dihitung di HPP" tone="indigo" icon={<Package2 className="h-4 w-4" />} />
         <KpiCard label="Rata-rata / Hari" value={fmtIDR(avgDaily)} hint={`Periode ${range.days} hari`} tone="emerald" icon={<Banknote className="h-4 w-4" />} />
+        <KpiCard label="Belum Dibayar" value={fmtIDR(unpaidTotal)} hint={`${unpaidCount} transaksi hutang`} tone="orange" icon={<Wallet className="h-4 w-4" />} />
       </div>
+
 
       {isLoading && <p className="text-sm text-slate-500">Memuat data…</p>}
 
@@ -490,6 +510,11 @@ function ExpensesPage() {
                         {!r.affects_pnl && (
                           <Badge variant="outline" className="text-[10px] text-indigo-600 border-indigo-200">HPP</Badge>
                         )}
+                        {r.payment_status === "lunas" ? (
+                          <Badge className="text-[10px] bg-emerald-100 text-emerald-700 border-0 hover:bg-emerald-100">✓ Lunas</Badge>
+                        ) : (
+                          <Badge className="text-[10px] bg-orange-100 text-orange-700 border-0 hover:bg-orange-100">● Hutang</Badge>
+                        )}
                       </div>
                       <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap mt-0.5">
                         <span>{format(new Date(r.expense_date), "EEE, d MMM yyyy", { locale: idLocale })}</span>
@@ -500,6 +525,14 @@ function ExpensesPage() {
                     <div className="text-right shrink-0">
                       <div className="font-bold text-slate-900">{fmtIDR(Number(r.amount))}</div>
                       <div className="flex items-center justify-end gap-1 mt-1">
+                        <Button
+                          size="sm" variant="ghost"
+                          className={`h-7 px-2 text-[10px] font-semibold ${r.payment_status === "lunas" ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50" : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"}`}
+                          disabled={togglePayMutation.isPending}
+                          onClick={() => togglePayMutation.mutate({ id: r.id, next: r.payment_status === "lunas" ? "hutang" : "lunas" })}
+                        >
+                          {r.payment_status === "lunas" ? "→ Hutang" : "→ Lunas"}
+                        </Button>
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditing(r); setDialogOpen(true); }}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -509,6 +542,7 @@ function ExpensesPage() {
                         </Button>
                       </div>
                     </div>
+
                   </div>
                 );
               })}
@@ -527,12 +561,13 @@ function ExpensesPage() {
   );
 }
 
-function KpiCard({ label, value, hint, tone, icon }: { label: string; value: string; hint?: string; tone: "rose"|"amber"|"indigo"|"emerald"; icon: React.ReactNode }) {
+function KpiCard({ label, value, hint, tone, icon }: { label: string; value: string; hint?: string; tone: "rose"|"amber"|"indigo"|"emerald"|"orange"; icon: React.ReactNode }) {
   const tones: Record<string, string> = {
     rose: "from-rose-50 to-rose-100 text-rose-700",
     amber: "from-amber-50 to-amber-100 text-amber-700",
     indigo: "from-indigo-50 to-indigo-100 text-indigo-700",
     emerald: "from-emerald-50 to-emerald-100 text-emerald-700",
+    orange: "from-orange-50 to-orange-100 text-orange-700",
   };
   return (
     <Card className={`border-0 shadow-sm bg-gradient-to-br ${tones[tone]}`}>
@@ -564,6 +599,7 @@ function ExpenseDialog({
     vendor: "",
     note: "",
     affects_pnl: true,
+    payment_status: "lunas" as PaymentStatus,
   });
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
@@ -579,11 +615,13 @@ function ExpenseDialog({
           vendor: editing.vendor ?? "",
           note: editing.note ?? "",
           affects_pnl: editing.affects_pnl,
+          payment_status: editing.payment_status ?? "lunas",
         });
       } else {
         setForm({
           expense_date: format(new Date(), "yyyy-MM-dd"),
-          category: "iklan", amount: "", description: "", vendor: "", note: "", affects_pnl: true,
+          category: "iklan", amount: "", description: "", vendor: "", note: "",
+          affects_pnl: true, payment_status: "lunas",
         });
       }
     }
@@ -602,6 +640,7 @@ function ExpenseDialog({
         vendor: form.vendor.trim() || null,
         note: form.note.trim() || null,
         affects_pnl: form.affects_pnl,
+        payment_status: form.payment_status,
       };
       if (editing) {
         const { error } = await supabase.from("expenses").update(payload).eq("id", editing.id);
@@ -708,6 +747,26 @@ function ExpenseDialog({
           </div>
           <div className="flex items-center justify-between rounded-lg border border-slate-200 p-3 bg-slate-50">
             <div className="min-w-0">
+              <div className="text-sm font-semibold text-slate-800">Status Pembayaran</div>
+              <div className="text-[11px] text-slate-500">
+                Tandai apakah pengeluaran ini sudah dibayar atau masih hutang.
+              </div>
+            </div>
+            <div className="flex rounded-md border border-slate-200 overflow-hidden bg-white shrink-0">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, payment_status: "lunas" }))}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${form.payment_status === "lunas" ? "bg-emerald-500 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >Lunas</button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, payment_status: "hutang" }))}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${form.payment_status === "hutang" ? "bg-orange-500 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >Hutang</button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 p-3 bg-slate-50">
+            <div className="min-w-0">
               <div className="text-sm font-semibold text-slate-800">Masuk Laporan Laba/Rugi</div>
               <div className="text-[11px] text-slate-500">
                 Matikan jika sudah dihitung di HPP (mis. bahan pokok).
@@ -715,6 +774,7 @@ function ExpenseDialog({
             </div>
             <Switch checked={form.affects_pnl} onCheckedChange={(v) => setForm((f) => ({ ...f, affects_pnl: v }))} />
           </div>
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
