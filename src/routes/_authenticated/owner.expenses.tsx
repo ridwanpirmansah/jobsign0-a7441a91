@@ -599,6 +599,7 @@ function ExpenseDialog({
     vendor: "",
     note: "",
     affects_pnl: true,
+    payment_status: "lunas" as PaymentStatus,
   });
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
@@ -614,11 +615,13 @@ function ExpenseDialog({
           vendor: editing.vendor ?? "",
           note: editing.note ?? "",
           affects_pnl: editing.affects_pnl,
+          payment_status: editing.payment_status ?? "lunas",
         });
       } else {
         setForm({
           expense_date: format(new Date(), "yyyy-MM-dd"),
-          category: "iklan", amount: "", description: "", vendor: "", note: "", affects_pnl: true,
+          category: "iklan", amount: "", description: "", vendor: "", note: "",
+          affects_pnl: true, payment_status: "lunas",
         });
       }
     }
