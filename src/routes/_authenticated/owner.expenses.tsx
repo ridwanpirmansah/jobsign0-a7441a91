@@ -640,6 +640,7 @@ function ExpenseDialog({
         vendor: form.vendor.trim() || null,
         note: form.note.trim() || null,
         affects_pnl: form.affects_pnl,
+        payment_status: form.payment_status,
       };
       if (editing) {
         const { error } = await supabase.from("expenses").update(payload).eq("id", editing.id);
