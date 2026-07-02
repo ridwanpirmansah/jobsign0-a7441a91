@@ -627,3 +627,30 @@ function StatCard({ label, value, positive }: { label: string; value: string; po
     </CardContent></Card>
   );
 }
+
+function SortableHead({
+  label, col, sortKey, sortDir, onClick, align,
+}: {
+  label: string;
+  col: string;
+  sortKey: string;
+  sortDir: "asc" | "desc";
+  onClick: (k: any) => void;
+  align?: "right";
+}) {
+  const active = sortKey === col;
+  const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <TableHead className={align === "right" ? "text-right" : undefined}>
+      <button
+        type="button"
+        onClick={() => onClick(col)}
+        className={`inline-flex items-center gap-1 select-none hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : ""} ${align === "right" ? "flex-row-reverse" : ""}`}
+      >
+        <span>{label}</span>
+        <Icon className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"}`} />
+      </button>
+    </TableHead>
+  );
+}
+
