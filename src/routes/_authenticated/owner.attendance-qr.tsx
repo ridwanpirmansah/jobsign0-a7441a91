@@ -164,6 +164,39 @@ function AttendanceQrPage() {
     }).catch(() => undefined);
   }, [dailyToken]);
 
+  useEffect(() => {
+    if (!permToken || !permCanvasRef.current) return;
+    QRCode.toCanvas(permCanvasRef.current, permToken, {
+      width: 360, margin: 2, color: { dark: "#0f172a", light: "#ffffff" },
+    }).catch(() => undefined);
+  }, [permToken]);
+
+  const downloadPerm = async () => {
+    if (!permToken) return;
+    const dataUrl = await QRCode.toDataURL(permToken, {
+      width: 1024, margin: 4, color: { dark: "#0f172a", light: "#ffffff" },
+    });
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `qr-absensi-permanen.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const printPerm = () => {
+    if (!permToken || !permCanvasRef.current) return;
+    const url = permCanvasRef.current.toDataURL("image/png");
+    const w = window.open("", "_blank", "width=600,height=800");
+    if (!w) return;
+    w.document.write(`<!doctype html><html><head><title>QR Absensi Permanen</title>
+      <style>body{font-family:system-ui;text-align:center;padding:24px}h1{font-size:20px;margin:8px 0}p{color:#475569;font-size:13px;margin:4px 0 16px}img{width:90%;max-width:480px}</style>
+      </head><body><h1>QR Absensi Permanen</h1><p>Berlaku selamanya (kecuali kunci dirotasi)</p>
+      <img src="${url}" /><p style="margin-top:16px">Scan untuk Check-In / Check-Out</p>
+      <script>window.onload=()=>{setTimeout(()=>window.print(),300)}<\/script></body></html>`);
+    w.document.close();
+  };
+
   const downloadDaily = async () => {
     if (!dailyToken) return;
     const dataUrl = await QRCode.toDataURL(dailyToken, {
