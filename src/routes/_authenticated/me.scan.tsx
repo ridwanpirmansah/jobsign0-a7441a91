@@ -153,6 +153,16 @@ function ScanPage() {
         </Card>
       )}
 
+      {settings?.enforce_location && (
+        <Card className="border-sky-200 bg-sky-50">
+          <CardContent className="p-3 text-sm text-sky-800 flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Absensi wajib berada dalam radius {settings.radius_meters ?? 100} m dari workshop. Izinkan akses lokasi saat diminta.
+          </CardContent>
+        </Card>
+      )}
+
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base flex items-center gap-2"><Camera className="h-4 w-4" /> Kamera</CardTitle>
