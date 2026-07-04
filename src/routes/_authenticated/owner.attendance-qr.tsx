@@ -310,6 +310,99 @@ function AttendanceQrPage() {
         </CardContent>
       </Card>
 
+      <Card className="border-emerald-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base flex items-center gap-2">
+            <InfinityIcon className="h-4 w-4 text-emerald-600" />
+            QR Absensi Permanen
+          </CardTitle>
+          <Badge variant="outline" className="border-emerald-300 text-emerald-700">Seumur hidup</Badge>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-600">
+            QR ini berlaku selamanya (tidak berganti otomatis). Cetak dan tempel di workshop untuk absensi
+            harian. QR ini hanya menjadi tidak berlaku bila Anda merotasi kunci QR di bagian Keamanan.
+            Kombinasikan dengan validasi lokasi di bawah agar QR tidak bisa dipakai dari luar workshop.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={downloadPerm} disabled={!permToken} variant="outline">
+              <Download className="h-4 w-4 mr-2" /> Unduh PNG
+            </Button>
+            <Button onClick={printPerm} disabled={!permToken} variant="outline">
+              <Printer className="h-4 w-4 mr-2" /> Cetak
+            </Button>
+          </div>
+          {permToken && (
+            <div className="flex flex-col items-center gap-2 pt-2">
+              <div className="rounded-2xl border-2 border-emerald-200 bg-white p-4 shadow-sm">
+                <canvas ref={permCanvasRef} className="block" />
+              </div>
+              <div className="text-xs text-slate-500">Berlaku selamanya</div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-sky-200">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-sky-600" />
+            Validasi Lokasi (Radius Workshop)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Aktifkan untuk mewajibkan karyawan berada dalam radius yang ditentukan dari workshop saat scan QR.
+            Karyawan akan diminta izin lokasi oleh browser saat melakukan absensi.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Latitude</Label>
+              <Input value={locLat} onChange={(e) => setLocLat(e.target.value)} placeholder="-6.200000" />
+            </div>
+            <div>
+              <Label className="text-xs">Longitude</Label>
+              <Input value={locLng} onChange={(e) => setLocLng(e.target.value)} placeholder="106.816666" />
+            </div>
+            <div>
+              <Label className="text-xs">Radius (meter)</Label>
+              <Input type="number" min={10} value={locRadius} onChange={(e) => setLocRadius(e.target.value)} />
+            </div>
+            <div className="flex items-end">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300"
+                  checked={locEnforce}
+                  onChange={(e) => setLocEnforce(e.target.checked)}
+                />
+                Wajibkan validasi lokasi saat scan
+              </label>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={useMyLocation} variant="outline" disabled={gettingLoc}>
+              <LocateFixed className="h-4 w-4 mr-2" /> Pakai Lokasi Saya Sekarang
+            </Button>
+            <Button onClick={() => saveLocMut.mutate()} disabled={saveLocMut.isPending}>
+              Simpan Pengaturan
+            </Button>
+            {locLat && locLng && (
+              <a
+                href={`https://www.google.com/maps?q=${locLat},${locLng}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center text-sm text-sky-700 hover:underline px-3 py-2"
+              >
+                Lihat di Google Maps
+              </a>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+
+
       {me?.role === "owner" && (
         <Card>
           <CardHeader><CardTitle className="text-base">Keamanan</CardTitle></CardHeader>
