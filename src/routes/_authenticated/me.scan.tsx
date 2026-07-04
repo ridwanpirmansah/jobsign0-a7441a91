@@ -40,9 +40,38 @@ function ScanPage() {
   const processingRef = useRef(false);
   const lastTokenRef = useRef<string>("");
 
+  const { data: settings } = useQuery({
+    queryKey: ["att-settings-meta"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance_settings")
+        .select("enforce_location, radius_meters, workshop_lat, workshop_lng")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
+  });
+
   const checkInMut = useMutation({
     mutationFn: async (token: string) => {
-      const { data, error } = await supabase.rpc("attendance_check_in", { _token: token });
+      let lat: number | null = null;
+      let lng: number | null = null;
+      if (settings?.enforce_location) {
+        try {
+          const pos = await getPosition();
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        } catch (e) {
+          throw new Error("Izinkan akses lokasi untuk absensi: " + (e as Error).message);
+        }
+      }
+      const { data, error } = await supabase.rpc("attendance_check_in", {
+        _token: token,
+        _lat: lat,
+        _lng: lng,
+      });
       if (error) throw error;
       return data as { action: string; time: string };
     },
