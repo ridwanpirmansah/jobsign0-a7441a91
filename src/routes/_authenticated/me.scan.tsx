@@ -56,8 +56,8 @@ function ScanPage() {
 
   const checkInMut = useMutation({
     mutationFn: async (token: string) => {
-      let lat: number | null = null;
-      let lng: number | null = null;
+      let lat: number | undefined;
+      let lng: number | undefined;
       if (settings?.enforce_location) {
         try {
           const pos = await getPosition();
