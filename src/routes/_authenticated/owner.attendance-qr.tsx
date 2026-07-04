@@ -23,9 +23,15 @@ function AttendanceQrPage() {
   const qc = useQueryClient();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dailyCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const permCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [token, setToken] = useState<string>("");
   const [secsLeft, setSecsLeft] = useState<number>(WINDOW_SECONDS);
   const [dailyDate, setDailyDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [locLat, setLocLat] = useState<string>("");
+  const [locLng, setLocLng] = useState<string>("");
+  const [locRadius, setLocRadius] = useState<string>("100");
+  const [locEnforce, setLocEnforce] = useState<boolean>(false);
+  const [gettingLoc, setGettingLoc] = useState<boolean>(false);
 
   const { data: secret, isLoading, error } = useQuery({
     enabled: me?.role === "owner" || me?.role === "admin",
