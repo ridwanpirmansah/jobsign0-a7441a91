@@ -55,6 +55,74 @@ function AttendanceQrPage() {
     staleTime: 1000 * 60 * 60,
   });
 
+  const { data: permToken } = useQuery({
+    enabled: me?.role === "owner" || me?.role === "admin",
+    queryKey: ["attendance-perm-token"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_permanent_attendance_token");
+      if (error) throw error;
+      return data as string;
+    },
+    staleTime: Infinity,
+  });
+
+  const { data: settings } = useQuery({
+    enabled: me?.role === "owner" || me?.role === "admin",
+    queryKey: ["attendance-settings-loc"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance_settings")
+        .select("workshop_lat, workshop_lng, radius_meters, enforce_location")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (!settings) return;
+    setLocLat(settings.workshop_lat != null ? String(settings.workshop_lat) : "");
+    setLocLng(settings.workshop_lng != null ? String(settings.workshop_lng) : "");
+    setLocRadius(String(settings.radius_meters ?? 100));
+    setLocEnforce(!!settings.enforce_location);
+  }, [settings]);
+
+  const saveLocMut = useMutation({
+    mutationFn: async () => {
+      const lat = parseFloat(locLat);
+      const lng = parseFloat(locLng);
+      const radius = parseInt(locRadius, 10);
+      if (!isFinite(lat) || !isFinite(lng)) throw new Error("Latitude/Longitude tidak valid");
+      if (!isFinite(radius) || radius < 10) throw new Error("Radius minimal 10 meter");
+      const { error } = await supabase.rpc("update_attendance_location", {
+        _lat: lat, _lng: lng, _radius: radius, _enforce: locEnforce,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Pengaturan lokasi tersimpan");
+      qc.invalidateQueries({ queryKey: ["attendance-settings-loc"] });
+      qc.invalidateQueries({ queryKey: ["att-settings-meta"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const useMyLocation = () => {
+    if (!("geolocation" in navigator)) { toast.error("Perangkat tidak mendukung geolokasi"); return; }
+    setGettingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocLat(pos.coords.latitude.toFixed(6));
+        setLocLng(pos.coords.longitude.toFixed(6));
+        setGettingLoc(false);
+        toast.success("Lokasi saat ini dipakai");
+      },
+      (err) => { setGettingLoc(false); toast.error(err.message); },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
   const rotateMut = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("rotate_attendance_secret");
