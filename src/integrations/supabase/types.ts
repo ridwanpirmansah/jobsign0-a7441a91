@@ -16,19 +16,31 @@ export type Database = {
     Tables: {
       attendance_settings: {
         Row: {
+          enforce_location: boolean
           id: number
+          radius_meters: number
           secret: string
           updated_at: string
+          workshop_lat: number | null
+          workshop_lng: number | null
         }
         Insert: {
+          enforce_location?: boolean
           id?: number
+          radius_meters?: number
           secret?: string
           updated_at?: string
+          workshop_lat?: number | null
+          workshop_lng?: number | null
         }
         Update: {
+          enforce_location?: boolean
           id?: number
+          radius_meters?: number
           secret?: string
           updated_at?: string
+          workshop_lat?: number | null
+          workshop_lng?: number | null
         }
         Relationships: []
       }
@@ -817,7 +829,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      attendance_check_in: { Args: { _token: string }; Returns: Json }
+      attendance_check_in: {
+        Args: { _lat?: number; _lng?: number; _token: string }
+        Returns: Json
+      }
       get_attendance_secret: { Args: never; Returns: string }
       get_available_projects: {
         Args: never
@@ -832,6 +847,7 @@ export type Database = {
         }[]
       }
       get_daily_attendance_token: { Args: { _date?: string }; Returns: string }
+      get_permanent_attendance_token: { Args: never; Returns: string }
       get_project_rate_availability: {
         Args: { _project_id: string }
         Returns: {
@@ -867,6 +883,10 @@ export type Database = {
       rotate_attendance_secret: { Args: never; Returns: string }
       set_attendance_note: {
         Args: { _attendance_id: string; _note: string }
+        Returns: undefined
+      }
+      update_attendance_location: {
+        Args: { _enforce: boolean; _lat: number; _lng: number; _radius: number }
         Returns: undefined
       }
     }
