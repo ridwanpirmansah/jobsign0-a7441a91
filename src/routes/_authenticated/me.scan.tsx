@@ -1,18 +1,32 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Camera, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { Camera, CheckCircle2, XCircle, ArrowLeft, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/me/scan")({
   component: ScanPage,
 });
+
+function getPosition(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (!("geolocation" in navigator)) {
+      reject(new Error("Perangkat tidak mendukung geolokasi"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 15000,
+    });
+  });
+}
 
 type LastResult = { ok: boolean; message: string; action?: string };
 
@@ -26,9 +40,38 @@ function ScanPage() {
   const processingRef = useRef(false);
   const lastTokenRef = useRef<string>("");
 
+  const { data: settings } = useQuery({
+    queryKey: ["att-settings-meta"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance_settings")
+        .select("enforce_location, radius_meters, workshop_lat, workshop_lng")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
+  });
+
   const checkInMut = useMutation({
     mutationFn: async (token: string) => {
-      const { data, error } = await supabase.rpc("attendance_check_in", { _token: token });
+      let lat: number | undefined;
+      let lng: number | undefined;
+      if (settings?.enforce_location) {
+        try {
+          const pos = await getPosition();
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        } catch (e) {
+          throw new Error("Izinkan akses lokasi untuk absensi: " + (e as Error).message);
+        }
+      }
+      const { data, error } = await supabase.rpc("attendance_check_in", {
+        _token: token,
+        _lat: lat,
+        _lng: lng,
+      });
       if (error) throw error;
       return data as { action: string; time: string };
     },
@@ -109,6 +152,16 @@ function ScanPage() {
           </CardContent>
         </Card>
       )}
+
+      {settings?.enforce_location && (
+        <Card className="border-sky-200 bg-sky-50">
+          <CardContent className="p-3 text-sm text-sky-800 flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Absensi wajib berada dalam radius {settings.radius_meters ?? 100} m dari workshop. Izinkan akses lokasi saat diminta.
+          </CardContent>
+        </Card>
+      )}
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
