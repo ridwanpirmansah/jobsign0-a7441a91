@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshCw, ShieldCheck, Download, CalendarDays, Printer } from "lucide-react";
+import { RefreshCw, ShieldCheck, Download, CalendarDays, Printer, Infinity as InfinityIcon, MapPin, LocateFixed } from "lucide-react";
 import { toast } from "sonner";
 import { computeToken, currentWindow, secondsLeftInWindow, WINDOW_SECONDS } from "@/lib/attendance-token";
 import { format } from "date-fns";
