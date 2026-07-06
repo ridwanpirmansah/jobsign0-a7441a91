@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt, Utensils,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
