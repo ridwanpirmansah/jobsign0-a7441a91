@@ -212,6 +212,18 @@ function MyEarnings() {
     [outstandingCashbon],
   );
 
+  // Total konsumsi belum-dipotong → potongan slip
+  const consumptionDetail: SlipConsumption[] = useMemo(
+    () => (outstandingConsumption ?? []).map((c) => ({
+      date: c.consumption_date, note: c.note, amount: Number(c.amount),
+    })),
+    [outstandingConsumption],
+  );
+  const consumptionDeduction = useMemo(
+    () => consumptionDetail.reduce((s, c) => s + c.amount, 0),
+    [consumptionDetail],
+  );
+
   // Rincian garapan per jenis (Potong / Tempel / Solder / Kabel, dst) — non-reparasi
   const jobBreakdown: SlipJobBreakdown[] = useMemo(() => {
     const map = new Map<string, SlipJobBreakdown>();
