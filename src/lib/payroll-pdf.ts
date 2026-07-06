@@ -9,6 +9,7 @@ function fmtIDR(n: number) {
 
 export type SlipJobBreakdown = { name: string; unit: string; qty: number; amount: number };
 export type SlipAttendance = { date: string; check_in: string | null; check_out: string | null; hours: number };
+export type SlipConsumption = { date: string; note: string | null; amount: number };
 
 export interface SlipData {
   employeeName: string;
@@ -19,9 +20,11 @@ export interface SlipData {
   jobBreakdown: SlipJobBreakdown[];
   repairBreakdown?: SlipJobBreakdown[];
   attendance: SlipAttendance[];
+  consumption?: SlipConsumption[];
   base: number;
   bonus: number;
   cashbonDeduction: number;
+  consumptionDeduction?: number;
   otherDeduction?: number;
   totalHours: number;
 }
@@ -120,6 +123,37 @@ export function generateSlipPdf(d: SlipData) {
     y = doc.lastAutoTable.finalY + 16;
   }
 
+  // Rincian Konsumsi (Pengurang) — opsional
+  const consumption = d.consumption ?? [];
+  if (consumption.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Rincian Konsumsi (Pengurang Upah)", margin, y);
+    y += 4;
+    autoTable(doc, {
+      startY: y + 4,
+      head: [["Tanggal", "Catatan", "Nominal"]],
+      body: consumption.map((c) => [
+        format(new Date(c.date), "EEE, dd MMM", { locale: idLocale }),
+        c.note ?? "—",
+        fmtIDR(c.amount),
+      ]),
+      foot: [[
+        "Subtotal Konsumsi",
+        "",
+        fmtIDR(consumption.reduce((s, c) => s + c.amount, 0)),
+      ]],
+      styles: { fontSize: 9, cellPadding: 5 },
+      headStyles: { fillColor: [220, 38, 38], textColor: 255 },
+      footStyles: { fillColor: [254, 226, 226], textColor: 15, fontStyle: "bold" },
+      columnStyles: { 2: { halign: "right" } },
+      margin: { left: margin, right: margin },
+    });
+    // @ts-expect-error autotable injects lastAutoTable
+    y = doc.lastAutoTable.finalY + 16;
+  }
+
+
   // Rincian Kehadiran / Jam Kerja
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -153,7 +187,8 @@ export function generateSlipPdf(d: SlipData) {
   doc.text("Ringkasan Gaji", margin, y);
 
   const other = d.otherDeduction ?? 0;
-  const totalDed = d.cashbonDeduction + other;
+  const consumptionDed = d.consumptionDeduction ?? 0;
+  const totalDed = d.cashbonDeduction + consumptionDed + other;
   const net = d.base + d.bonus - totalDed;
 
   autoTable(doc, {
@@ -162,6 +197,7 @@ export function generateSlipPdf(d: SlipData) {
       ["Penghasilan Pokok (Base)", fmtIDR(d.base)],
       ["Bonus", fmtIDR(d.bonus)],
       ["Potongan Cashbon", `- ${fmtIDR(d.cashbonDeduction)}`],
+      ...(consumptionDed > 0 ? [["Potongan Konsumsi", `- ${fmtIDR(consumptionDed)}`]] : []),
       ...(other > 0 ? [["Potongan Lain", `- ${fmtIDR(other)}`]] : []),
       [{ content: "TOTAL DITERIMA", styles: { fontStyle: "bold", fillColor: [16, 185, 129], textColor: 255 } },
        { content: fmtIDR(net), styles: { fontStyle: "bold", halign: "right", fillColor: [16, 185, 129], textColor: 255 } }],

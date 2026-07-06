@@ -15,7 +15,7 @@ import { id as idLocale } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { generateSlipPdf, type SlipJobBreakdown, type SlipAttendance } from "@/lib/payroll-pdf";
+import { generateSlipPdf, type SlipJobBreakdown, type SlipAttendance, type SlipConsumption } from "@/lib/payroll-pdf";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/me/earnings")({ component: MyEarnings });
@@ -138,6 +138,19 @@ function MyEarnings() {
     },
   });
 
+  // Konsumsi karyawan yang belum dipotong (akan jadi potongan slip)
+  const { data: outstandingConsumption } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-consumption", empId, to],
+    queryFn: async () => {
+      const { data } = await supabase.from("employee_consumption")
+        .select("amount,consumption_date,note")
+        .eq("employee_id", empId!).eq("deducted", false).lte("consumption_date", to)
+        .order("consumption_date", { ascending: true });
+      return data ?? [];
+    },
+  });
+
   const { data: empMeta } = useQuery({
     enabled: !!empId,
     queryKey: ["earnings-emp-meta", empId],
@@ -199,6 +212,18 @@ function MyEarnings() {
     [outstandingCashbon],
   );
 
+  // Total konsumsi belum-dipotong → potongan slip
+  const consumptionDetail: SlipConsumption[] = useMemo(
+    () => (outstandingConsumption ?? []).map((c) => ({
+      date: c.consumption_date, note: c.note, amount: Number(c.amount),
+    })),
+    [outstandingConsumption],
+  );
+  const consumptionDeduction = useMemo(
+    () => consumptionDetail.reduce((s, c) => s + c.amount, 0),
+    [consumptionDetail],
+  );
+
   // Rincian garapan per jenis (Potong / Tempel / Solder / Kabel, dst) — non-reparasi
   const jobBreakdown: SlipJobBreakdown[] = useMemo(() => {
     const map = new Map<string, SlipJobBreakdown>();
@@ -249,7 +274,7 @@ function MyEarnings() {
 
   const totalHours = useMemo(() => attendanceDetail.reduce((s, a) => s + a.hours, 0), [attendanceDetail]);
   const baseTotal = summary.approvedTotal + summary.pendingTotal;
-  const netTotal = baseTotal - cashbonDeduction;
+  const netTotal = baseTotal - cashbonDeduction - consumptionDeduction;
 
   const handleDownloadPdf = () => {
     if (!empMeta) { toast.error("Data karyawan belum siap"); return; }
@@ -262,9 +287,11 @@ function MyEarnings() {
       jobBreakdown,
       repairBreakdown,
       attendance: attendanceDetail,
+      consumption: consumptionDetail,
       base: baseTotal,
       bonus: 0,
       cashbonDeduction,
+      consumptionDeduction,
       totalHours,
     });
     toast.success("Slip gaji PDF berhasil diunduh");
@@ -475,6 +502,15 @@ function MyEarnings() {
               </div>
               <span className="font-semibold text-rose-700">- {fmtIDR(cashbonDeduction)}</span>
             </div>
+            {consumptionDeduction > 0 && (
+              <div className="flex items-center justify-between px-3 py-2 text-sm bg-orange-50/40">
+                <div>
+                  <div className="text-slate-700">Potongan Konsumsi</div>
+                  <div className="text-[11px] text-orange-600">{consumptionDetail.length} catatan konsumsi</div>
+                </div>
+                <span className="font-semibold text-orange-700">- {fmtIDR(consumptionDeduction)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between px-3 py-2.5 bg-emerald-50">
               <span className="text-sm font-bold text-emerald-900">Total Diterima</span>
               <span className="text-lg font-bold text-emerald-700">{fmtIDR(netTotal)}</span>

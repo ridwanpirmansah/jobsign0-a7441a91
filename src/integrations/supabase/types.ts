@@ -174,6 +174,60 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_consumption: {
+        Row: {
+          amount: number
+          consumption_date: string
+          created_at: string
+          created_by: string | null
+          deducted: boolean
+          employee_id: string
+          id: string
+          note: string | null
+          payroll_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          consumption_date?: string
+          created_at?: string
+          created_by?: string | null
+          deducted?: boolean
+          employee_id: string
+          id?: string
+          note?: string | null
+          payroll_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          consumption_date?: string
+          created_at?: string
+          created_by?: string | null
+          deducted?: boolean
+          employee_id?: string
+          id?: string
+          note?: string | null
+          payroll_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_consumption_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_consumption_payroll_id_fkey"
+            columns: ["payroll_id"]
+            isOneToOne: false
+            referencedRelation: "payrolls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           active: boolean
@@ -558,6 +612,7 @@ export type Database = {
           approved_by: string | null
           base: number
           bonus: number
+          consumption_deduction: number
           created_at: string
           deductions: number
           employee_id: string
@@ -574,6 +629,7 @@ export type Database = {
           approved_by?: string | null
           base?: number
           bonus?: number
+          consumption_deduction?: number
           created_at?: string
           deductions?: number
           employee_id: string
@@ -590,6 +646,7 @@ export type Database = {
           approved_by?: string | null
           base?: number
           bonus?: number
+          consumption_deduction?: number
           created_at?: string
           deductions?: number
           employee_id?: string

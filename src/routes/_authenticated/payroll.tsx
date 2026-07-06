@@ -72,15 +72,21 @@ function PayrollPage() {
         // Hitung potongan cashbon yang belum dibayar (status approved)
         const { data: cb } = await supabase.from("cashbon").select("amount")
           .eq("employee_id", e.id).eq("status", "approved");
-        const deductions = (cb ?? []).reduce((s, c) => s + Number(c.amount), 0);
+        const cashbonDed = (cb ?? []).reduce((s, c) => s + Number(c.amount), 0);
+        // Hitung potongan konsumsi (belum dipotong)
+        const { data: cons } = await supabase.from("employee_consumption").select("amount")
+          .eq("employee_id", e.id).eq("deducted", false)
+          .lte("consumption_date", to);
+        const consumptionDed = (cons ?? []).reduce((s, c) => s + Number(c.amount), 0);
+        const deductions = cashbonDed + consumptionDed;
         const total = Math.max(0, base - deductions);
         // upsert
         const { data: existing } = await supabase.from("payrolls").select("id")
           .eq("employee_id", e.id).eq("period_start", from).eq("period_end", to).maybeSingle();
         if (existing) {
-          await supabase.from("payrolls").update({ base, deductions, total }).eq("id", existing.id);
+          await supabase.from("payrolls").update({ base, deductions, consumption_deduction: consumptionDed, total }).eq("id", existing.id);
         } else {
-          await supabase.from("payrolls").insert({ employee_id: e.id, period_start: from, period_end: to, base, deductions, total, status: "draft" });
+          await supabase.from("payrolls").insert({ employee_id: e.id, period_start: from, period_end: to, base, deductions, consumption_deduction: consumptionDed, total, status: "draft" });
         }
         void days;
       }
@@ -93,8 +99,16 @@ function PayrollPage() {
     mutationFn: async ({ id, status }: { id: string; status: "draft" | "approved" | "paid" }) => {
       const payload: { status: "draft" | "approved" | "paid"; approved_by?: string; approved_at?: string } = { status };
       if (status === "approved") { payload.approved_by = me!.user.id; payload.approved_at = new Date().toISOString(); }
-      const { error } = await supabase.from("payrolls").update(payload).eq("id", id);
+      const { data: payroll, error } = await supabase.from("payrolls").update(payload).eq("id", id).select("employee_id, period_end").maybeSingle();
       if (error) throw error;
+      // Saat paid: tandai konsumsi yang belum-dipotong sampai tanggal periode sebagai sudah-dipotong
+      if (status === "paid" && payroll) {
+        await supabase.from("employee_consumption")
+          .update({ deducted: true, payroll_id: id })
+          .eq("employee_id", payroll.employee_id)
+          .eq("deducted", false)
+          .lte("consumption_date", payroll.period_end);
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["payrolls"] }),
     onError: (e: Error) => toast.error(e.message),
