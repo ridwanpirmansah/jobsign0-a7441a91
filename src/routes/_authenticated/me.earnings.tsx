@@ -138,6 +138,19 @@ function MyEarnings() {
     },
   });
 
+  // Konsumsi karyawan yang belum dipotong (akan jadi potongan slip)
+  const { data: outstandingConsumption } = useQuery({
+    enabled: !!empId,
+    queryKey: ["earnings-consumption", empId, to],
+    queryFn: async () => {
+      const { data } = await supabase.from("employee_consumption")
+        .select("amount,consumption_date,note")
+        .eq("employee_id", empId!).eq("deducted", false).lte("consumption_date", to)
+        .order("consumption_date", { ascending: true });
+      return data ?? [];
+    },
+  });
+
   const { data: empMeta } = useQuery({
     enabled: !!empId,
     queryKey: ["earnings-emp-meta", empId],
