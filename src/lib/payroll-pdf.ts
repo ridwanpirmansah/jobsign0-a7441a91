@@ -75,33 +75,64 @@ export function generateSlipPdf(d: SlipData) {
 
   y += 6;
 
-  // Rincian Garapan
+  // Layout dua kolom: Rincian Garapan (kiri) & Rincian Jam Kerja (kanan)
+  const gap = 12;
+  const contentW = pageW - margin * 2;
+  const halfW = (contentW - gap) / 2;
+  const leftRight = { left: margin, right: margin + halfW + gap };
+  const rightLeft = { left: margin + halfW + gap, right: margin };
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Rincian Garapan (Borongan)", margin, y);
-  y += 4;
+  doc.text("Rincian Jam Kerja (per Hari)", margin + halfW + gap, y);
+  const tablesStartY = y + 8;
 
   autoTable(doc, {
-    startY: y + 4,
-    head: [["Jenis Garapan", "Satuan", "Jumlah", "Upah"]],
+    startY: tablesStartY,
+    head: [["Jenis Garapan", "Sat", "Qty", "Upah"]],
     body: d.jobBreakdown.length
       ? d.jobBreakdown.map((b) => [b.name, b.unit, b.qty.toString(), fmtIDR(b.amount)])
       : [["—", "—", "—", "—"]],
     foot: [[
-      "Subtotal Borongan",
+      "Subtotal",
       "",
       d.jobBreakdown.reduce((s, b) => s + b.qty, 0).toString(),
       fmtIDR(d.jobBreakdown.reduce((s, b) => s + b.amount, 0)),
     ]],
-    styles: { fontSize: 9, cellPadding: 5 },
+    styles: { fontSize: 8, cellPadding: 4, overflow: "linebreak" },
     headStyles: { fillColor: [37, 99, 235], textColor: 255 },
     footStyles: { fillColor: [241, 245, 249], textColor: 15, fontStyle: "bold" },
     columnStyles: { 2: { halign: "right" }, 3: { halign: "right" } },
-    margin: { left: margin, right: margin },
+    margin: leftRight,
+    tableWidth: halfW,
   });
-
   // @ts-expect-error autotable injects lastAutoTable
-  y = doc.lastAutoTable.finalY + 16;
+  const leftEndY = doc.lastAutoTable.finalY;
+
+  autoTable(doc, {
+    startY: tablesStartY,
+    head: [["Tanggal", "In", "Out", "Jam"]],
+    body: d.attendance.length
+      ? d.attendance.map((a) => [
+          format(new Date(a.date), "EEE, dd MMM", { locale: idLocale }),
+          a.check_in ? format(new Date(a.check_in), "HH:mm") : "—",
+          a.check_out ? format(new Date(a.check_out), "HH:mm") : "—",
+          a.hours > 0 ? `${a.hours.toFixed(2)}` : "—",
+        ])
+      : [["—", "—", "—", "—"]],
+    foot: [["Total Jam Kerja", "", "", `${d.totalHours.toFixed(2)}`]],
+    styles: { fontSize: 8, cellPadding: 4, overflow: "linebreak" },
+    headStyles: { fillColor: [16, 185, 129], textColor: 255 },
+    footStyles: { fillColor: [241, 245, 249], textColor: 15, fontStyle: "bold" },
+    columnStyles: { 3: { halign: "right" } },
+    margin: rightLeft,
+    tableWidth: halfW,
+  });
+  // @ts-expect-error autotable injects lastAutoTable
+  const rightEndY = doc.lastAutoTable.finalY;
+
+  y = Math.max(leftEndY, rightEndY) + 24;
 
   // Rincian Reparasi (opsional)
   const repairs = d.repairBreakdown ?? [];
@@ -109,9 +140,8 @@ export function generateSlipPdf(d: SlipData) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.text("Rincian Pekerjaan Reparasi", margin, y);
-    y += 4;
     autoTable(doc, {
-      startY: y + 4,
+      startY: y + 8,
       head: [["Jenis Reparasi", "Satuan", "Jumlah", "Upah"]],
       body: repairs.map((b) => [b.name, b.unit, b.qty.toString(), fmtIDR(b.amount)]),
       foot: [[
@@ -127,18 +157,17 @@ export function generateSlipPdf(d: SlipData) {
       margin: { left: margin, right: margin },
     });
     // @ts-expect-error autotable injects lastAutoTable
-    y = doc.lastAutoTable.finalY + 16;
+    y = doc.lastAutoTable.finalY + 24;
   }
 
-  // Rincian Konsumsi (Pengurang) — opsional
+  // Rincian Konsumsi (Pengurang) — opsional, di bawah Jam Kerja
   const consumption = d.consumption ?? [];
   if (consumption.length) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.text("Rincian Konsumsi (Pengurang Upah)", margin, y);
-    y += 4;
     autoTable(doc, {
-      startY: y + 4,
+      startY: y + 8,
       head: [["Tanggal", "Catatan", "Metode", "Nominal", "Ditanggung Perusahaan", "Tagihan Karyawan"]],
       body: consumption.map((c) => [
         format(new Date(c.date), "EEE, dd MMM", { locale: idLocale }),
@@ -163,42 +192,15 @@ export function generateSlipPdf(d: SlipData) {
       margin: { left: margin, right: margin },
     });
     // @ts-expect-error autotable injects lastAutoTable
-    y = doc.lastAutoTable.finalY + 6;
+    y = doc.lastAutoTable.finalY + 10;
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
     doc.setTextColor(100);
     doc.text("Tagihan karyawan dari konsumsi cashbon sudah otomatis masuk ke Potongan Cashbon di ringkasan.", margin, y);
     doc.setTextColor(0);
-    y += 12;
+    y += 24;
   }
 
-
-  // Rincian Kehadiran / Jam Kerja
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("Rincian Jam Kerja (per Hari)", margin, y);
-
-  autoTable(doc, {
-    startY: y + 4,
-    head: [["Tanggal", "Check-in", "Check-out", "Jam Kerja"]],
-    body: d.attendance.length
-      ? d.attendance.map((a) => [
-          format(new Date(a.date), "EEE, dd MMM", { locale: idLocale }),
-          a.check_in ? format(new Date(a.check_in), "HH:mm") : "—",
-          a.check_out ? format(new Date(a.check_out), "HH:mm") : "—",
-          a.hours > 0 ? `${a.hours.toFixed(2)} jam` : "—",
-        ])
-      : [["—", "—", "—", "—"]],
-    foot: [["Total Jam Kerja", "", "", `${d.totalHours.toFixed(2)} jam`]],
-    styles: { fontSize: 9, cellPadding: 5 },
-    headStyles: { fillColor: [16, 185, 129], textColor: 255 },
-    footStyles: { fillColor: [241, 245, 249], textColor: 15, fontStyle: "bold" },
-    columnStyles: { 3: { halign: "right" } },
-    margin: { left: margin, right: margin },
-  });
-
-  // @ts-expect-error autotable injects lastAutoTable
-  y = doc.lastAutoTable.finalY + 16;
 
   // Ringkasan Gaji
   doc.setFont("helvetica", "bold");
@@ -210,7 +212,7 @@ export function generateSlipPdf(d: SlipData) {
   const net = d.base + d.bonus - totalDed;
 
   autoTable(doc, {
-    startY: y + 4,
+    startY: y + 8,
     body: [
       ["Penghasilan Pokok (Base)", fmtIDR(d.base)],
       ["Bonus", fmtIDR(d.bonus)],
