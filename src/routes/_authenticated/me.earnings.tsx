@@ -138,13 +138,13 @@ function MyEarnings() {
     },
   });
 
-  // Konsumsi karyawan yang belum dipotong (akan jadi potongan slip)
+  // Konsumsi karyawan yang belum dipotong — info di slip. Potongan sebenarnya sudah masuk cashbon (untuk metode cashbon).
   const { data: outstandingConsumption } = useQuery({
     enabled: !!empId,
     queryKey: ["earnings-consumption", empId, to],
     queryFn: async () => {
       const { data } = await supabase.from("employee_consumption")
-        .select("amount,consumption_date,note")
+        .select("amount,consumption_date,note,payment_method,company_covered,employee_charge")
         .eq("employee_id", empId!).eq("deducted", false).lte("consumption_date", to)
         .order("consumption_date", { ascending: true });
       return data ?? [];
