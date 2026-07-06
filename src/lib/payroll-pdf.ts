@@ -9,6 +9,7 @@ function fmtIDR(n: number) {
 
 export type SlipJobBreakdown = { name: string; unit: string; qty: number; amount: number };
 export type SlipAttendance = { date: string; check_in: string | null; check_out: string | null; hours: number };
+export type SlipConsumption = { date: string; note: string | null; amount: number };
 
 export interface SlipData {
   employeeName: string;
@@ -19,9 +20,11 @@ export interface SlipData {
   jobBreakdown: SlipJobBreakdown[];
   repairBreakdown?: SlipJobBreakdown[];
   attendance: SlipAttendance[];
+  consumption?: SlipConsumption[];
   base: number;
   bonus: number;
   cashbonDeduction: number;
+  consumptionDeduction?: number;
   otherDeduction?: number;
   totalHours: number;
 }
