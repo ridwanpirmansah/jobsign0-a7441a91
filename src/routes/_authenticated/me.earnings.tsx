@@ -228,7 +228,7 @@ function MyEarnings() {
   const consumptionDeduction = useMemo(
     () => consumptionDetail
       .filter((c) => c.paymentMethod === "cashbon")
-      .reduce((s, c) => s + c.employeeCharge, 0),
+      .reduce((s, c) => s + (c.employeeCharge ?? 0), 0),
     [consumptionDetail],
   );
 
