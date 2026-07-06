@@ -212,15 +212,23 @@ function MyEarnings() {
     [outstandingCashbon],
   );
 
-  // Total konsumsi belum-dipotong → potongan slip
+  // Rincian konsumsi (info di slip) — potongan aktual sudah lewat cashbon
   const consumptionDetail: SlipConsumption[] = useMemo(
     () => (outstandingConsumption ?? []).map((c) => ({
-      date: c.consumption_date, note: c.note, amount: Number(c.amount),
+      date: c.consumption_date,
+      note: c.note,
+      amount: Number(c.amount),
+      companyCovered: Number(c.company_covered ?? 0),
+      employeeCharge: Number(c.employee_charge ?? 0),
+      paymentMethod: (c.payment_method ?? "cashbon") as "cash" | "cashbon",
     })),
     [outstandingConsumption],
   );
+  // Info: total bagian karyawan dari konsumsi cashbon (sudah masuk cashbonDeduction)
   const consumptionDeduction = useMemo(
-    () => consumptionDetail.reduce((s, c) => s + c.amount, 0),
+    () => consumptionDetail
+      .filter((c) => c.paymentMethod === "cashbon")
+      .reduce((s, c) => s + c.employeeCharge, 0),
     [consumptionDetail],
   );
 
