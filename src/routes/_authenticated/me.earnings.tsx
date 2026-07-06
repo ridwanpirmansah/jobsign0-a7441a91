@@ -502,6 +502,15 @@ function MyEarnings() {
               </div>
               <span className="font-semibold text-rose-700">- {fmtIDR(cashbonDeduction)}</span>
             </div>
+            {consumptionDeduction > 0 && (
+              <div className="flex items-center justify-between px-3 py-2 text-sm bg-orange-50/40">
+                <div>
+                  <div className="text-slate-700">Potongan Konsumsi</div>
+                  <div className="text-[11px] text-orange-600">{consumptionDetail.length} catatan konsumsi</div>
+                </div>
+                <span className="font-semibold text-orange-700">- {fmtIDR(consumptionDeduction)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between px-3 py-2.5 bg-emerald-50">
               <span className="text-sm font-bold text-emerald-900">Total Diterima</span>
               <span className="text-lg font-bold text-emerald-700">{fmtIDR(netTotal)}</span>
