@@ -15,7 +15,7 @@ import { id as idLocale } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { generateSlipPdf, type SlipJobBreakdown, type SlipAttendance } from "@/lib/payroll-pdf";
+import { generateSlipPdf, type SlipJobBreakdown, type SlipAttendance, type SlipConsumption } from "@/lib/payroll-pdf";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/me/earnings")({ component: MyEarnings });
