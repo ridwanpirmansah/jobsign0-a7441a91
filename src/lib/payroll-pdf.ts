@@ -215,7 +215,7 @@ export function generateSlipPdf(d: SlipData) {
       ["Penghasilan Pokok (Base)", fmtIDR(d.base)],
       ["Bonus", fmtIDR(d.bonus)],
       ["Potongan Cashbon", `- ${fmtIDR(d.cashbonDeduction)}`],
-      ...(consumptionDed > 0 ? [["Potongan Konsumsi", `- ${fmtIDR(consumptionDed)}`]] : []),
+      ...(other > 0 ? [] : []),
       ...(other > 0 ? [["Potongan Lain", `- ${fmtIDR(other)}`]] : []),
       [{ content: "TOTAL DITERIMA", styles: { fontStyle: "bold", fillColor: [16, 185, 129], textColor: 255 } },
        { content: fmtIDR(net), styles: { fontStyle: "bold", halign: "right", fillColor: [16, 185, 129], textColor: 255 } }],
