@@ -99,8 +99,16 @@ function PayrollPage() {
     mutationFn: async ({ id, status }: { id: string; status: "draft" | "approved" | "paid" }) => {
       const payload: { status: "draft" | "approved" | "paid"; approved_by?: string; approved_at?: string } = { status };
       if (status === "approved") { payload.approved_by = me!.user.id; payload.approved_at = new Date().toISOString(); }
-      const { error } = await supabase.from("payrolls").update(payload).eq("id", id);
+      const { data: payroll, error } = await supabase.from("payrolls").update(payload).eq("id", id).select("employee_id, period_end").maybeSingle();
       if (error) throw error;
+      // Saat paid: tandai konsumsi yang belum-dipotong sampai tanggal periode sebagai sudah-dipotong
+      if (status === "paid" && payroll) {
+        await supabase.from("employee_consumption")
+          .update({ deducted: true, payroll_id: id })
+          .eq("employee_id", payroll.employee_id)
+          .eq("deducted", false)
+          .lte("consumption_date", payroll.period_end);
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["payrolls"] }),
     onError: (e: Error) => toast.error(e.message),
