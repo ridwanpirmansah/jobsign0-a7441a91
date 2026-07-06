@@ -274,7 +274,7 @@ function MyEarnings() {
 
   const totalHours = useMemo(() => attendanceDetail.reduce((s, a) => s + a.hours, 0), [attendanceDetail]);
   const baseTotal = summary.approvedTotal + summary.pendingTotal;
-  const netTotal = baseTotal - cashbonDeduction;
+  const netTotal = baseTotal - cashbonDeduction - consumptionDeduction;
 
   const handleDownloadPdf = () => {
     if (!empMeta) { toast.error("Data karyawan belum siap"); return; }
@@ -287,9 +287,11 @@ function MyEarnings() {
       jobBreakdown,
       repairBreakdown,
       attendance: attendanceDetail,
+      consumption: consumptionDetail,
       base: baseTotal,
       bonus: 0,
       cashbonDeduction,
+      consumptionDeduction,
       totalHours,
     });
     toast.success("Slip gaji PDF berhasil diunduh");
