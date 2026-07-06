@@ -9,7 +9,14 @@ function fmtIDR(n: number) {
 
 export type SlipJobBreakdown = { name: string; unit: string; qty: number; amount: number };
 export type SlipAttendance = { date: string; check_in: string | null; check_out: string | null; hours: number };
-export type SlipConsumption = { date: string; note: string | null; amount: number };
+export type SlipConsumption = {
+  date: string;
+  note: string | null;
+  amount: number;
+  companyCovered?: number;
+  employeeCharge?: number;
+  paymentMethod?: "cash" | "cashbon";
+};
 
 export interface SlipData {
   employeeName: string;
