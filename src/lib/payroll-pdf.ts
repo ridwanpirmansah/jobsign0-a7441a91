@@ -206,8 +206,7 @@ export function generateSlipPdf(d: SlipData) {
   doc.text("Ringkasan Gaji", margin, y);
 
   const other = d.otherDeduction ?? 0;
-  const consumptionDed = d.consumptionDeduction ?? 0;
-  const totalDed = d.cashbonDeduction + consumptionDed + other;
+  const totalDed = d.cashbonDeduction + other;
   const net = d.base + d.bonus - totalDed;
 
   autoTable(doc, {
