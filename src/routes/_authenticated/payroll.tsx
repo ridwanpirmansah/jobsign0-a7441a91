@@ -73,12 +73,15 @@ function PayrollPage() {
         const { data: cb } = await supabase.from("cashbon").select("amount")
           .eq("employee_id", e.id).eq("status", "approved");
         const cashbonDed = (cb ?? []).reduce((s, c) => s + Number(c.amount), 0);
-        // Hitung potongan konsumsi (belum dipotong)
-        const { data: cons } = await supabase.from("employee_consumption").select("amount")
+        // Potongan konsumsi kini otomatis lewat cashbon (untuk metode Cashbon) — tidak dihitung ganda.
+        // Ringkas: hitung juga total employee_charge (info di slip) untuk metode cashbon yang belum dipotong.
+        const { data: cons } = await supabase.from("employee_consumption").select("employee_charge, payment_method")
           .eq("employee_id", e.id).eq("deducted", false)
           .lte("consumption_date", to);
-        const consumptionDed = (cons ?? []).reduce((s, c) => s + Number(c.amount), 0);
-        const deductions = cashbonDed + consumptionDed;
+        const consumptionDed = (cons ?? [])
+          .filter((c) => c.payment_method === "cashbon")
+          .reduce((s, c) => s + Number(c.employee_charge ?? 0), 0);
+        const deductions = cashbonDed; // cashbon sudah mencakup employee_charge dari konsumsi
         const total = Math.max(0, base - deductions);
         // upsert
         const { data: existing } = await supabase.from("payrolls").select("id")

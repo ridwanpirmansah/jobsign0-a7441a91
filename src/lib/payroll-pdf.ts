@@ -9,7 +9,14 @@ function fmtIDR(n: number) {
 
 export type SlipJobBreakdown = { name: string; unit: string; qty: number; amount: number };
 export type SlipAttendance = { date: string; check_in: string | null; check_out: string | null; hours: number };
-export type SlipConsumption = { date: string; note: string | null; amount: number };
+export type SlipConsumption = {
+  date: string;
+  note: string | null;
+  amount: number;
+  companyCovered?: number;
+  employeeCharge?: number;
+  paymentMethod?: "cash" | "cashbon";
+};
 
 export interface SlipData {
   employeeName: string;
@@ -132,25 +139,37 @@ export function generateSlipPdf(d: SlipData) {
     y += 4;
     autoTable(doc, {
       startY: y + 4,
-      head: [["Tanggal", "Catatan", "Nominal"]],
+      head: [["Tanggal", "Catatan", "Metode", "Nominal", "Ditanggung Perusahaan", "Tagihan Karyawan"]],
       body: consumption.map((c) => [
         format(new Date(c.date), "EEE, dd MMM", { locale: idLocale }),
         c.note ?? "—",
+        (c.paymentMethod ?? "cashbon") === "cash" ? "Cash" : "Cashbon",
         fmtIDR(c.amount),
+        fmtIDR(c.companyCovered ?? 0),
+        fmtIDR(c.employeeCharge ?? 0),
       ]),
       foot: [[
-        "Subtotal Konsumsi",
+        "Subtotal",
+        "",
         "",
         fmtIDR(consumption.reduce((s, c) => s + c.amount, 0)),
+        fmtIDR(consumption.reduce((s, c) => s + (c.companyCovered ?? 0), 0)),
+        fmtIDR(consumption.reduce((s, c) => s + (c.employeeCharge ?? 0), 0)),
       ]],
-      styles: { fontSize: 9, cellPadding: 5 },
+      styles: { fontSize: 8, cellPadding: 4 },
       headStyles: { fillColor: [220, 38, 38], textColor: 255 },
       footStyles: { fillColor: [254, 226, 226], textColor: 15, fontStyle: "bold" },
-      columnStyles: { 2: { halign: "right" } },
+      columnStyles: { 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
       margin: { left: margin, right: margin },
     });
     // @ts-expect-error autotable injects lastAutoTable
-    y = doc.lastAutoTable.finalY + 16;
+    y = doc.lastAutoTable.finalY + 6;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text("Tagihan karyawan dari konsumsi cashbon sudah otomatis masuk ke Potongan Cashbon di ringkasan.", margin, y);
+    doc.setTextColor(0);
+    y += 12;
   }
 
 
@@ -187,8 +206,7 @@ export function generateSlipPdf(d: SlipData) {
   doc.text("Ringkasan Gaji", margin, y);
 
   const other = d.otherDeduction ?? 0;
-  const consumptionDed = d.consumptionDeduction ?? 0;
-  const totalDed = d.cashbonDeduction + consumptionDed + other;
+  const totalDed = d.cashbonDeduction + other;
   const net = d.base + d.bonus - totalDed;
 
   autoTable(doc, {
@@ -197,7 +215,7 @@ export function generateSlipPdf(d: SlipData) {
       ["Penghasilan Pokok (Base)", fmtIDR(d.base)],
       ["Bonus", fmtIDR(d.bonus)],
       ["Potongan Cashbon", `- ${fmtIDR(d.cashbonDeduction)}`],
-      ...(consumptionDed > 0 ? [["Potongan Konsumsi", `- ${fmtIDR(consumptionDed)}`]] : []),
+      ...(other > 0 ? [] : []),
       ...(other > 0 ? [["Potongan Lain", `- ${fmtIDR(other)}`]] : []),
       [{ content: "TOTAL DITERIMA", styles: { fontStyle: "bold", fillColor: [16, 185, 129], textColor: 255 } },
        { content: fmtIDR(net), styles: { fontStyle: "bold", halign: "right", fillColor: [16, 185, 129], textColor: 255 } }],

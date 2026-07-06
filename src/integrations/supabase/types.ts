@@ -176,47 +176,79 @@ export type Database = {
       }
       employee_consumption: {
         Row: {
+          allowance_applied: number
           amount: number
+          cashbon_id: string | null
+          company_covered: number
           consumption_date: string
           created_at: string
           created_by: string | null
           deducted: boolean
+          employee_charge: number
           employee_id: string
+          expense_id: string | null
           id: string
           note: string | null
+          payment_method: string
           payroll_id: string | null
           updated_at: string
         }
         Insert: {
+          allowance_applied?: number
           amount: number
+          cashbon_id?: string | null
+          company_covered?: number
           consumption_date?: string
           created_at?: string
           created_by?: string | null
           deducted?: boolean
+          employee_charge?: number
           employee_id: string
+          expense_id?: string | null
           id?: string
           note?: string | null
+          payment_method?: string
           payroll_id?: string | null
           updated_at?: string
         }
         Update: {
+          allowance_applied?: number
           amount?: number
+          cashbon_id?: string | null
+          company_covered?: number
           consumption_date?: string
           created_at?: string
           created_by?: string | null
           deducted?: boolean
+          employee_charge?: number
           employee_id?: string
+          expense_id?: string | null
           id?: string
           note?: string | null
+          payment_method?: string
           payroll_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "employee_consumption_cashbon_id_fkey"
+            columns: ["cashbon_id"]
+            isOneToOne: false
+            referencedRelation: "cashbon"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "employee_consumption_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_consumption_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
             referencedColumns: ["id"]
           },
           {
