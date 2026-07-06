@@ -282,7 +282,7 @@ function MyEarnings() {
 
   const totalHours = useMemo(() => attendanceDetail.reduce((s, a) => s + a.hours, 0), [attendanceDetail]);
   const baseTotal = summary.approvedTotal + summary.pendingTotal;
-  const netTotal = baseTotal - cashbonDeduction - consumptionDeduction;
+  const netTotal = baseTotal - cashbonDeduction; // konsumsi cashbon sudah termasuk di cashbonDeduction
 
   const handleDownloadPdf = () => {
     if (!empMeta) { toast.error("Data karyawan belum siap"); return; }
