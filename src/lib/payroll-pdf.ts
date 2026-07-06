@@ -187,7 +187,8 @@ export function generateSlipPdf(d: SlipData) {
   doc.text("Ringkasan Gaji", margin, y);
 
   const other = d.otherDeduction ?? 0;
-  const totalDed = d.cashbonDeduction + other;
+  const consumptionDed = d.consumptionDeduction ?? 0;
+  const totalDed = d.cashbonDeduction + consumptionDed + other;
   const net = d.base + d.bonus - totalDed;
 
   autoTable(doc, {
@@ -196,6 +197,7 @@ export function generateSlipPdf(d: SlipData) {
       ["Penghasilan Pokok (Base)", fmtIDR(d.base)],
       ["Bonus", fmtIDR(d.bonus)],
       ["Potongan Cashbon", `- ${fmtIDR(d.cashbonDeduction)}`],
+      ...(consumptionDed > 0 ? [["Potongan Konsumsi", `- ${fmtIDR(consumptionDed)}`]] : []),
       ...(other > 0 ? [["Potongan Lain", `- ${fmtIDR(other)}`]] : []),
       [{ content: "TOTAL DITERIMA", styles: { fontStyle: "bold", fillColor: [16, 185, 129], textColor: 255 } },
        { content: fmtIDR(net), styles: { fontStyle: "bold", halign: "right", fillColor: [16, 185, 129], textColor: 255 } }],
