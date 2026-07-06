@@ -212,7 +212,7 @@ export function generateSlipPdf(d: SlipData) {
   const net = d.base + d.bonus - totalDed;
 
   autoTable(doc, {
-    startY: y + 4,
+    startY: y + 8,
     body: [
       ["Penghasilan Pokok (Base)", fmtIDR(d.base)],
       ["Bonus", fmtIDR(d.bonus)],
