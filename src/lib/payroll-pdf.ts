@@ -123,6 +123,37 @@ export function generateSlipPdf(d: SlipData) {
     y = doc.lastAutoTable.finalY + 16;
   }
 
+  // Rincian Konsumsi (Pengurang) — opsional
+  const consumption = d.consumption ?? [];
+  if (consumption.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Rincian Konsumsi (Pengurang Upah)", margin, y);
+    y += 4;
+    autoTable(doc, {
+      startY: y + 4,
+      head: [["Tanggal", "Catatan", "Nominal"]],
+      body: consumption.map((c) => [
+        format(new Date(c.date), "EEE, dd MMM", { locale: idLocale }),
+        c.note ?? "—",
+        fmtIDR(c.amount),
+      ]),
+      foot: [[
+        "Subtotal Konsumsi",
+        "",
+        fmtIDR(consumption.reduce((s, c) => s + c.amount, 0)),
+      ]],
+      styles: { fontSize: 9, cellPadding: 5 },
+      headStyles: { fillColor: [220, 38, 38], textColor: 255 },
+      footStyles: { fillColor: [254, 226, 226], textColor: 15, fontStyle: "bold" },
+      columnStyles: { 2: { halign: "right" } },
+      margin: { left: margin, right: margin },
+    });
+    // @ts-expect-error autotable injects lastAutoTable
+    y = doc.lastAutoTable.finalY + 16;
+  }
+
+
   // Rincian Kehadiran / Jam Kerja
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
