@@ -31,6 +31,7 @@ const adminItems = [
   { title: "Karyawan", url: "/employees", icon: Users },
   { title: "Tarif Borongan", url: "/rates", icon: DollarSign },
   { title: "Approval", url: "/approvals", icon: BadgeCheck },
+  { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils },
   { title: "Customer", url: "/customers", icon: Building2 },
 ];
 const ownerItems = [
