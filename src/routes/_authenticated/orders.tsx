@@ -207,6 +207,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [header, setHeader] = useState<HeaderForm>(emptyHeader());
   const [items, setItems] = useState<ItemForm[]>([]);
+  const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
+
+  const addNewItem = () => {
+    setItems((arr) => {
+      const next = emptyItem(arr.filter((i) => !i._deleted).length + 1, priceMap);
+      setExpandedItemKey(next._key);
+      return [...arr, next];
+    });
+  };
 
   type SortKey = "order_no" | "co_date" | "source" | "status" | "username" | "text_neon" | "titik" | "hpp" | "payment" | "profit";
   const [sortKey, setSortKey] = useState<SortKey>("co_date");
@@ -255,13 +264,17 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   useEffect(() => {
     if (open && header.id && itemsQ.data) {
       const rows = itemsQ.data as any[];
-      setItems(rows.length ? rows.map(itemFromDb) : [emptyItem(1, priceMap, isReady ? "custom" : "custom")]);
+      const list = rows.length ? rows.map(itemFromDb) : [emptyItem(1, priceMap, isReady ? "custom" : "custom")];
+      setItems(list);
+      setExpandedItemKey(list.length === 1 ? list[0]._key : null);
     }
   }, [open, header.id, itemsQ.data]);
 
   const openNew = () => {
     setHeader(emptyHeader(isReady ? nextReadyStockNo : nextOrderNo, isReady ? "ready_stock" : "active"));
-    setItems([emptyItem(1, priceMap, "custom")]);
+    const first = emptyItem(1, priceMap, "custom");
+    setItems([first]);
+    setExpandedItemKey(first._key);
     setOpen(true);
   };
   const openEdit = (o: any) => {
@@ -273,8 +286,10 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       notes: o.notes ?? "",
     });
     setItems([]); // will be filled by itemsQ effect
+    setExpandedItemKey(null);
     setOpen(true);
   };
+
   const openDuplicate = (o: any) => {
     setHeader({
       source: o.source, status: (o.status as OrderStatus) ?? "active",
@@ -454,9 +469,11 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button onClick={openNew}><Plus className="h-4 w-4 mr-1"/> {isReady ? "Ready Stock Baru" : "Order Baru"}</Button></DialogTrigger>
           <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{header.id ? "Edit Order" : (isReady ? "Ready Stock Baru" : "Order Baru")}</DialogTitle>
+
+            <DialogHeader className="-m-6 mb-0 p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-t-lg">
+              <DialogTitle className="text-white">{header.id ? "Edit Order" : (isReady ? "Ready Stock Baru" : "Order Baru")}</DialogTitle>
             </DialogHeader>
+
 
             {/* HEADER FORM */}
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 pb-4 border-b">
@@ -488,10 +505,10 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             </div>
 
             {/* ITEMS SECTION */}
-            <div className="pt-2 space-y-3">
+            <div className="pt-2 space-y-3 rounded-lg bg-gradient-to-br from-indigo-50/60 via-white to-emerald-50/50 p-3 border border-indigo-100">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold flex items-center gap-2"><Boxes className="h-4 w-4"/> Produk dalam order ({items.filter((i) => !i._deleted).length})</div>
-                <Button size="sm" variant="outline" onClick={() => setItems((arr) => [...arr, { ...emptyItem(arr.filter((i) => !i._deleted).length + 1, priceMap) }])}>
+                <div className="text-sm font-semibold flex items-center gap-2 text-indigo-900"><Boxes className="h-4 w-4"/> Produk dalam order ({items.filter((i) => !i._deleted).length})</div>
+                <Button size="sm" variant="outline" className="border-indigo-300 text-indigo-700 hover:bg-indigo-50" onClick={addNewItem}>
                   <Plus className="h-3.5 w-3.5 mr-1"/> Tambah Produk
                 </Button>
               </div>
@@ -499,7 +516,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               {itemsQ.isLoading && header.id ? (
                 <div className="text-sm text-muted-foreground">Memuat item…</div>
               ) : items.filter((i) => !i._deleted).length === 0 ? (
-                <div className="text-sm text-muted-foreground border rounded-md p-4 text-center">Belum ada produk. Klik "Tambah Produk".</div>
+                <div className="text-sm text-muted-foreground border rounded-md p-4 text-center bg-white">Belum ada produk. Klik "Tambah Produk".</div>
               ) : (
                 items.map((it, idx) => it._deleted ? null : (
                   <ItemCard
@@ -509,6 +526,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     priceMap={priceMap}
                     rsList={(rsQ.data ?? []) as any[]}
                     excludeRsId={header.id}
+                    expanded={expandedItemKey === it._key}
+                    onToggleExpand={() => setExpandedItemKey((k) => k === it._key ? null : it._key)}
                     onChange={(patch) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, ...patch } : x))}
                     onDelete={() => setItems((arr) => {
                       const target = arr[idx];
@@ -518,7 +537,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   />
                 ))
               )}
+
+              {items.filter((i) => !i._deleted).length > 0 && (
+                <div className="flex justify-center pt-1">
+                  <Button size="sm" variant="outline" className="border-dashed border-indigo-300 text-indigo-700 hover:bg-indigo-50" onClick={addNewItem}>
+                    <Plus className="h-3.5 w-3.5 mr-1"/> Tambah Produk Lagi
+                  </Button>
+                </div>
+              )}
             </div>
+
 
             {/* TOTALS */}
             <Card className="bg-muted/40 mt-3">
@@ -649,13 +677,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
 // -------- ItemCard --------
 function ItemCard({
-  item, index, priceMap, rsList, excludeRsId, onChange, onDelete,
+  item, index, priceMap, rsList, excludeRsId, expanded, onToggleExpand, onChange, onDelete,
 }: {
   item: ItemForm;
   index: number;
   priceMap: Record<string, number>;
   rsList: any[];
   excludeRsId?: string;
+  expanded: boolean;
+  onToggleExpand: () => void;
   onChange: (patch: Partial<ItemForm>) => void;
   onDelete: () => void;
 }) {
@@ -667,24 +697,49 @@ function ItemCard({
     ? Number(rsList.find((r) => r.id === item.source_ready_stock_order_id)?.hpp ?? 0)
     : calcItemHpp(item, priceMap);
 
+  const kindStyle = item.kind === "custom"
+    ? { border: "border-l-4 border-l-indigo-500", bg: "bg-indigo-50/60", badge: "bg-indigo-100 text-indigo-800", label: "Custom" }
+    : item.kind === "ready_stock_ref"
+    ? { border: "border-l-4 border-l-emerald-500", bg: "bg-emerald-50/60", badge: "bg-emerald-100 text-emerald-800", label: "Ready Stock" }
+    : { border: "border-l-4 border-l-amber-500", bg: "bg-amber-50/60", badge: "bg-amber-100 text-amber-800", label: "Manual" };
+
+  const titleText = item.kind === "ready_stock_manual"
+    ? (item.manual_name || "Ready Stock manual")
+    : item.kind === "ready_stock_ref"
+    ? (rsList.find((r) => r.id === item.source_ready_stock_order_id)?.text_neon || "Pilih ready stock…")
+    : (item.text_neon || "Belum diisi");
+
   return (
-    <Card className="border-slate-300">
-      <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">#{item.position}</Badge>
+    <Card className={`border-slate-300 ${kindStyle.border} shadow-sm`}>
+      <CardHeader
+        className={`p-3 pb-2 flex-row items-center justify-between space-y-0 cursor-pointer ${kindStyle.bg} rounded-t-lg`}
+        onClick={onToggleExpand}
+      >
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button type="button" className="shrink-0" onClick={(e) => { e.stopPropagation(); onToggleExpand(); }} aria-label={expanded ? "Tutup" : "Buka"}>
+            {expanded ? <ChevronDown className="h-4 w-4 text-slate-600"/> : <ChevronRight className="h-4 w-4 text-slate-600"/>}
+          </button>
+          <Badge className={`${kindStyle.badge} border-0`}>#{item.position}</Badge>
+          <span className={`text-xs px-2 py-0.5 rounded-full ${kindStyle.badge}`}>{kindStyle.label}</span>
+          <span className="font-medium text-sm truncate" title={titleText}>{titleText}</span>
+          <span className="text-xs text-muted-foreground shrink-0 ml-auto pr-2">HPP: <span className="font-semibold text-foreground">Rp {rp(itemHpp)}</span></span>
+        </div>
+        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); onDelete(); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+      </CardHeader>
+      {expanded && (
+      <CardContent className="p-3 pt-2">
+        <div className="mb-2">
+          <Label className="text-xs">Jenis Produk</Label>
           <Select value={item.kind} onValueChange={(v) => onChange({ kind: v as ItemKind })}>
-            <SelectTrigger className="h-8 w-56"><SelectValue/></SelectTrigger>
+            <SelectTrigger className="h-8 w-full sm:w-64"><SelectValue/></SelectTrigger>
             <SelectContent>
               <SelectItem value="custom">Custom (Neon Sign)</SelectItem>
               <SelectItem value="ready_stock_ref">Ready Stock (pilih existing)</SelectItem>
               <SelectItem value="ready_stock_manual">Ready Stock / Manual</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-xs text-muted-foreground">HPP: <span className="font-semibold text-foreground">Rp {rp(itemHpp)}</span></span>
         </div>
-        <Button size="icon" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-      </CardHeader>
-      <CardContent className="p-3 pt-1">
+
         {item.kind === "custom" && (
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="sm:col-span-2"><Label>TEXT Neon *</Label><Input value={item.text_neon} onChange={(e) => onChange({ text_neon: e.target.value })}/></div>
@@ -761,7 +816,9 @@ function ItemCard({
           </div>
         )}
       </CardContent>
+      )}
     </Card>
+
   );
 }
 
