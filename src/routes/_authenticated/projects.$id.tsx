@@ -27,7 +27,7 @@ function ProjectDetail() {
 
   const { data: project } = useQuery({
     queryKey: ["project", id],
-    queryFn: async () => (await supabase.from("projects").select("*, customer:customers(name,phone)").eq("id", id).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("projects").select("*, customer:customers(name,phone), parent_order:orders!projects_parent_order_id_fkey(id, order_no, source, co_date, username, kota, payment, split, status, notes)").eq("id", id).maybeSingle()).data,
   });
   const { data: assignments } = useQuery({
     queryKey: ["assignments", id],
@@ -98,12 +98,31 @@ function ProjectDetail() {
         </div>
       </div>
 
+
+      {project.parent_order && (
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Order Terkait</CardTitle></CardHeader>
+          <CardContent className="text-sm grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div><div className="text-xs text-slate-500">No. Order</div><div className="font-mono font-semibold">{project.parent_order.order_no}</div></div>
+            <div><div className="text-xs text-slate-500">Sumber</div><div><Badge variant="outline">{project.parent_order.source}</Badge> <Badge variant="secondary" className="ml-1">{project.parent_order.status}</Badge></div></div>
+            <div><div className="text-xs text-slate-500">Tgl CO</div><div>{project.parent_order.co_date ?? "-"}</div></div>
+            <div><div className="text-xs text-slate-500">Customer / Kota</div><div>{project.parent_order.username ?? "-"}{project.parent_order.kota ? ` — ${project.parent_order.kota}` : ""}</div></div>
+            <div><div className="text-xs text-slate-500">Payment Order</div><div className="font-semibold">{fmtIDR(Number(project.parent_order.payment ?? 0) + Number(project.parent_order.split ?? 0))}</div></div>
+            {project.parent_order.notes && <div className="sm:col-span-2 md:col-span-3"><div className="text-xs text-slate-500">Catatan Order</div><div className="text-slate-700">{project.parent_order.notes}</div></div>}
+            <div className="sm:col-span-2 md:col-span-4">
+              <Link to="/orders" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">Buka daftar order →</Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4 md:grid-cols-4">
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Total Titik</div><div className="text-2xl font-bold">{project.total_points}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Titik Selesai</div><div className="text-2xl font-bold">{totalApproved}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Nilai Kontrak</div><div className="text-2xl font-bold">{fmtIDR(Number(project.contract_value))}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Biaya Tenaga Kerja</div><div className="text-2xl font-bold text-amber-600">{fmtIDR(totalSpend)}</div></CardContent></Card>
       </div>
+
 
       <Card>
         <CardHeader><CardTitle className="text-base">Karyawan Ditugaskan</CardTitle></CardHeader>
