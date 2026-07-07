@@ -469,9 +469,11 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button onClick={openNew}><Plus className="h-4 w-4 mr-1"/> {isReady ? "Ready Stock Baru" : "Order Baru"}</Button></DialogTrigger>
           <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{header.id ? "Edit Order" : (isReady ? "Ready Stock Baru" : "Order Baru")}</DialogTitle>
+          <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
+            <DialogHeader className="-m-6 mb-0 p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-t-lg">
+              <DialogTitle className="text-white">{header.id ? "Edit Order" : (isReady ? "Ready Stock Baru" : "Order Baru")}</DialogTitle>
             </DialogHeader>
+
 
             {/* HEADER FORM */}
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 pb-4 border-b">
