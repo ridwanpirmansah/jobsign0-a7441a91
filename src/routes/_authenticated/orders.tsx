@@ -207,6 +207,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [header, setHeader] = useState<HeaderForm>(emptyHeader());
   const [items, setItems] = useState<ItemForm[]>([]);
+  const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
+
+  const addNewItem = () => {
+    setItems((arr) => {
+      const next = emptyItem(arr.filter((i) => !i._deleted).length + 1, priceMap);
+      setExpandedItemKey(next._key);
+      return [...arr, next];
+    });
+  };
 
   type SortKey = "order_no" | "co_date" | "source" | "status" | "username" | "text_neon" | "titik" | "hpp" | "payment" | "profit";
   const [sortKey, setSortKey] = useState<SortKey>("co_date");
