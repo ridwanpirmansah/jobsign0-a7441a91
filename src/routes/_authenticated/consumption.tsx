@@ -87,7 +87,7 @@ function ConsumptionPage() {
   const saveAllowance = useMutation({
     mutationFn: async () => {
       const v = Number(allowanceInput);
-      if (!v || v < 0) throw new Error("Nominal tidak valid");
+      if (!Number.isFinite(v) || v < 0) throw new Error("Nominal jatah tidak valid");
       const { error } = await supabase.from("material_prices").update({ value: v }).eq("key", "meal_allowance_per_person");
       if (error) throw error;
     },
@@ -97,9 +97,10 @@ function ConsumptionPage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!employeeId) throw new Error("Pilih karyawan");
+      if (!employeeId) throw new Error("Pilih karyawan terlebih dahulu");
       const amt = Number(amount);
-      if (!amt || amt <= 0) throw new Error("Nominal tidak valid");
+      if (!Number.isFinite(amt) || amt <= 0) throw new Error("Nominal Total harus lebih dari 0");
+
       const emp = employees?.find(e => e.id === employeeId);
       const empName = emp?.full_name ?? "Karyawan";
       const allowance = effectiveAllowance;
@@ -276,12 +277,22 @@ function ConsumptionPage() {
                 </span>
                 <span className={`font-bold ${paymentMethod === "cash" ? "text-slate-500" : "text-amber-700"}`}>{fmtIDR(previewCharge)}</span>
               </div>
+              {previewCharge === 0 && paymentMethod === "cashbon" && (
+                <div className="mt-1.5 pt-1.5 border-t border-orange-100 text-[11px] text-emerald-700">
+                  ✓ Nominal ≤ uang makan — tidak ada tagihan ke karyawan. Hanya tercatat sebagai beban perusahaan.
+                </div>
+              )}
             </div>
           )}
 
-          <Button onClick={() => create.mutate()} disabled={create.isPending} className="bg-orange-600 hover:bg-orange-700">
-            <Plus className="h-4 w-4 mr-2" /> Simpan
+          <Button
+            onClick={() => create.mutate()}
+            disabled={create.isPending || !employeeId || !(Number(amount) > 0)}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Simpan Catatan Konsumsi
           </Button>
+
         </CardContent>
       </Card>
 
