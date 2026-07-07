@@ -645,8 +645,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   );
 }
 
-// Need React for Fragment usage in map
-import React from "react";
+// (React imported at top)
 
 // -------- ItemCard --------
 function ItemCard({
