@@ -1,31 +1,20 @@
+# Perbaikan Link "Detail →" Project
+
 ## Masalah
+Klik "Detail →" tidak membuka halaman detail project. URL berubah tapi konten tetap menampilkan daftar project (atau kosong).
 
-Data order Anda **tidak hilang** — 52 order masih utuh di database. Halaman Orders tampak kosong karena request ke server gagal dengan error:
+## Penyebab
+Di TanStack Router, file `src/routes/_authenticated/projects.tsx` dan `src/routes/_authenticated/projects.$id.tsx` memiliki prefix nama yang sama. Router memperlakukan `projects.tsx` sebagai **layout parent** dari `projects.$id.tsx`. Karena `projects.tsx` merender daftar project langsung (tanpa `<Outlet />`), child route `/projects/$id` tidak pernah punya tempat untuk dirender.
 
-> Could not embed because more than one relationship was found for 'orders' and 'order_items'
+## Solusi
+Ubah `projects.tsx` menjadi route index sehingga tidak lagi menjadi layout parent:
 
-Penyebab: tabel `order_items` punya dua foreign key ke `orders`:
-1. `order_id` → order induk
-2. `source_ready_stock_order_id` → referensi ready-stock
+1. **Rename file**: `src/routes/_authenticated/projects.tsx` → `src/routes/_authenticated/projects.index.tsx`
+2. **Update `createFileRoute`** di file tersebut dari `/_authenticated/projects` menjadi `/_authenticated/projects/`
+3. Biarkan `projects.$id.tsx` apa adanya — sekarang menjadi sibling, bukan child.
 
-PostgREST tidak tahu embed mana yang dimaksud saat kita menulis `order_items(...)`, jadi seluruh query gagal dan list kembali kosong.
+Setelah ini `/projects` tetap menampilkan list, dan `/projects/{id}` merender halaman detail secara benar.
 
-## Perbaikan
-
-Edit satu tempat di `src/lib/orders.functions.ts` pada `listOrders`: ubah embed dari
-
-```
-order_items(...)
-```
-
-menjadi eksplisit lewat FK order induk:
-
-```
-order_items!order_items_order_id_fkey(...)
-```
-
-Setelah itu list order langsung muncul kembali beserta ringkasan itemnya. Tidak ada perubahan skema, tidak ada migrasi.
-
-## File yang disentuh
-
-- `src/lib/orders.functions.ts` — 1 baris pada `listOrders`.
+## File yang diubah
+- Rename + edit `src/routes/_authenticated/projects.tsx` → `projects.index.tsx` (ganti path pada `createFileRoute`)
+- `src/routeTree.gen.ts` akan di-regenerate otomatis oleh plugin
