@@ -156,12 +156,58 @@ function ProjectDetail() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Riwayat Job Log</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Tim Pengerjaan</CardTitle></CardHeader>
         <CardContent>
+          {(() => {
+            const approved = (logs ?? []).filter((l: any) => l.status === "approved");
+            if (!approved.length) return <p className="text-sm text-slate-500">Belum ada pekerjaan yang di-approve.</p>;
+            const groups = new Map<string, { unit: string; contribs: Map<string, { name: string; qty: number; amount: number }> }>();
+            for (const l of approved) {
+              const key = l.rate?.name ?? "-";
+              const g = groups.get(key) ?? { unit: l.rate?.unit ?? "", contribs: new Map() };
+              const emp = l.employee?.full_name ?? "?";
+              const cur = g.contribs.get(emp) ?? { name: emp, qty: 0, amount: 0 };
+              cur.qty += Number(l.qty ?? 0);
+              cur.amount += Number(l.amount ?? 0);
+              g.contribs.set(emp, cur);
+              groups.set(key, g);
+            }
+            const colorFor = (k: string) => {
+              const s = k.toLowerCase();
+              if (s.includes("potong")) return "bg-blue-50 border-blue-200 text-blue-900";
+              if (s.includes("solder")) return "bg-amber-50 border-amber-200 text-amber-900";
+              if (s.includes("tempel")) return "bg-emerald-50 border-emerald-200 text-emerald-900";
+              if (s.includes("kabel")) return "bg-purple-50 border-purple-200 text-purple-900";
+              return "bg-slate-50 border-slate-200 text-slate-900";
+            };
+            return (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from(groups.entries()).map(([rateName, g]) => (
+                  <div key={rateName} className={`rounded-lg border p-3 ${colorFor(rateName)}`}>
+                    <div className="font-semibold text-sm mb-2">{rateName}</div>
+                    <ul className="space-y-1 text-sm">
+                      {Array.from(g.contribs.values()).sort((a, b) => b.qty - a.qty).map((c) => (
+                        <li key={c.name} className="flex items-center justify-between gap-2">
+                          <span className="truncate">{c.name}</span>
+                          <span className="text-xs font-medium whitespace-nowrap">{c.qty} {g.unit} · {fmtIDR(c.amount)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Riwayat Job Log</CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead>Tanggal</TableHead><TableHead>Karyawan</TableHead><TableHead>Tarif</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Upah</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Tanggal</TableHead><TableHead>Karyawan</TableHead><TableHead>Tarif</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Upah</TableHead><TableHead>Status</TableHead><TableHead>Approver</TableHead></TableRow></TableHeader>
             <TableBody>
-              {logs?.map((l) => (
+              {logs?.map((l: any) => (
                 <TableRow key={l.id}>
                   <TableCell>{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</TableCell>
                   <TableCell>{l.employee?.full_name}</TableCell>
@@ -169,13 +215,15 @@ function ProjectDetail() {
                   <TableCell className="text-right">{l.qty}</TableCell>
                   <TableCell className="text-right">{fmtIDR(Number(l.amount))}</TableCell>
                   <TableCell><Badge variant={l.status === "approved" ? "default" : l.status === "rejected" ? "destructive" : "secondary"}>{l.status}</Badge></TableCell>
+                  <TableCell className="text-xs text-slate-600">{l.approved_by ? (approverMap.get(l.approved_by) ?? "—") : "—"}</TableCell>
                 </TableRow>
               ))}
-              {!logs?.length && <TableRow><TableCell colSpan={6} className="text-center py-6 text-slate-500">Belum ada laporan</TableCell></TableRow>}
+              {!logs?.length && <TableRow><TableCell colSpan={7} className="text-center py-6 text-slate-500">Belum ada laporan</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
     </div>
   );
 }
