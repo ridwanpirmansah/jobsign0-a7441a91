@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Plus, Play, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/projects")({ component: ProjectsPage });
+export const Route = createFileRoute("/_authenticated/projects/")({ component: ProjectsPage });
 
 function ProjectsPage() {
   const { data: me, isLoading: meLoading } = useCurrentUser();

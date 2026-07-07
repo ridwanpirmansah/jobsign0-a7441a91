@@ -16,7 +16,6 @@ import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedReadyStockRouteImport } from './routes/_authenticated/ready-stock'
 import { Route as AuthenticatedRatesRouteImport } from './routes/_authenticated/rates'
-import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
@@ -25,6 +24,7 @@ import { Route as AuthenticatedCustomersRouteImport } from './routes/_authentica
 import { Route as AuthenticatedConsumptionRouteImport } from './routes/_authenticated/consumption'
 import { Route as AuthenticatedCashbonRouteImport } from './routes/_authenticated/cashbon'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
 import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
@@ -73,11 +73,6 @@ const AuthenticatedRatesRoute = AuthenticatedRatesRouteImport.update({
   path: '/rates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
-  id: '/projects',
-  path: '/projects',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedPayrollRoute = AuthenticatedPayrollRouteImport.update({
   id: '/payroll',
   path: '/payroll',
@@ -119,10 +114,16 @@ const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProjectsIndexRoute =
+  AuthenticatedProjectsIndexRouteImport.update({
+    id: '/projects/',
+    path: '/projects/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedProjectsRoute,
+  id: '/projects/$id',
+  path: '/projects/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOwnerSyncRoute = AuthenticatedOwnerSyncRouteImport.update({
   id: '/owner/sync',
@@ -203,7 +204,6 @@ export interface FileRoutesByFullPath {
   '/employees': typeof AuthenticatedEmployeesRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/payroll': typeof AuthenticatedPayrollRoute
-  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/rates': typeof AuthenticatedRatesRoute
   '/ready-stock': typeof AuthenticatedReadyStockRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -220,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
 }
 export interface FileRoutesByTo {
@@ -233,7 +234,6 @@ export interface FileRoutesByTo {
   '/employees': typeof AuthenticatedEmployeesRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/payroll': typeof AuthenticatedPayrollRoute
-  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/rates': typeof AuthenticatedRatesRoute
   '/ready-stock': typeof AuthenticatedReadyStockRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -250,6 +250,7 @@ export interface FileRoutesByTo {
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
 }
 export interface FileRoutesById {
@@ -265,7 +266,6 @@ export interface FileRoutesById {
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
-  '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/rates': typeof AuthenticatedRatesRoute
   '/_authenticated/ready-stock': typeof AuthenticatedReadyStockRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
@@ -282,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/_authenticated/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
 }
 export interface FileRouteTypes {
@@ -297,7 +298,6 @@ export interface FileRouteTypes {
     | '/employees'
     | '/orders'
     | '/payroll'
-    | '/projects'
     | '/rates'
     | '/ready-stock'
     | '/reports'
@@ -314,6 +314,7 @@ export interface FileRouteTypes {
     | '/owner/prices'
     | '/owner/sync'
     | '/projects/$id'
+    | '/projects/'
     | '/api/public/hooks/sync-projects'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -327,7 +328,6 @@ export interface FileRouteTypes {
     | '/employees'
     | '/orders'
     | '/payroll'
-    | '/projects'
     | '/rates'
     | '/ready-stock'
     | '/reports'
@@ -344,6 +344,7 @@ export interface FileRouteTypes {
     | '/owner/prices'
     | '/owner/sync'
     | '/projects/$id'
+    | '/projects'
     | '/api/public/hooks/sync-projects'
   id:
     | '__root__'
@@ -358,7 +359,6 @@ export interface FileRouteTypes {
     | '/_authenticated/employees'
     | '/_authenticated/orders'
     | '/_authenticated/payroll'
-    | '/_authenticated/projects'
     | '/_authenticated/rates'
     | '/_authenticated/ready-stock'
     | '/_authenticated/reports'
@@ -375,6 +375,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner/prices'
     | '/_authenticated/owner/sync'
     | '/_authenticated/projects/$id'
+    | '/_authenticated/projects/'
     | '/api/public/hooks/sync-projects'
   fileRoutesById: FileRoutesById
 }
@@ -436,13 +437,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/projects': {
-      id: '/_authenticated/projects'
-      path: '/projects'
-      fullPath: '/projects'
-      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/payroll': {
       id: '/_authenticated/payroll'
       path: '/payroll'
@@ -499,12 +493,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects/': {
+      id: '/_authenticated/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/projects/$id': {
       id: '/_authenticated/projects/$id'
-      path: '/$id'
+      path: '/projects/$id'
       fullPath: '/projects/$id'
       preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
-      parentRoute: typeof AuthenticatedProjectsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owner/sync': {
       id: '/_authenticated/owner/sync'
@@ -593,19 +594,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedProjectsRouteChildren {
-  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
-}
-
-const AuthenticatedProjectsRouteChildren: AuthenticatedProjectsRouteChildren = {
-  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
-}
-
-const AuthenticatedProjectsRouteWithChildren =
-  AuthenticatedProjectsRoute._addFileChildren(
-    AuthenticatedProjectsRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedCashbonRoute: typeof AuthenticatedCashbonRoute
@@ -615,7 +603,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
-  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedRatesRoute: typeof AuthenticatedRatesRoute
   AuthenticatedReadyStockRoute: typeof AuthenticatedReadyStockRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
@@ -631,6 +618,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerExpensesRoute: typeof AuthenticatedOwnerExpensesRoute
   AuthenticatedOwnerPricesRoute: typeof AuthenticatedOwnerPricesRoute
   AuthenticatedOwnerSyncRoute: typeof AuthenticatedOwnerSyncRoute
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+  AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -642,7 +631,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
-  AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedRatesRoute: AuthenticatedRatesRoute,
   AuthenticatedReadyStockRoute: AuthenticatedReadyStockRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
@@ -659,6 +647,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerExpensesRoute: AuthenticatedOwnerExpensesRoute,
   AuthenticatedOwnerPricesRoute: AuthenticatedOwnerPricesRoute,
   AuthenticatedOwnerSyncRoute: AuthenticatedOwnerSyncRoute,
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+  AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
