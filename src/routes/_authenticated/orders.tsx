@@ -497,10 +497,10 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             </div>
 
             {/* ITEMS SECTION */}
-            <div className="pt-2 space-y-3">
+            <div className="pt-2 space-y-3 rounded-lg bg-gradient-to-br from-indigo-50/60 via-white to-emerald-50/50 p-3 border border-indigo-100">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold flex items-center gap-2"><Boxes className="h-4 w-4"/> Produk dalam order ({items.filter((i) => !i._deleted).length})</div>
-                <Button size="sm" variant="outline" onClick={() => setItems((arr) => [...arr, { ...emptyItem(arr.filter((i) => !i._deleted).length + 1, priceMap) }])}>
+                <div className="text-sm font-semibold flex items-center gap-2 text-indigo-900"><Boxes className="h-4 w-4"/> Produk dalam order ({items.filter((i) => !i._deleted).length})</div>
+                <Button size="sm" variant="outline" className="border-indigo-300 text-indigo-700 hover:bg-indigo-50" onClick={addNewItem}>
                   <Plus className="h-3.5 w-3.5 mr-1"/> Tambah Produk
                 </Button>
               </div>
@@ -508,7 +508,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               {itemsQ.isLoading && header.id ? (
                 <div className="text-sm text-muted-foreground">Memuat item…</div>
               ) : items.filter((i) => !i._deleted).length === 0 ? (
-                <div className="text-sm text-muted-foreground border rounded-md p-4 text-center">Belum ada produk. Klik "Tambah Produk".</div>
+                <div className="text-sm text-muted-foreground border rounded-md p-4 text-center bg-white">Belum ada produk. Klik "Tambah Produk".</div>
               ) : (
                 items.map((it, idx) => it._deleted ? null : (
                   <ItemCard
@@ -518,6 +518,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     priceMap={priceMap}
                     rsList={(rsQ.data ?? []) as any[]}
                     excludeRsId={header.id}
+                    expanded={expandedItemKey === it._key}
+                    onToggleExpand={() => setExpandedItemKey((k) => k === it._key ? null : it._key)}
                     onChange={(patch) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, ...patch } : x))}
                     onDelete={() => setItems((arr) => {
                       const target = arr[idx];
@@ -527,7 +529,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   />
                 ))
               )}
+
+              {items.filter((i) => !i._deleted).length > 0 && (
+                <div className="flex justify-center pt-1">
+                  <Button size="sm" variant="outline" className="border-dashed border-indigo-300 text-indigo-700 hover:bg-indigo-50" onClick={addNewItem}>
+                    <Plus className="h-3.5 w-3.5 mr-1"/> Tambah Produk Lagi
+                  </Button>
+                </div>
+              )}
             </div>
+
 
             {/* TOTALS */}
             <Card className="bg-muted/40 mt-3">
