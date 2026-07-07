@@ -669,13 +669,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
 // -------- ItemCard --------
 function ItemCard({
-  item, index, priceMap, rsList, excludeRsId, onChange, onDelete,
+  item, index, priceMap, rsList, excludeRsId, expanded, onToggleExpand, onChange, onDelete,
 }: {
   item: ItemForm;
   index: number;
   priceMap: Record<string, number>;
   rsList: any[];
   excludeRsId?: string;
+  expanded: boolean;
+  onToggleExpand: () => void;
   onChange: (patch: Partial<ItemForm>) => void;
   onDelete: () => void;
 }) {
@@ -687,24 +689,49 @@ function ItemCard({
     ? Number(rsList.find((r) => r.id === item.source_ready_stock_order_id)?.hpp ?? 0)
     : calcItemHpp(item, priceMap);
 
+  const kindStyle = item.kind === "custom"
+    ? { border: "border-l-4 border-l-indigo-500", bg: "bg-indigo-50/60", badge: "bg-indigo-100 text-indigo-800", label: "Custom" }
+    : item.kind === "ready_stock_ref"
+    ? { border: "border-l-4 border-l-emerald-500", bg: "bg-emerald-50/60", badge: "bg-emerald-100 text-emerald-800", label: "Ready Stock" }
+    : { border: "border-l-4 border-l-amber-500", bg: "bg-amber-50/60", badge: "bg-amber-100 text-amber-800", label: "Manual" };
+
+  const titleText = item.kind === "ready_stock_manual"
+    ? (item.manual_name || "Ready Stock manual")
+    : item.kind === "ready_stock_ref"
+    ? (rsList.find((r) => r.id === item.source_ready_stock_order_id)?.text_neon || "Pilih ready stock…")
+    : (item.text_neon || "Belum diisi");
+
   return (
-    <Card className="border-slate-300">
-      <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">#{item.position}</Badge>
+    <Card className={`border-slate-300 ${kindStyle.border} shadow-sm`}>
+      <CardHeader
+        className={`p-3 pb-2 flex-row items-center justify-between space-y-0 cursor-pointer ${kindStyle.bg} rounded-t-lg`}
+        onClick={onToggleExpand}
+      >
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button type="button" className="shrink-0" onClick={(e) => { e.stopPropagation(); onToggleExpand(); }} aria-label={expanded ? "Tutup" : "Buka"}>
+            {expanded ? <ChevronDown className="h-4 w-4 text-slate-600"/> : <ChevronRight className="h-4 w-4 text-slate-600"/>}
+          </button>
+          <Badge className={`${kindStyle.badge} border-0`}>#{item.position}</Badge>
+          <span className={`text-xs px-2 py-0.5 rounded-full ${kindStyle.badge}`}>{kindStyle.label}</span>
+          <span className="font-medium text-sm truncate" title={titleText}>{titleText}</span>
+          <span className="text-xs text-muted-foreground shrink-0 ml-auto pr-2">HPP: <span className="font-semibold text-foreground">Rp {rp(itemHpp)}</span></span>
+        </div>
+        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); onDelete(); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+      </CardHeader>
+      {expanded && (
+      <CardContent className="p-3 pt-2">
+        <div className="mb-2">
+          <Label className="text-xs">Jenis Produk</Label>
           <Select value={item.kind} onValueChange={(v) => onChange({ kind: v as ItemKind })}>
-            <SelectTrigger className="h-8 w-56"><SelectValue/></SelectTrigger>
+            <SelectTrigger className="h-8 w-full sm:w-64"><SelectValue/></SelectTrigger>
             <SelectContent>
               <SelectItem value="custom">Custom (Neon Sign)</SelectItem>
               <SelectItem value="ready_stock_ref">Ready Stock (pilih existing)</SelectItem>
               <SelectItem value="ready_stock_manual">Ready Stock / Manual</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-xs text-muted-foreground">HPP: <span className="font-semibold text-foreground">Rp {rp(itemHpp)}</span></span>
         </div>
-        <Button size="icon" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-      </CardHeader>
-      <CardContent className="p-3 pt-1">
+
         {item.kind === "custom" && (
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="sm:col-span-2"><Label>TEXT Neon *</Label><Input value={item.text_neon} onChange={(e) => onChange({ text_neon: e.target.value })}/></div>
