@@ -264,13 +264,17 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   useEffect(() => {
     if (open && header.id && itemsQ.data) {
       const rows = itemsQ.data as any[];
-      setItems(rows.length ? rows.map(itemFromDb) : [emptyItem(1, priceMap, isReady ? "custom" : "custom")]);
+      const list = rows.length ? rows.map(itemFromDb) : [emptyItem(1, priceMap, isReady ? "custom" : "custom")];
+      setItems(list);
+      setExpandedItemKey(list.length === 1 ? list[0]._key : null);
     }
   }, [open, header.id, itemsQ.data]);
 
   const openNew = () => {
     setHeader(emptyHeader(isReady ? nextReadyStockNo : nextOrderNo, isReady ? "ready_stock" : "active"));
-    setItems([emptyItem(1, priceMap, "custom")]);
+    const first = emptyItem(1, priceMap, "custom");
+    setItems([first]);
+    setExpandedItemKey(first._key);
     setOpen(true);
   };
   const openEdit = (o: any) => {
@@ -282,8 +286,10 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       notes: o.notes ?? "",
     });
     setItems([]); // will be filled by itemsQ effect
+    setExpandedItemKey(null);
     setOpen(true);
   };
+
   const openDuplicate = (o: any) => {
     setHeader({
       source: o.source, status: (o.status as OrderStatus) ?? "active",
