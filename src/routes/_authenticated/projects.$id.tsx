@@ -27,7 +27,7 @@ function ProjectDetail() {
 
   const { data: project } = useQuery({
     queryKey: ["project", id],
-    queryFn: async () => (await supabase.from("projects").select("*, customer:customers(name,phone)").eq("id", id).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("projects").select("*, customer:customers(name,phone), parent_order:orders!projects_parent_order_id_fkey(id, order_no, source, co_date, username, kota, payment, split, status, notes)").eq("id", id).maybeSingle()).data,
   });
   const { data: assignments } = useQuery({
     queryKey: ["assignments", id],
