@@ -87,7 +87,7 @@ function ConsumptionPage() {
   const saveAllowance = useMutation({
     mutationFn: async () => {
       const v = Number(allowanceInput);
-      if (!v || v < 0) throw new Error("Nominal tidak valid");
+      if (!Number.isFinite(v) || v < 0) throw new Error("Nominal jatah tidak valid");
       const { error } = await supabase.from("material_prices").update({ value: v }).eq("key", "meal_allowance_per_person");
       if (error) throw error;
     },
@@ -97,9 +97,10 @@ function ConsumptionPage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!employeeId) throw new Error("Pilih karyawan");
+      if (!employeeId) throw new Error("Pilih karyawan terlebih dahulu");
       const amt = Number(amount);
-      if (!amt || amt <= 0) throw new Error("Nominal tidak valid");
+      if (!Number.isFinite(amt) || amt <= 0) throw new Error("Nominal Total harus lebih dari 0");
+
       const emp = employees?.find(e => e.id === employeeId);
       const empName = emp?.full_name ?? "Karyawan";
       const allowance = effectiveAllowance;
