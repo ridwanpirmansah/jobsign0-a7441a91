@@ -44,6 +44,15 @@ function ProjectDetail() {
       .eq("project_id", id).order("log_date", { ascending: false })).data ?? [],
   });
 
+  const approverIds = Array.from(new Set((logs ?? []).map((l: any) => l.approved_by).filter(Boolean))) as string[];
+  const { data: approvers } = useQuery({
+    queryKey: ["approvers", approverIds.sort().join(",")],
+    enabled: approverIds.length > 0,
+    queryFn: async () => (await supabase.from("profiles").select("id, full_name").in("id", approverIds)).data ?? [],
+  });
+  const approverMap = new Map((approvers ?? []).map((p: any) => [p.id, p.full_name]));
+
+
   const updateStatus = useMutation({
     mutationFn: async (status: string) => {
       const { error } = await supabase.from("projects").update({ status: status as "draft" | "active" | "done" | "cancelled" }).eq("id", id);
