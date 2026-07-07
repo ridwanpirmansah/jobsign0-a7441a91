@@ -504,6 +504,136 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          adaptor: number
+          adaptor_type: string | null
+          akrilik_cost: number
+          akrilik_l: number
+          akrilik_p: number
+          baut_fischer: number
+          biaya_lainnya: number
+          created_at: string
+          id: string
+          item_hpp: number
+          kabel_cost: number
+          kabel_meter: number | null
+          kabel_socket_cost: number
+          kabel_socket_meter: number
+          kind: Database["public"]["Enums"]["order_item_kind"]
+          led_cost: number
+          led_meter: number
+          manual_hpp: number
+          manual_name: string | null
+          manual_price: number
+          modul: number
+          notes: string | null
+          order_id: string
+          outdoor_cost: number | null
+          position: number
+          project_id: string | null
+          socket_dc: number
+          solder_cost: number
+          source_ready_stock_order_id: string | null
+          tempel_cost: number
+          text_neon: string | null
+          titik: number
+          updated_at: string
+        }
+        Insert: {
+          adaptor?: number
+          adaptor_type?: string | null
+          akrilik_cost?: number
+          akrilik_l?: number
+          akrilik_p?: number
+          baut_fischer?: number
+          biaya_lainnya?: number
+          created_at?: string
+          id?: string
+          item_hpp?: number
+          kabel_cost?: number
+          kabel_meter?: number | null
+          kabel_socket_cost?: number
+          kabel_socket_meter?: number
+          kind?: Database["public"]["Enums"]["order_item_kind"]
+          led_cost?: number
+          led_meter?: number
+          manual_hpp?: number
+          manual_name?: string | null
+          manual_price?: number
+          modul?: number
+          notes?: string | null
+          order_id: string
+          outdoor_cost?: number | null
+          position?: number
+          project_id?: string | null
+          socket_dc?: number
+          solder_cost?: number
+          source_ready_stock_order_id?: string | null
+          tempel_cost?: number
+          text_neon?: string | null
+          titik?: number
+          updated_at?: string
+        }
+        Update: {
+          adaptor?: number
+          adaptor_type?: string | null
+          akrilik_cost?: number
+          akrilik_l?: number
+          akrilik_p?: number
+          baut_fischer?: number
+          biaya_lainnya?: number
+          created_at?: string
+          id?: string
+          item_hpp?: number
+          kabel_cost?: number
+          kabel_meter?: number | null
+          kabel_socket_cost?: number
+          kabel_socket_meter?: number
+          kind?: Database["public"]["Enums"]["order_item_kind"]
+          led_cost?: number
+          led_meter?: number
+          manual_hpp?: number
+          manual_name?: string | null
+          manual_price?: number
+          modul?: number
+          notes?: string | null
+          order_id?: string
+          outdoor_cost?: number | null
+          position?: number
+          project_id?: string | null
+          socket_dc?: number
+          solder_cost?: number
+          source_ready_stock_order_id?: string | null
+          tempel_cost?: number
+          text_neon?: string | null
+          titik?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_source_ready_stock_order_id_fkey"
+            columns: ["source_ready_stock_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           adaptor: number
@@ -772,6 +902,7 @@ export type Database = {
           deadline: string | null
           description: string | null
           id: string
+          parent_order_id: string | null
           status: Database["public"]["Enums"]["project_status"]
           title: string
           total_points: number
@@ -785,6 +916,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          parent_order_id?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           title: string
           total_points?: number
@@ -798,6 +930,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          parent_order_id?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           title?: string
           total_points?: number
@@ -809,6 +942,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -969,6 +1109,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_owner: { Args: { _user_id: string }; Returns: boolean }
+      refresh_order_from_items: { Args: { _oid: string }; Returns: undefined }
       rotate_attendance_secret: { Args: never; Returns: string }
       set_attendance_note: {
         Args: { _attendance_id: string; _note: string }
@@ -995,6 +1136,7 @@ export type Database = {
         | "lainnya"
         | "packing"
       job_log_status: "pending" | "approved" | "rejected"
+      order_item_kind: "custom" | "ready_stock_ref" | "ready_stock_manual"
       order_source:
         | "shopee"
         | "tiktok"
@@ -1147,6 +1289,7 @@ export const Constants = {
         "packing",
       ],
       job_log_status: ["pending", "approved", "rejected"],
+      order_item_kind: ["custom", "ready_stock_ref", "ready_stock_manual"],
       order_source: [
         "shopee",
         "tiktok",
