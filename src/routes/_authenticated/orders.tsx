@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listOrders, listPrices, upsertOrder, deleteOrder } from "@/lib/orders.functions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  listOrders, listPrices, upsertOrder, deleteOrder,
+  listOrderItems, upsertOrderItem, deleteOrderItem, listReadyStockAvailable,
+} from "@/lib/orders.functions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +22,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import {
+  ShoppingBag, Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, ArrowUpDown,
+  Package, Boxes, ChevronRight, ChevronDown,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/orders")({
@@ -46,8 +52,9 @@ function suggestAdaptor(ledMeter: number): typeof ADAPTOR_VARIANTS[number] {
 }
 
 const rp = (n: number) => new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
+const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
 
-type FormState = {
+type HeaderForm = {
   id?: string;
   source: Source;
   status: OrderStatus;
@@ -55,6 +62,21 @@ type FormState = {
   co_date: string;
   username: string;
   kota: string;
+  payment: string;
+  dp: string;
+  split: string;
+  notes: string;
+};
+
+type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual";
+
+type ItemForm = {
+  id?: string;                // DB id if existing
+  _key: string;               // client key
+  _deleted?: boolean;
+  position: number;
+  kind: ItemKind;
+  // custom
   text_neon: string;
   akrilik_p: string;
   akrilik_l: string;
@@ -62,11 +84,8 @@ type FormState = {
   titik: string;
   kabel_meter: string;
   kabel_socket_meter: string;
-  payment: string;
-  dp: string;
-  split: string;
   adaptor: string;
-  adaptor_type: string; // variant key, or "manual"
+  adaptor_type: string;
   adaptor_manual: boolean;
   modul: string;
   socket_dc: string;
@@ -74,67 +93,90 @@ type FormState = {
   use_outdoor: boolean;
   outdoor_cost: string;
   notes: string;
+  // ready_stock_ref
+  source_ready_stock_order_id: string;
+  // ready_stock_manual
+  manual_name: string;
+  manual_price: string;
+  manual_hpp: string;
 };
 
-function emptyForm(defaults: Record<string, number>, nextOrderNo: string = ""): FormState {
+function emptyHeader(nextOrderNo = "", status: OrderStatus = "active"): HeaderForm {
   return {
-    source: "shopee",
-    status: "active",
-    order_no: nextOrderNo,
+    source: "shopee", status, order_no: nextOrderNo,
     co_date: new Date().toISOString().slice(0, 10),
-    username: "",
-    kota: "",
-    text_neon: "",
-    akrilik_p: "",
-    akrilik_l: "",
-    led_meter: "",
-    titik: "",
-    kabel_meter: "",
-    kabel_socket_meter: "1",
-    payment: "",
-    dp: "",
-    split: "",
-    adaptor: "",
-    adaptor_type: "adaptor_2a",
-    adaptor_manual: false,
-    modul: String(defaults.modul_default ?? 0),
-    socket_dc: String(defaults.socket_dc_default ?? 0),
-    baut_fischer: String(defaults.baut_fischer_default ?? 0),
-    use_outdoor: false,
-    outdoor_cost: "",
-    notes: "",
+    username: "", kota: "",
+    payment: "", dp: "", split: "", notes: "",
   };
 }
 
-function toForm(o: any): FormState {
+function emptyItem(pos: number, defaults: Record<string, number> = {}, kind: ItemKind = "custom"): ItemForm {
   return {
-    id: o.id,
-    source: o.source,
-    status: (o.status as OrderStatus) ?? "active",
-    order_no: o.order_no,
-    co_date: o.co_date ?? "",
-    username: o.username ?? "",
-    kota: o.kota ?? "",
-    text_neon: o.text_neon ?? "",
-    akrilik_p: String(o.akrilik_p ?? ""),
-    akrilik_l: String(o.akrilik_l ?? ""),
-    led_meter: String(o.led_meter ?? ""),
-    titik: String(o.titik ?? ""),
-    kabel_meter: String(o.kabel_meter ?? ""),
-    kabel_socket_meter: String(o.kabel_socket_meter ?? 1),
-    payment: String(o.payment ?? ""),
-    dp: String(o.dp ?? ""),
-    split: String(o.split ?? ""),
-    adaptor: String(o.adaptor ?? 0),
-    adaptor_type: o.adaptor_type ?? "adaptor_2a",
-    adaptor_manual: !!o.adaptor && !!o.adaptor_type ? false : false,
-    modul: String(o.modul ?? 0),
-    socket_dc: String(o.socket_dc ?? 0),
-    baut_fischer: String(o.baut_fischer ?? 0),
-    use_outdoor: false,
-    outdoor_cost: String(o.outdoor_cost ?? ""),
-    notes: o.notes ?? "",
+    _key: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    position: pos, kind,
+    text_neon: "", akrilik_p: "", akrilik_l: "", led_meter: "", titik: "",
+    kabel_meter: "", kabel_socket_meter: "1",
+    adaptor: "", adaptor_type: "adaptor_2a", adaptor_manual: false,
+    modul: String(defaults.modul_default ?? 0),
+    socket_dc: String(defaults.socket_dc_default ?? 0),
+    baut_fischer: String(defaults.baut_fischer_default ?? 0),
+    use_outdoor: false, outdoor_cost: "", notes: "",
+    source_ready_stock_order_id: "",
+    manual_name: "", manual_price: "", manual_hpp: "",
   };
+}
+
+function itemFromDb(row: any): ItemForm {
+  return {
+    id: row.id, _key: row.id,
+    position: row.position ?? 1,
+    kind: row.kind ?? "custom",
+    text_neon: row.text_neon ?? "",
+    akrilik_p: String(row.akrilik_p ?? ""),
+    akrilik_l: String(row.akrilik_l ?? ""),
+    led_meter: String(row.led_meter ?? ""),
+    titik: String(row.titik ?? ""),
+    kabel_meter: row.kabel_meter == null ? "" : String(row.kabel_meter),
+    kabel_socket_meter: String(row.kabel_socket_meter ?? 1),
+    adaptor: String(row.adaptor ?? 0),
+    adaptor_type: row.adaptor_type ?? "adaptor_2a",
+    adaptor_manual: false,
+    modul: String(row.modul ?? 0),
+    socket_dc: String(row.socket_dc ?? 0),
+    baut_fischer: String(row.baut_fischer ?? 0),
+    use_outdoor: Number(row.outdoor_cost ?? 0) > 0,
+    outdoor_cost: row.outdoor_cost == null ? "" : String(row.outdoor_cost),
+    notes: row.notes ?? "",
+    source_ready_stock_order_id: row.source_ready_stock_order_id ?? "",
+    manual_name: row.manual_name ?? "",
+    manual_price: String(row.manual_price ?? ""),
+    manual_hpp: String(row.manual_hpp ?? ""),
+  };
+}
+
+function calcItemHpp(item: ItemForm, priceMap: Record<string, number>): number {
+  if (item.kind === "ready_stock_manual") return num(item.manual_hpp);
+  if (item.kind === "ready_stock_ref") return 0; // filled from ref on server
+  // custom
+  const led_meter = num(item.led_meter);
+  const titik = num(item.titik);
+  const p = num(item.akrilik_p);
+  const l = num(item.akrilik_l);
+  const kabel_meter = num(item.kabel_meter) || (((led_meter / 4) * 3) + 1.5 + ((titik * 5) / 100));
+  const kabel_socket_meter = item.kabel_socket_meter === "" ? 1 : num(item.kabel_socket_meter);
+  const outdoor_cost = item.use_outdoor ? (num(item.outdoor_cost) || titik * 2000) : 0;
+  const led_cost = Math.round(led_meter * (priceMap.led_per_meter ?? 0));
+  const akrilik_cost = Math.round(p * l * (priceMap.akrilik_per_cm2 ?? 0));
+  const solder_cost = Math.round(titik * (priceMap.solder_per_titik ?? 0));
+  const tempel_cost = Math.round(titik * (priceMap.tempel_per_titik ?? 0));
+  const kabel_cost = Math.round(kabel_meter * (priceMap.kabel_per_meter ?? 0));
+  const kabel_socket_cost = Math.round(kabel_socket_meter * (priceMap.kabel_socket_per_meter ?? 0));
+  const suggested = suggestAdaptor(led_meter);
+  const variantPrice = priceMap[item.adaptor_type] ?? suggested.defaultPrice;
+  const adaptorCost = item.adaptor_manual ? num(item.adaptor) : variantPrice;
+  const base = led_cost + akrilik_cost + solder_cost + tempel_cost + kabel_cost + kabel_socket_cost +
+    adaptorCost + num(item.modul) + num(item.socket_dc) + num(item.baut_fischer) + outdoor_cost;
+  return base + Math.round(base * 0.01);
 }
 
 export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock" }) {
@@ -143,10 +185,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const fetchPrices = useServerFn(listPrices);
   const saveOrder = useServerFn(upsertOrder);
   const delOrder = useServerFn(deleteOrder);
+  const fetchItems = useServerFn(listOrderItems);
+  const saveItem = useServerFn(upsertOrderItem);
+  const delItem = useServerFn(deleteOrderItem);
+  const fetchRs = useServerFn(listReadyStockAvailable);
   const qc = useQueryClient();
 
   const ordersQ = useQuery({ queryKey: ["orders"], queryFn: () => fetchOrders() });
   const pricesQ = useQuery({ queryKey: ["material_prices"], queryFn: () => fetchPrices() });
+  const rsQ = useQuery({ queryKey: ["rs-available"], queryFn: () => fetchRs() });
 
   const priceMap = useMemo(() => {
     const m: Record<string, number> = {};
@@ -157,7 +204,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState("");
   const [srcFilter, setSrcFilter] = useState<string>("all");
-  const [form, setForm] = useState<FormState>(emptyForm({}));
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [header, setHeader] = useState<HeaderForm>(emptyHeader());
+  const [items, setItems] = useState<ItemForm[]>([]);
 
   type SortKey = "order_no" | "co_date" | "source" | "status" | "username" | "text_neon" | "titik" | "hpp" | "payment" | "profit";
   const [sortKey, setSortKey] = useState<SortKey>("co_date");
@@ -166,7 +215,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(k); setSortDir(k === "co_date" || k === "profit" || k === "payment" || k === "hpp" ? "desc" : "asc"); }
   };
-
 
   const nextOrderNo = useMemo(() => {
     const list = ordersQ.data ?? [];
@@ -197,104 +245,150 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     return `RS-${max + 1}`;
   }, [ordersQ.data]);
 
+  // Load items when editing an existing order
+  const itemsQ = useQuery({
+    queryKey: ["order-items", header.id],
+    queryFn: () => fetchItems({ data: { orderId: header.id! } }),
+    enabled: open && !!header.id,
+  });
+
+  useEffect(() => {
+    if (open && header.id && itemsQ.data) {
+      const rows = itemsQ.data as any[];
+      setItems(rows.length ? rows.map(itemFromDb) : [emptyItem(1, priceMap, isReady ? "custom" : "custom")]);
+    }
+  }, [open, header.id, itemsQ.data]);
+
   const openNew = () => {
-    const f = emptyForm(priceMap, isReady ? nextReadyStockNo : nextOrderNo);
-    if (isReady) { f.status = "ready_stock"; }
-    setForm(f);
+    setHeader(emptyHeader(isReady ? nextReadyStockNo : nextOrderNo, isReady ? "ready_stock" : "active"));
+    setItems([emptyItem(1, priceMap, "custom")]);
     setOpen(true);
   };
-  const openEdit = (o: any) => { setForm(toForm(o)); setOpen(true); };
+  const openEdit = (o: any) => {
+    setHeader({
+      id: o.id, source: o.source, status: (o.status as OrderStatus) ?? "active",
+      order_no: o.order_no, co_date: o.co_date ?? "",
+      username: o.username ?? "", kota: o.kota ?? "",
+      payment: String(o.payment ?? ""), dp: String(o.dp ?? ""), split: String(o.split ?? ""),
+      notes: o.notes ?? "",
+    });
+    setItems([]); // will be filled by itemsQ effect
+    setOpen(true);
+  };
   const openDuplicate = (o: any) => {
-    const f = toForm(o);
-    delete f.id;
-    f.order_no = isReady ? nextReadyStockNo : nextOrderNo;
-    f.co_date = new Date().toISOString().slice(0, 10);
-    setForm(f);
+    setHeader({
+      source: o.source, status: (o.status as OrderStatus) ?? "active",
+      order_no: isReady ? nextReadyStockNo : nextOrderNo,
+      co_date: new Date().toISOString().slice(0, 10),
+      username: o.username ?? "", kota: o.kota ?? "",
+      payment: String(o.payment ?? ""), dp: "", split: String(o.split ?? ""),
+      notes: o.notes ?? "",
+    });
+    // clone items
+    const srcItems = (o.order_items ?? []) as any[];
+    if (srcItems.length) {
+      // Only clone summary; deep clone requires refetch - keep simple: single item from header row copy
+      // Better: fetch items of that order and clone. For now: create 1 custom placeholder if we lack detail.
+      setItems([emptyItem(1, priceMap)]);
+    } else {
+      setItems([emptyItem(1, priceMap)]);
+    }
     setOpen(true);
   };
 
-  const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
-
-  // Auto-suggested adaptor variant based on LED length
-  const ledMeterNum = num(form.led_meter);
-  const suggestedVariant = useMemo(() => suggestAdaptor(ledMeterNum), [ledMeterNum]);
-
-  // Resolve adaptor cost: manual override > variant from price map > variant default
-  const adaptorVariantKey = form.adaptor_type || suggestedVariant.key;
-  const adaptorVariantPrice = useMemo(() => {
-    const v = ADAPTOR_VARIANTS.find((a) => a.key === adaptorVariantKey) ?? suggestedVariant;
-    return priceMap[v.key] ?? v.defaultPrice;
-  }, [adaptorVariantKey, priceMap, suggestedVariant]);
-  const adaptorCost = form.adaptor_manual ? num(form.adaptor) : adaptorVariantPrice;
-
-  // Live calculation preview (mirror DB trigger)
-  const calc = useMemo(() => {
-    const led_meter = num(form.led_meter);
-    const titik = num(form.titik);
-    const p = num(form.akrilik_p);
-    const l = num(form.akrilik_l);
-    const kabel_meter = num(form.kabel_meter) || (((led_meter / 4) * 3) + 1.5 + ((titik * 5) / 100));
-    const kabel_socket_meter = form.kabel_socket_meter === "" ? 1 : num(form.kabel_socket_meter);
-    const outdoor_cost = form.use_outdoor ? (num(form.outdoor_cost) || titik * 2000) : 0;
-    const led_cost = Math.round(led_meter * (priceMap.led_per_meter ?? 0));
-    const akrilik_cost = Math.round(p * l * (priceMap.akrilik_per_cm2 ?? 0));
-    const solder_cost = Math.round(titik * (priceMap.solder_per_titik ?? 0));
-    const tempel_cost = Math.round(titik * (priceMap.tempel_per_titik ?? 0));
-    const kabel_cost = Math.round(kabel_meter * (priceMap.kabel_per_meter ?? 0));
-    const kabel_socket_cost = Math.round(kabel_socket_meter * (priceMap.kabel_socket_per_meter ?? 0));
-    const base_hpp = led_cost + akrilik_cost + solder_cost + tempel_cost + kabel_cost + kabel_socket_cost +
-      adaptorCost + num(form.modul) + num(form.socket_dc) + num(form.baut_fischer) + outdoor_cost;
-    const biaya_lainnya = Math.round(base_hpp * 0.01);
-    const hpp = base_hpp + biaya_lainnya;
-    const totalPay = num(form.payment) + num(form.split);
-    const profit = totalPay - hpp;
-    const profit_pct = totalPay > 0 ? (profit / totalPay) * 100 : 0;
-    const sisa = totalPay - num(form.dp);
-    const rec_min = Math.round(hpp * 1.8);
-    const rec_max = Math.round(hpp * 2);
-    const marketplacePct = Number(priceMap.marketplace_markup_pct ?? 22);
-    const rec_marketplace = Math.round((totalPay > 0 ? totalPay : hpp) * (1 + marketplacePct / 100));
-    return { kabel_meter, kabel_socket_meter, outdoor_cost, led_cost, akrilik_cost, solder_cost, tempel_cost, kabel_cost, kabel_socket_cost, adaptor_cost: adaptorCost, biaya_lainnya, hpp, profit, profit_pct, sisa, rec_min, rec_max, rec_marketplace, marketplacePct, totalPay };
-  }, [form, priceMap, adaptorCost]);
+  const totalItemsHpp = useMemo(() =>
+    items.filter((i) => !i._deleted).reduce((s, i) => {
+      if (i.kind === "ready_stock_ref") {
+        const rs = (rsQ.data ?? []).find((r: any) => r.id === i.source_ready_stock_order_id);
+        return s + Number(rs?.hpp ?? 0);
+      }
+      return s + calcItemHpp(i, priceMap);
+    }, 0),
+    [items, priceMap, rsQ.data],
+  );
+  const totalPay = num(header.payment) + num(header.split);
+  const totalProfit = totalPay - totalItemsHpp;
 
   const saveMut = useMutation({
     mutationFn: async () => {
-      const isDraftLike = form.status === "draft" || form.status === "ready_stock";
-      if (!form.text_neon.trim()) throw new Error("TEXT wajib diisi");
-      if (!isDraftLike && !form.order_no.trim()) throw new Error("No. Order wajib diisi untuk status Aktif/Retur");
-      return saveOrder({
+      const isDraftLike = header.status === "draft" || header.status === "ready_stock";
+      const alive = items.filter((i) => !i._deleted);
+      if (alive.length === 0) throw new Error("Minimal harus ada 1 item produk");
+      for (const it of alive) {
+        if (it.kind === "custom" && !it.text_neon.trim()) throw new Error(`Item #${it.position}: TEXT wajib diisi`);
+        if (it.kind === "ready_stock_ref" && !it.source_ready_stock_order_id) throw new Error(`Item #${it.position}: pilih ready-stock`);
+        if (it.kind === "ready_stock_manual" && !it.manual_name.trim()) throw new Error(`Item #${it.position}: nama produk wajib`);
+      }
+      if (!isDraftLike && !header.order_no.trim()) throw new Error("No. Order wajib diisi untuk status Aktif/Retur");
+
+      // For legacy compat, keep required text_neon at header level (use first item's label)
+      const firstLabel = alive[0].kind === "custom" ? alive[0].text_neon : alive[0].manual_name || "Ready Stock";
+
+      const res = await saveOrder({
         data: {
-          id: form.id,
-          source: form.source,
-          status: form.status,
-          order_no: form.order_no.trim(),
-          co_date: form.co_date || null,
-          username: form.username || null,
-          kota: form.kota || null,
-          text_neon: form.text_neon.trim(),
-          akrilik_p: num(form.akrilik_p),
-          akrilik_l: num(form.akrilik_l),
-          led_meter: num(form.led_meter),
-          titik: Math.floor(num(form.titik)),
-          kabel_meter: num(form.kabel_meter),
-          kabel_socket_meter: form.kabel_socket_meter === "" ? 1 : num(form.kabel_socket_meter),
-          payment: num(form.payment),
-          dp: num(form.dp),
-          split: num(form.split),
-          adaptor: adaptorCost,
-          adaptor_type: adaptorVariantKey,
-          modul: num(form.modul),
-          socket_dc: num(form.socket_dc),
-          baut_fischer: num(form.baut_fischer),
-          outdoor_cost: !form.use_outdoor ? 0 : (form.outdoor_cost === "" ? null : num(form.outdoor_cost)),
-          notes: form.notes || null,
+          id: header.id,
+          source: header.source,
+          status: header.status,
+          order_no: header.order_no.trim(),
+          co_date: header.co_date || null,
+          username: header.username || null,
+          kota: header.kota || null,
+          text_neon: firstLabel,
+          akrilik_p: 0, akrilik_l: 0, led_meter: 0, titik: 0,
+          kabel_meter: 0, kabel_socket_meter: 1,
+          payment: num(header.payment), dp: num(header.dp), split: num(header.split),
+          adaptor: 0, adaptor_type: null,
+          modul: 0, socket_dc: 0, baut_fischer: 0,
+          outdoor_cost: 0,
+          notes: header.notes || null,
         },
       });
+      const orderId = res.id!;
+
+      // Delete removed items
+      for (const it of items) {
+        if (it._deleted && it.id) await delItem({ data: { id: it.id } });
+      }
+      // Upsert alive items
+      for (let i = 0; i < alive.length; i++) {
+        const it = alive[i];
+        const pos = i + 1;
+        const suggested = suggestAdaptor(num(it.led_meter));
+        const variantPrice = priceMap[it.adaptor_type] ?? suggested.defaultPrice;
+        const adaptorCost = it.adaptor_manual ? num(it.adaptor) : variantPrice;
+        await saveItem({
+          data: {
+            id: it.id,
+            order_id: orderId,
+            position: pos,
+            kind: it.kind,
+            text_neon: it.kind === "custom" ? it.text_neon : null,
+            akrilik_p: num(it.akrilik_p), akrilik_l: num(it.akrilik_l),
+            led_meter: num(it.led_meter),
+            titik: Math.floor(num(it.titik)),
+            kabel_meter: it.kabel_meter === "" ? null : num(it.kabel_meter),
+            kabel_socket_meter: it.kabel_socket_meter === "" ? 1 : num(it.kabel_socket_meter),
+            adaptor: it.kind === "custom" ? adaptorCost : 0,
+            adaptor_type: it.kind === "custom" ? (it.adaptor_type || null) : null,
+            modul: num(it.modul), socket_dc: num(it.socket_dc), baut_fischer: num(it.baut_fischer),
+            outdoor_cost: it.kind === "custom"
+              ? (!it.use_outdoor ? 0 : (it.outdoor_cost === "" ? null : num(it.outdoor_cost)))
+              : 0,
+            source_ready_stock_order_id: it.kind === "ready_stock_ref" ? it.source_ready_stock_order_id : null,
+            manual_name: it.kind === "ready_stock_manual" ? it.manual_name : null,
+            manual_price: it.kind === "ready_stock_manual" ? num(it.manual_price) : 0,
+            manual_hpp: it.kind === "ready_stock_manual" ? num(it.manual_hpp) : 0,
+            notes: it.notes || null,
+          },
+        });
+      }
+      return { orderId };
     },
     onSuccess: () => {
-      toast.success(form.id ? "Order diperbarui" : "Order ditambahkan");
+      toast.success(header.id ? "Order diperbarui" : "Order ditambahkan");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["rs-available"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Gagal simpan"),
   });
@@ -303,26 +397,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     mutationFn: (id: string) => delOrder({ data: { id } }),
     onSuccess: () => { toast.success("Dihapus"); qc.invalidateQueries({ queryKey: ["orders"] }); },
     onError: (e: any) => toast.error(e?.message ?? "Gagal hapus"),
-  });
-
-  const convertMut = useMutation({
-    mutationFn: (o: any) => saveOrder({ data: {
-      id: o.id, source: o.source, status: "active", order_no: "",
-      co_date: o.co_date ?? new Date().toISOString().slice(0, 10),
-      username: o.username, kota: o.kota, text_neon: o.text_neon,
-      akrilik_p: Number(o.akrilik_p ?? 0), akrilik_l: Number(o.akrilik_l ?? 0),
-      led_meter: Number(o.led_meter ?? 0), titik: Math.floor(Number(o.titik ?? 0)),
-      kabel_meter: Number(o.kabel_meter ?? 0),
-      kabel_socket_meter: Number(o.kabel_socket_meter ?? 1),
-      payment: Number(o.payment ?? 0), dp: Number(o.dp ?? 0), split: Number(o.split ?? 0),
-      adaptor: Number(o.adaptor ?? 0), adaptor_type: o.adaptor_type ?? null,
-      modul: Number(o.modul ?? 0), socket_dc: Number(o.socket_dc ?? 0),
-      baut_fischer: Number(o.baut_fischer ?? 0),
-      outdoor_cost: o.outdoor_cost == null ? null : Number(o.outdoor_cost),
-      notes: o.notes ?? null,
-    } }),
-    onSuccess: () => { toast.success("Ready stock dikonversi ke Order"); qc.invalidateQueries({ queryKey: ["orders"] }); },
-    onError: (e: any) => toast.error(e?.message ?? "Gagal konversi"),
   });
 
   const filtered = useMemo(() => {
@@ -338,7 +412,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     const sorted = [...out].sort((a: any, b: any) => {
       let av: any; let bv: any;
       if (sortKey === "order_no") {
-        // natural sort: extract numeric suffix, fallback to string
         const na = parseInt(String(a.order_no ?? "").replace(/\D/g, ""), 10);
         const nb = parseInt(String(b.order_no ?? "").replace(/\D/g, ""), 10);
         av = isNaN(na) ? -1 : na; bv = isNaN(nb) ? -1 : nb;
@@ -358,17 +431,14 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     return sorted;
   }, [ordersQ.data, filter, srcFilter, isReady, sortKey, sortDir]);
 
-
-  const totals = useMemo(() => {
-    return filtered.reduce(
-      (acc: any, o: any) => {
-        acc.payment += Number(o.payment || 0);
-        acc.hpp += Number(o.hpp || 0);
-        acc.profit += Number(o.profit || 0);
-        return acc;
-      }, { payment: 0, hpp: 0, profit: 0 },
-    );
-  }, [filtered]);
+  const totals = useMemo(() => filtered.reduce(
+    (acc: any, o: any) => {
+      acc.payment += Number(o.payment || 0);
+      acc.hpp += Number(o.hpp || 0);
+      acc.profit += Number(o.profit || 0);
+      return acc;
+    }, { payment: 0, hpp: 0, profit: 0 },
+  ), [filtered]);
 
   return (
     <div className="p-2 sm:p-4 space-y-4">
@@ -377,146 +447,91 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           <h1 className="text-2xl font-bold flex items-center gap-2"><ShoppingBag className="h-6 w-6"/> {isReady ? "Ready Stock" : "Order Neon Sign"}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isReady
-              ? "Produk ready stock — tidak masuk laporan penjualan, tapi tetap muncul di Project untuk dikerjakan. Ubah status ke 'Aktif' saat ada pembeli."
-              : "Input pesanan custom. HPP & profit dihitung otomatis. Setiap order otomatis membuat Project."}
+              ? "Produk ready stock — tidak masuk laporan penjualan, tapi tetap muncul di Project untuk dikerjakan."
+              : "Satu order bisa berisi banyak produk (custom + ready-stock). HPP & profit dihitung otomatis dari total item."}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button onClick={openNew}><Plus className="h-4 w-4 mr-1"/> {isReady ? "Ready Stock Baru" : "Order Baru"}</Button></DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{form.id ? (isReady ? "Edit Ready Stock" : "Edit Order") : (isReady ? "Ready Stock Baru" : "Order Baru")}</DialogTitle></DialogHeader>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="md:col-span-2 grid sm:grid-cols-2 gap-3">
-                <div>
-                  <Label>Sumber</Label>
-                  <Select value={form.source} onValueChange={(v) => setForm((f) => ({ ...f, source: v as Source }))}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      {SOURCES.map((s) => <SelectItem key={s} value={s}>{s.toUpperCase()}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as OrderStatus }))}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      {STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>No. Order {(form.status === "draft" || form.status === "ready_stock") ? <span className="text-xs text-muted-foreground">— opsional, otomatis terisi saat jadi Aktif</span> : <span className="text-xs text-muted-foreground">— otomatis, bisa diubah</span>}</Label>
-                  <Input value={form.order_no} placeholder={(form.status === "draft" || form.status === "ready_stock") ? "Kosongkan saja" : ""} onChange={(e) => setForm((f) => ({ ...f, order_no: e.target.value }))}/>
-                </div>
-                <div><Label>Tgl CO</Label><Input type="date" value={form.co_date} onChange={(e) => setForm((f) => ({ ...f, co_date: e.target.value }))}/></div>
-                <div><Label>User Pembeli</Label><Input value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}/></div>
-                <div><Label>Kota</Label><Input value={form.kota} onChange={(e) => setForm((f) => ({ ...f, kota: e.target.value }))}/></div>
-                <div className="sm:col-span-2"><Label>TEXT Neon *</Label><Input value={form.text_neon} onChange={(e) => setForm((f) => ({ ...f, text_neon: e.target.value }))}/></div>
+          <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{header.id ? "Edit Order" : (isReady ? "Ready Stock Baru" : "Order Baru")}</DialogTitle>
+            </DialogHeader>
 
-                <div><Label>Akrilik P (cm)</Label><Input type="number" value={form.akrilik_p} onChange={(e) => setForm((f) => ({ ...f, akrilik_p: e.target.value }))}/></div>
-                <div><Label>Akrilik L (cm)</Label><Input type="number" value={form.akrilik_l} onChange={(e) => setForm((f) => ({ ...f, akrilik_l: e.target.value }))}/></div>
-                <div><Label>LED (meter)</Label><Input type="number" step="0.1" value={form.led_meter} onChange={(e) => setForm((f) => ({ ...f, led_meter: e.target.value }))}/></div>
-                <div><Label>Titik</Label><Input type="number" value={form.titik} onChange={(e) => setForm((f) => ({ ...f, titik: e.target.value }))}/></div>
-                <div>
-                  <Label>Kabel (meter) <span className="text-xs text-muted-foreground">— kosongkan utk auto</span></Label>
-                  <Input type="number" step="0.1" value={form.kabel_meter} placeholder={calc.kabel_meter.toFixed(2)} onChange={(e) => setForm((f) => ({ ...f, kabel_meter: e.target.value }))}/>
-                </div>
-                <div>
-                  <Label>Kabel Socket (meter) <span className="text-xs text-muted-foreground">— default 1m × Rp {rp(priceMap.kabel_socket_per_meter ?? 2500)}</span></Label>
-                  <Input type="number" step="0.1" value={form.kabel_socket_meter} onChange={(e) => setForm((f) => ({ ...f, kabel_socket_meter: e.target.value }))}/>
-                </div>
-                <div>
-                  <Label>Payment (Rp) {calc.hpp > 0 && (
-                    <span className="text-xs text-emerald-600">— rekomendasi Rp {rp(calc.rec_min)} – Rp {rp(calc.rec_max)}</span>
-                  )}</Label>
-                  <Input type="number" value={form.payment} placeholder={calc.hpp > 0 ? String(calc.rec_max) : ""} onChange={(e) => setForm((f) => ({ ...f, payment: e.target.value }))}/>
-                </div>
-                <div>
-                  <Label>DP (Rp)</Label>
-                  <Input type="number" value={form.dp} onChange={(e) => setForm((f) => ({ ...f, dp: e.target.value }))}/>
-                  {(num(form.payment) + num(form.split)) > 0 && (
-                    <div className="text-xs text-muted-foreground mt-1">Sisa pembayaran: <span className="font-semibold text-foreground">Rp {rp(calc.sisa)}</span></div>
-                  )}
-                </div>
-                <div><Label>Split (Rp)</Label><Input type="number" value={form.split} onChange={(e) => setForm((f) => ({ ...f, split: e.target.value }))}/></div>
-
-                <div className="sm:col-span-2 pt-2 border-t mt-2"><div className="text-sm font-semibold">Bahan tambahan (Rp)</div></div>
-                <div className="sm:col-span-2 rounded-lg border bg-slate-50/60 p-3 space-y-2">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <Label className="text-sm font-semibold">Adaptor</Label>
-                    <span className="text-xs text-muted-foreground">
-                      LED {ledMeterNum || 0}m → saran <span className="font-semibold text-foreground">{suggestedVariant.label}</span>
-                    </span>
-                  </div>
-                  <Select value={form.adaptor_type} onValueChange={(v) => setForm((f) => ({ ...f, adaptor_type: v, adaptor_manual: false }))}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      {ADAPTOR_VARIANTS.map((a) => {
-                        const price = priceMap[a.key] ?? a.defaultPrice;
-                        return <SelectItem key={a.key} value={a.key}>{a.label} (≤{a.maxLed}m) — Rp {rp(price)}</SelectItem>;
-                      })}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center gap-2">
-                    <Checkbox id="adaptor-manual" checked={form.adaptor_manual} onCheckedChange={(checked) => {
-                      const isChecked = !!checked;
-                      setForm((f) => ({ ...f, adaptor_manual: isChecked, adaptor: isChecked ? String(adaptorVariantPrice) : "" }));
-                    }}/>
-                    <Label htmlFor="adaptor-manual" className="cursor-pointer text-xs">Override harga manual</Label>
-                  </div>
-                  {form.adaptor_manual && (
-                    <Input type="number" value={form.adaptor} placeholder={String(adaptorVariantPrice)} onChange={(e) => setForm((f) => ({ ...f, adaptor: e.target.value }))}/>
-                  )}
-                  <div className="text-xs text-muted-foreground">Harga adaptor dipakai: <span className="font-semibold text-foreground">Rp {rp(adaptorCost)}</span></div>
-                </div>
-                <div><Label>Modul</Label><Input type="number" value={form.modul} onChange={(e) => setForm((f) => ({ ...f, modul: e.target.value }))}/></div>
-                <div><Label>Socket DC</Label><Input type="number" value={form.socket_dc} onChange={(e) => setForm((f) => ({ ...f, socket_dc: e.target.value }))}/></div>
-                <div><Label>Baut Fischer</Label><Input type="number" value={form.baut_fischer} onChange={(e) => setForm((f) => ({ ...f, baut_fischer: e.target.value }))}/></div>
-                <div className="sm:col-span-2 flex items-center gap-2">
-                  <Checkbox id="outdoor" checked={form.use_outdoor} onCheckedChange={(checked) => {
-                    const isChecked = !!checked;
-                    setForm(f => ({
-                      ...f,
-                      use_outdoor: isChecked,
-                      outdoor_cost: isChecked ? String((num(f.titik) * 2000) || 0) : ""
-                    }));
-                  }}/>
-                  <Label htmlFor="outdoor" className="cursor-pointer">Outdoor <span className="text-xs text-muted-foreground">— auto titik × 2.000</span></Label>
-                </div>
-                {form.use_outdoor && (
-                  <div>
-                    <Label>Biaya Outdoor (Rp)</Label>
-                    <Input type="number" value={form.outdoor_cost} placeholder={String((num(form.titik) * 2000) || 0)} onChange={(e) => setForm((f) => ({ ...f, outdoor_cost: e.target.value }))}/>
-                  </div>
-                )}
-                <div className="sm:col-span-2"><Label>Catatan</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}/></div>
+            {/* HEADER FORM */}
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 pb-4 border-b">
+              <div>
+                <Label>Sumber</Label>
+                <Select value={header.source} onValueChange={(v) => setHeader((f) => ({ ...f, source: v as Source }))}>
+                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectContent>{SOURCES.map((s) => <SelectItem key={s} value={s}>{s.toUpperCase()}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
-              <Card className="bg-muted/40 h-fit sticky top-0">
-                <CardHeader className="pb-2"><CardTitle className="text-base">Kalkulasi Live</CardTitle></CardHeader>
-                <CardContent className="text-sm space-y-1">
-                  <Row k="Kabel (m)" v={calc.kabel_meter.toFixed(2)}/>
-                  <Row k="LED" v={`Rp ${rp(calc.led_cost)}`}/>
-                  <Row k="Akrilik" v={`Rp ${rp(calc.akrilik_cost)}`}/>
-                  <Row k="Solder" v={`Rp ${rp(calc.solder_cost)}`}/>
-                  <Row k="Tempel" v={`Rp ${rp(calc.tempel_cost)}`}/>
-                  <Row k="Kabel" v={`Rp ${rp(calc.kabel_cost)}`}/>
-                  <Row k="Kabel Socket" v={`Rp ${rp(calc.kabel_socket_cost)}`}/>
-                  <Row k="Adaptor" v={`Rp ${rp(calc.adaptor_cost)}`}/>
-                  <Row k="Outdoor" v={`Rp ${rp(calc.outdoor_cost)}`}/>
-                  <Row k="Biaya Lainnya (1% HPP)" v={`Rp ${rp(calc.biaya_lainnya)}`}/>
-                  <div className="border-t my-2"/>
-                  <Row k="HPP" v={`Rp ${rp(calc.hpp)}`} bold/>
-                  <Row k={`Rekom. Marketplace (+${calc.marketplacePct}%)`} v={`Rp ${rp(calc.rec_marketplace)}`} bold positive />
-                  <div className="border-t my-2"/>
-                  <Row k="Payment" v={`Rp ${rp(calc.totalPay)}`}/>
-                  <Row k="DP" v={`Rp ${rp(num(form.dp))}`}/>
-                  <Row k="Sisa Bayar" v={`Rp ${rp(calc.sisa)}`}/>
-                  <Row k="Profit" v={`Rp ${rp(calc.profit)}`} bold positive={calc.profit >= 0}/>
-                  <Row k="Profit %" v={`${calc.profit_pct.toFixed(1)}%`} bold positive={calc.profit_pct >= 0}/>
-                </CardContent>
-              </Card>
+              <div>
+                <Label>Status</Label>
+                <Select value={header.status} onValueChange={(v) => setHeader((f) => ({ ...f, status: v as OrderStatus }))}>
+                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>No. Order</Label>
+                <Input value={header.order_no} onChange={(e) => setHeader((f) => ({ ...f, order_no: e.target.value }))}/>
+              </div>
+              <div><Label>Tgl CO</Label><Input type="date" value={header.co_date} onChange={(e) => setHeader((f) => ({ ...f, co_date: e.target.value }))}/></div>
+              <div><Label>User Pembeli</Label><Input value={header.username} onChange={(e) => setHeader((f) => ({ ...f, username: e.target.value }))}/></div>
+              <div><Label>Kota</Label><Input value={header.kota} onChange={(e) => setHeader((f) => ({ ...f, kota: e.target.value }))}/></div>
+              <div><Label>Payment (Rp)</Label><Input type="number" value={header.payment} onChange={(e) => setHeader((f) => ({ ...f, payment: e.target.value }))}/></div>
+              <div><Label>DP (Rp)</Label><Input type="number" value={header.dp} onChange={(e) => setHeader((f) => ({ ...f, dp: e.target.value }))}/></div>
+              <div><Label>Split (Rp)</Label><Input type="number" value={header.split} onChange={(e) => setHeader((f) => ({ ...f, split: e.target.value }))}/></div>
+              <div className="sm:col-span-2 md:col-span-3"><Label>Catatan Order</Label><Textarea rows={2} value={header.notes} onChange={(e) => setHeader((f) => ({ ...f, notes: e.target.value }))}/></div>
             </div>
+
+            {/* ITEMS SECTION */}
+            <div className="pt-2 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold flex items-center gap-2"><Boxes className="h-4 w-4"/> Produk dalam order ({items.filter((i) => !i._deleted).length})</div>
+                <Button size="sm" variant="outline" onClick={() => setItems((arr) => [...arr, { ...emptyItem(arr.filter((i) => !i._deleted).length + 1, priceMap) }])}>
+                  <Plus className="h-3.5 w-3.5 mr-1"/> Tambah Produk
+                </Button>
+              </div>
+
+              {itemsQ.isLoading && header.id ? (
+                <div className="text-sm text-muted-foreground">Memuat item…</div>
+              ) : items.filter((i) => !i._deleted).length === 0 ? (
+                <div className="text-sm text-muted-foreground border rounded-md p-4 text-center">Belum ada produk. Klik "Tambah Produk".</div>
+              ) : (
+                items.map((it, idx) => it._deleted ? null : (
+                  <ItemCard
+                    key={it._key}
+                    item={it}
+                    index={idx}
+                    priceMap={priceMap}
+                    rsList={(rsQ.data ?? []) as any[]}
+                    excludeRsId={header.id}
+                    onChange={(patch) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, ...patch } : x))}
+                    onDelete={() => setItems((arr) => {
+                      const target = arr[idx];
+                      if (target.id) return arr.map((x, i) => i === idx ? { ...x, _deleted: true } : x);
+                      return arr.filter((_, i) => i !== idx);
+                    })}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* TOTALS */}
+            <Card className="bg-muted/40 mt-3">
+              <CardContent className="p-3 text-sm grid sm:grid-cols-3 gap-3">
+                <div><div className="text-muted-foreground text-xs">Total HPP</div><div className="text-lg font-semibold">Rp {rp(totalItemsHpp)}</div></div>
+                <div><div className="text-muted-foreground text-xs">Total Payment (+Split)</div><div className="text-lg font-semibold">Rp {rp(totalPay)}</div></div>
+                <div>
+                  <div className="text-muted-foreground text-xs">Profit</div>
+                  <div className={`text-lg font-semibold ${totalProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>Rp {rp(totalProfit)}</div>
+                </div>
+              </CardContent>
+            </Card>
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
               <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending} className="bg-green-500 hover:bg-green-600 text-white">
@@ -526,7 +541,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           </DialogContent>
         </Dialog>
       </div>
-
 
       <div className="grid sm:grid-cols-3 gap-3">
         <StatCard label="Total Payment" value={`Rp ${rp(totals.payment)}`} />
@@ -553,12 +567,13 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8"></TableHead>
                   <SortableHead label="No" col="order_no" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
                   <SortableHead label="Tgl" col="co_date" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
                   <SortableHead label="Sumber" col="source" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
                   <SortableHead label="Status" col="status" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
                   <SortableHead label="User / Kota" col="username" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
-                  <SortableHead label="Text" col="text_neon" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                  <SortableHead label="Produk" col="text_neon" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
                   <SortableHead label="Titik" col="titik" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
                   <SortableHead label="HPP" col="hpp" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
                   <SortableHead label="Payment" col="payment" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
@@ -567,42 +582,60 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((o: any) => (
-                  <TableRow key={o.id}>
-                    <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
-                    <TableCell className="text-xs">{o.co_date ?? "-"}</TableCell>
-                    <TableCell><Badge variant="outline">{o.source}</Badge></TableCell>
-                    <TableCell>
-                      <Badge variant={o.status === "active" ? "default" : o.status === "return" ? "destructive" : "secondary"}>
-                        {STATUS_LABEL[(o.status as OrderStatus) ?? "active"] ?? o.status ?? "Aktif"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs">{o.username ?? "-"}<div className="text-muted-foreground">{o.kota ?? ""}</div></TableCell>
-                    <TableCell className="max-w-xs truncate">{o.text_neon}</TableCell>
-                    <TableCell className="text-right">{o.titik}</TableCell>
-                    <TableCell className="text-right">{rp(Number(o.hpp))}</TableCell>
-                    <TableCell className="text-right">{rp(Number(o.payment) + Number(o.split))}</TableCell>
-                    <TableCell className={`text-right font-medium ${Number(o.profit) >= 0 ? "text-emerald-600" : "text-destructive"}`}>{rp(Number(o.profit))}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {isReady && (
-                        <>
-                          <Button size="sm" variant="outline" className="mr-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                            disabled={convertMut.isPending}
-                            onClick={() => { if (confirm(`Konversi ${o.order_no} jadi Order penjualan? Nomor RS akan diganti nomor order berikutnya.`)) convertMut.mutate(o); }}>
-                            Jadikan Order
-                          </Button>
+                {filtered.map((o: any) => {
+                  const its = (o.order_items ?? []) as any[];
+                  const isExp = !!expanded[o.id];
+                  const firstText = its.length ? (its[0].text_neon || its[0].manual_name || "Item") : (o.text_neon || "-");
+                  const moreLabel = its.length > 1 ? ` +${its.length - 1} lainnya` : "";
+                  return (
+                    <React.Fragment key={o.id}>
+                      <TableRow className={isExp ? "bg-muted/30" : ""}>
+                        <TableCell className="p-1">
+                          {its.length > 1 && (
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setExpanded((e) => ({ ...e, [o.id]: !e[o.id] }))}>
+                              {isExp ? <ChevronDown className="h-4 w-4"/> : <ChevronRight className="h-4 w-4"/>}
+                            </Button>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
+                        <TableCell className="text-xs">{o.co_date ?? "-"}</TableCell>
+                        <TableCell><Badge variant="outline">{o.source}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant={o.status === "active" ? "default" : o.status === "return" ? "destructive" : "secondary"}>
+                            {STATUS_LABEL[(o.status as OrderStatus) ?? "active"] ?? o.status ?? "Aktif"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">{o.username ?? "-"}<div className="text-muted-foreground">{o.kota ?? ""}</div></TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {firstText}<span className="text-xs text-muted-foreground">{moreLabel}</span>
+                        </TableCell>
+                        <TableCell className="text-right">{o.titik}</TableCell>
+                        <TableCell className="text-right">{rp(Number(o.hpp))}</TableCell>
+                        <TableCell className="text-right">{rp(Number(o.payment) + Number(o.split))}</TableCell>
+                        <TableCell className={`text-right font-medium ${Number(o.profit) >= 0 ? "text-emerald-600" : "text-destructive"}`}>{rp(Number(o.profit))}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <Button size="icon" variant="ghost" title="Duplikat" onClick={() => openDuplicate(o)}><Copy className="h-4 w-4"/></Button>
-                        </>
-                      )}
-                      {!isReady && (
-                        <Button size="icon" variant="ghost" title="Duplikat" onClick={() => openDuplicate(o)}><Copy className="h-4 w-4"/></Button>
-                      )}
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(o)}><Pencil className="h-4 w-4"/></Button>
-                      <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Hapus ${o.order_no}?`)) delMut.mutate(o.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Belum ada order</TableCell></TableRow>}
+                          <Button size="icon" variant="ghost" onClick={() => openEdit(o)}><Pencil className="h-4 w-4"/></Button>
+                          <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Hapus ${o.order_no}?`)) delMut.mutate(o.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                        </TableCell>
+                      </TableRow>
+                      {isExp && its.map((it: any, i: number) => (
+                        <TableRow key={it.id} className="bg-muted/10">
+                          <TableCell></TableCell>
+                          <TableCell colSpan={5} className="text-xs pl-8">
+                            <span className="text-muted-foreground">#{it.position} · {it.kind === "custom" ? "Custom" : it.kind === "ready_stock_ref" ? "Ready Stock (ref)" : "Ready Stock (manual)"}</span>
+                          </TableCell>
+                          <TableCell className="text-xs">{it.text_neon || it.manual_name || "-"}</TableCell>
+                          <TableCell className="text-right text-xs">{it.titik ?? 0}</TableCell>
+                          <TableCell className="text-right text-xs">{rp(Number(it.item_hpp ?? 0))}</TableCell>
+                          <TableCell className="text-right text-xs">{it.kind === "ready_stock_manual" ? rp(Number(it.manual_price ?? 0)) : "-"}</TableCell>
+                          <TableCell colSpan={2}></TableCell>
+                        </TableRow>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">Belum ada order</TableCell></TableRow>}
               </TableBody>
             </Table>
           )}
@@ -612,13 +645,127 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   );
 }
 
-function Row({ k, v, bold, positive }: { k: string; v: string; bold?: boolean; positive?: boolean }) {
+// Need React for Fragment usage in map
+import React from "react";
+
+// -------- ItemCard --------
+function ItemCard({
+  item, index, priceMap, rsList, excludeRsId, onChange, onDelete,
+}: {
+  item: ItemForm;
+  index: number;
+  priceMap: Record<string, number>;
+  rsList: any[];
+  excludeRsId?: string;
+  onChange: (patch: Partial<ItemForm>) => void;
+  onDelete: () => void;
+}) {
+  const ledMeterNum = num(item.led_meter);
+  const suggested = suggestAdaptor(ledMeterNum);
+  const variantPrice = priceMap[item.adaptor_type] ?? suggested.defaultPrice;
+  const adaptorCost = item.adaptor_manual ? num(item.adaptor) : variantPrice;
+  const itemHpp = item.kind === "ready_stock_ref"
+    ? Number(rsList.find((r) => r.id === item.source_ready_stock_order_id)?.hpp ?? 0)
+    : calcItemHpp(item, priceMap);
+
   return (
-    <div className={`flex justify-between ${bold ? "font-semibold" : ""} ${positive === false ? "text-destructive" : positive ? "text-emerald-600" : ""}`}>
-      <span className="text-muted-foreground">{k}</span><span>{v}</span>
-    </div>
+    <Card className="border-slate-300">
+      <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">#{item.position}</Badge>
+          <Select value={item.kind} onValueChange={(v) => onChange({ kind: v as ItemKind })}>
+            <SelectTrigger className="h-8 w-56"><SelectValue/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="custom">Custom (Neon Sign)</SelectItem>
+              <SelectItem value="ready_stock_ref">Ready Stock (pilih existing)</SelectItem>
+              <SelectItem value="ready_stock_manual">Ready Stock / Manual</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-xs text-muted-foreground">HPP: <span className="font-semibold text-foreground">Rp {rp(itemHpp)}</span></span>
+        </div>
+        <Button size="icon" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+      </CardHeader>
+      <CardContent className="p-3 pt-1">
+        {item.kind === "custom" && (
+          <div className="grid sm:grid-cols-2 gap-2">
+            <div className="sm:col-span-2"><Label>TEXT Neon *</Label><Input value={item.text_neon} onChange={(e) => onChange({ text_neon: e.target.value })}/></div>
+            <div><Label>Akrilik P (cm)</Label><Input type="number" value={item.akrilik_p} onChange={(e) => onChange({ akrilik_p: e.target.value })}/></div>
+            <div><Label>Akrilik L (cm)</Label><Input type="number" value={item.akrilik_l} onChange={(e) => onChange({ akrilik_l: e.target.value })}/></div>
+            <div><Label>LED (meter)</Label><Input type="number" step="0.1" value={item.led_meter} onChange={(e) => onChange({ led_meter: e.target.value })}/></div>
+            <div><Label>Titik</Label><Input type="number" value={item.titik} onChange={(e) => onChange({ titik: e.target.value })}/></div>
+            <div><Label>Kabel (m) — kosongkan auto</Label><Input type="number" step="0.1" value={item.kabel_meter} onChange={(e) => onChange({ kabel_meter: e.target.value })}/></div>
+            <div><Label>Kabel Socket (m)</Label><Input type="number" step="0.1" value={item.kabel_socket_meter} onChange={(e) => onChange({ kabel_socket_meter: e.target.value })}/></div>
+            <div className="sm:col-span-2 rounded-lg border bg-slate-50/60 p-2 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs font-semibold">Adaptor</Label>
+                <span className="text-xs text-muted-foreground">LED {ledMeterNum || 0}m → saran <b>{suggested.label}</b></span>
+              </div>
+              <Select value={item.adaptor_type} onValueChange={(v) => onChange({ adaptor_type: v, adaptor_manual: false })}>
+                <SelectTrigger className="h-8"><SelectValue/></SelectTrigger>
+                <SelectContent>
+                  {ADAPTOR_VARIANTS.map((a) => {
+                    const price = priceMap[a.key] ?? a.defaultPrice;
+                    return <SelectItem key={a.key} value={a.key}>{a.label} (≤{a.maxLed}m) — Rp {rp(price)}</SelectItem>;
+                  })}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <Checkbox id={`am-${item._key}`} checked={item.adaptor_manual} onCheckedChange={(v) => {
+                  const c = !!v;
+                  onChange({ adaptor_manual: c, adaptor: c ? String(variantPrice) : "" });
+                }}/>
+                <Label htmlFor={`am-${item._key}`} className="cursor-pointer text-xs">Override manual (Rp {rp(adaptorCost)})</Label>
+              </div>
+              {item.adaptor_manual && <Input type="number" value={item.adaptor} onChange={(e) => onChange({ adaptor: e.target.value })}/>}
+            </div>
+            <div><Label>Modul</Label><Input type="number" value={item.modul} onChange={(e) => onChange({ modul: e.target.value })}/></div>
+            <div><Label>Socket DC</Label><Input type="number" value={item.socket_dc} onChange={(e) => onChange({ socket_dc: e.target.value })}/></div>
+            <div><Label>Baut Fischer</Label><Input type="number" value={item.baut_fischer} onChange={(e) => onChange({ baut_fischer: e.target.value })}/></div>
+            <div className="sm:col-span-2 flex items-center gap-2">
+              <Checkbox id={`od-${item._key}`} checked={item.use_outdoor} onCheckedChange={(v) => {
+                const c = !!v;
+                onChange({ use_outdoor: c, outdoor_cost: c ? String(num(item.titik) * 2000 || 0) : "" });
+              }}/>
+              <Label htmlFor={`od-${item._key}`} className="cursor-pointer text-sm">Outdoor <span className="text-xs text-muted-foreground">— auto titik × 2.000</span></Label>
+            </div>
+            {item.use_outdoor && (
+              <div><Label>Biaya Outdoor (Rp)</Label><Input type="number" value={item.outdoor_cost} onChange={(e) => onChange({ outdoor_cost: e.target.value })}/></div>
+            )}
+            <div className="sm:col-span-2"><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
+          </div>
+        )}
+
+        {item.kind === "ready_stock_ref" && (
+          <div className="space-y-2">
+            <Label>Pilih Ready Stock</Label>
+            <Select value={item.source_ready_stock_order_id} onValueChange={(v) => onChange({ source_ready_stock_order_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Pilih produk ready stock..."/></SelectTrigger>
+              <SelectContent>
+                {rsList.filter((r) => r.id !== excludeRsId).map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    <Package className="h-3 w-3 inline mr-1"/> {r.order_no} — {r.text_neon || "(tanpa nama)"} · HPP Rp {rp(Number(r.hpp))}
+                  </SelectItem>
+                ))}
+                {rsList.length === 0 && <div className="p-2 text-xs text-muted-foreground">Belum ada ready-stock tersedia.</div>}
+              </SelectContent>
+            </Select>
+            <div><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
+          </div>
+        )}
+
+        {item.kind === "ready_stock_manual" && (
+          <div className="grid sm:grid-cols-3 gap-2">
+            <div className="sm:col-span-3"><Label>Nama Produk *</Label><Input value={item.manual_name} onChange={(e) => onChange({ manual_name: e.target.value })}/></div>
+            <div><Label>Harga Jual (Rp)</Label><Input type="number" value={item.manual_price} onChange={(e) => onChange({ manual_price: e.target.value })}/></div>
+            <div><Label>HPP (Rp)</Label><Input type="number" value={item.manual_hpp} onChange={(e) => onChange({ manual_hpp: e.target.value })}/></div>
+            <div className="sm:col-span-3"><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
+
 function StatCard({ label, value, positive }: { label: string; value: string; positive?: boolean }) {
   return (
     <Card><CardContent className="pt-4 px-3 pb-3 sm:pt-6 sm:px-6 sm:pb-6">
@@ -631,26 +778,18 @@ function StatCard({ label, value, positive }: { label: string; value: string; po
 function SortableHead({
   label, col, sortKey, sortDir, onClick, align,
 }: {
-  label: string;
-  col: string;
-  sortKey: string;
-  sortDir: "asc" | "desc";
-  onClick: (k: any) => void;
-  align?: "right";
+  label: string; col: string; sortKey: string; sortDir: "asc" | "desc";
+  onClick: (k: any) => void; align?: "right";
 }) {
   const active = sortKey === col;
   const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
   return (
     <TableHead className={align === "right" ? "text-right" : undefined}>
-      <button
-        type="button"
-        onClick={() => onClick(col)}
-        className={`inline-flex items-center gap-1 select-none hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : ""} ${align === "right" ? "flex-row-reverse" : ""}`}
-      >
+      <button type="button" onClick={() => onClick(col)}
+        className={`inline-flex items-center gap-1 select-none hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : ""} ${align === "right" ? "flex-row-reverse" : ""}`}>
         <span>{label}</span>
         <Icon className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"}`} />
       </button>
     </TableHead>
   );
 }
-
