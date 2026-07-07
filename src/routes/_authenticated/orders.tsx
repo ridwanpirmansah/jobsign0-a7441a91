@@ -808,7 +808,9 @@ function ItemCard({
           </div>
         )}
       </CardContent>
+      )}
     </Card>
+
   );
 }
 
