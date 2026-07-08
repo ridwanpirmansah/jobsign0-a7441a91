@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ResiScanner } from "@/components/ResiScanner";
 import { Truck, PackageCheck, Search, ScanLine } from "lucide-react";
 import { toast } from "sonner";
+import { beepSuccess, beepError } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/me/pickup")({
   component: PickupPage,
