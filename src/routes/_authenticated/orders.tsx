@@ -540,13 +540,40 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               </div>
               <div>
                 <Label>Ekspedisi</Label>
-                <Select value={header.ekspedisi || "__none"} onValueChange={(v) => setHeader((f) => ({ ...f, ekspedisi: v === "__none" ? "" : v }))}>
-                  <SelectTrigger><SelectValue placeholder="Pilih ekspedisi"/></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">— Tidak dipilih —</SelectItem>
-                    {carriers.map((c: any) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-1">
+                  <Select value={header.ekspedisi || "__none"} onValueChange={(v) => setHeader((f) => ({ ...f, ekspedisi: v === "__none" ? "" : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Pilih ekspedisi"/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">— Tidak dipilih —</SelectItem>
+                      {carriers.map((c: any) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {(header.source === "direct" || header.source === "lainnya") && (
+                    <>
+                      <Button
+                        type="button" size="icon" variant="outline" title="Generate No Resi"
+                        onClick={() => setHeader((f) => ({ ...f, no_resi: generateResiNumber() }))}
+                      >
+                        <Wand2 className="h-4 w-4"/>
+                      </Button>
+                      <Button
+                        type="button" size="icon" variant="outline" title="Print Resi PDF"
+                        disabled={!header.no_resi}
+                        onClick={() => printResiPdf({
+                          no_resi: header.no_resi,
+                          ekspedisi: header.ekspedisi,
+                          co_date: header.co_date,
+                          kota: header.kota,
+                          text_neon: header.text_neon,
+                          username: header.username,
+                          order_no: header.order_no,
+                        })}
+                      >
+                        <Printer className="h-4 w-4"/>
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
               {header.id && header.no_resi && (
                 <div className="sm:col-span-2 md:col-span-3 flex items-center gap-2 flex-wrap">
