@@ -113,6 +113,7 @@ function emptyHeader(nextOrderNo = "", status: OrderStatus = "active"): HeaderFo
     co_date: new Date().toISOString().slice(0, 10),
     username: "", kota: "",
     payment: "", dp: "", split: "", notes: "",
+    no_resi: "", ekspedisi: "",
   };
 }
 
