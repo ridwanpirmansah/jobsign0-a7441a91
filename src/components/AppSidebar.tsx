@@ -33,6 +33,10 @@ const adminItems = [
   { title: "Approval", url: "/approvals", icon: BadgeCheck },
   { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils },
   { title: "Customer", url: "/customers", icon: Building2 },
+  { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
+];
+const kurirItems = [
+  { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
 ];
 const ownerItems = [
   { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
