@@ -549,30 +549,28 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     </SelectContent>
                   </Select>
                   {(header.source === "direct" || header.source === "lainnya") && (
-                    <>
-                      <Button
-                        type="button" size="icon" variant="outline" title="Generate No Resi"
-                        onClick={() => setHeader((f) => ({ ...f, no_resi: generateResiNumber() }))}
-                      >
-                        <Wand2 className="h-4 w-4"/>
-                      </Button>
-                      <Button
-                        type="button" size="icon" variant="outline" title="Print Resi PDF"
-                        disabled={!header.no_resi}
-                        onClick={() => printResiPdf({
-                          no_resi: header.no_resi,
-                          ekspedisi: header.ekspedisi,
-                          co_date: header.co_date,
-                          kota: header.kota,
-                          text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
-                          username: header.username,
-                          order_no: header.order_no,
-                        })}
-                      >
-                        <Printer className="h-4 w-4"/>
-                      </Button>
-                    </>
+                    <Button
+                      type="button" size="icon" variant="outline" title="Generate No Resi"
+                      onClick={() => setHeader((f) => ({ ...f, no_resi: generateResiNumber() }))}
+                    >
+                      <Wand2 className="h-4 w-4"/>
+                    </Button>
                   )}
+                  <Button
+                    type="button" size="icon" variant="outline" title="Print Resi PDF"
+                    disabled={!header.no_resi}
+                    onClick={() => printResiPdf({
+                      no_resi: header.no_resi,
+                      ekspedisi: header.ekspedisi,
+                      co_date: header.co_date,
+                      kota: header.kota,
+                      text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
+                      username: header.username,
+                      order_no: header.order_no,
+                    })}
+                  >
+                    <Printer className="h-4 w-4"/>
+                  </Button>
                 </div>
               </div>
               {header.id && header.no_resi && (
