@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/users")({ component: UsersPage });
 
-type Role = "owner" | "admin" | "karyawan";
+type Role = "owner" | "admin" | "karyawan" | "kurir";
 
 function UsersPage() {
   const { data: me } = useCurrentUser();
