@@ -367,6 +367,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           modul: 0, socket_dc: 0, baut_fischer: 0,
           outdoor_cost: 0,
           notes: header.notes || null,
+          no_resi: header.no_resi.trim() || null,
+          ekspedisi: header.ekspedisi || null,
         },
       });
       const orderId = res.id!;
