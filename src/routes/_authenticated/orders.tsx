@@ -196,7 +196,18 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const saveItem = useServerFn(upsertOrderItem);
   const delItem = useServerFn(deleteOrderItem);
   const fetchRs = useServerFn(listReadyStockAvailable);
+  const markPickup = useServerFn(markReadyPickup);
   const qc = useQueryClient();
+
+  const markPickupMut = useMutation({
+    mutationFn: (orderId: string) => markPickup({ data: { order_id: orderId } }),
+    onSuccess: () => {
+      toast.success("Ditandai siap pickup");
+      setHeader((f) => ({ ...f, ready_pickup_at: new Date().toISOString() }));
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const ordersQ = useQuery({ queryKey: ["orders"], queryFn: () => fetchOrders() });
   const pricesQ = useQuery({ queryKey: ["material_prices"], queryFn: () => fetchPrices() });
