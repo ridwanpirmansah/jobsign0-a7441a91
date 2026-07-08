@@ -308,6 +308,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       username: o.username ?? "", kota: o.kota ?? "",
       payment: String(o.payment ?? ""), dp: "", split: String(o.split ?? ""),
       notes: o.notes ?? "",
+      no_resi: "", ekspedisi: o.ekspedisi ?? "",
     });
     // clone items
     const srcItems = (o.order_items ?? []) as any[];
