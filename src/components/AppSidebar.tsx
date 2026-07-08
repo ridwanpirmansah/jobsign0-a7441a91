@@ -175,6 +175,8 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+      </SidebarContent>
+
 
       <SidebarFooter className="border-t border-slate-800 bg-slate-950 p-2">
         {!collapsed && data?.profile && (
