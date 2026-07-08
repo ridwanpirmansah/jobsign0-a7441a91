@@ -647,6 +647,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           dp: number
+          ekspedisi: string | null
           hpp: number
           id: string
           kabel_cost: number
@@ -657,13 +658,17 @@ export type Database = {
           led_cost: number
           led_meter: number
           modul: number
+          no_resi: string | null
           notes: string | null
           order_no: string
           outdoor_cost: number | null
           paket: string | null
           payment: number
+          picked_up_at: string | null
+          picked_up_by: string | null
           profit: number
           project_id: string | null
+          ready_pickup_at: string | null
           repair_cost: number
           socket_dc: number
           solder_cost: number
@@ -688,6 +693,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dp?: number
+          ekspedisi?: string | null
           hpp?: number
           id?: string
           kabel_cost?: number
@@ -698,13 +704,17 @@ export type Database = {
           led_cost?: number
           led_meter?: number
           modul?: number
+          no_resi?: string | null
           notes?: string | null
           order_no: string
           outdoor_cost?: number | null
           paket?: string | null
           payment?: number
+          picked_up_at?: string | null
+          picked_up_by?: string | null
           profit?: number
           project_id?: string | null
+          ready_pickup_at?: string | null
           repair_cost?: number
           socket_dc?: number
           solder_cost?: number
@@ -729,6 +739,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dp?: number
+          ekspedisi?: string | null
           hpp?: number
           id?: string
           kabel_cost?: number
@@ -739,13 +750,17 @@ export type Database = {
           led_cost?: number
           led_meter?: number
           modul?: number
+          no_resi?: string | null
           notes?: string | null
           order_no?: string
           outdoor_cost?: number | null
           paket?: string | null
           payment?: number
+          picked_up_at?: string | null
+          picked_up_by?: string | null
           profit?: number
           project_id?: string | null
+          ready_pickup_at?: string | null
           repair_cost?: number
           socket_dc?: number
           solder_cost?: number
@@ -759,6 +774,13 @@ export type Database = {
           username?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_picked_up_by_fkey"
+            columns: ["picked_up_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_project_id_fkey"
             columns: ["project_id"]
@@ -953,6 +975,48 @@ export type Database = {
           },
         ]
       }
+      shipment_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event: string
+          id: string
+          note: string | null
+          order_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          note?: string | null
+          order_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          note?: string | null
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_settings: {
         Row: {
           created_at: string
@@ -1062,6 +1126,10 @@ export type Database = {
         Args: { _lat?: number; _lng?: number; _token: string }
         Returns: Json
       }
+      courier_pickup: {
+        Args: { _no_resi: string; _note?: string }
+        Returns: Json
+      }
       get_attendance_secret: { Args: never; Returns: string }
       get_available_projects: {
         Args: never
@@ -1109,6 +1177,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_owner: { Args: { _user_id: string }; Returns: boolean }
+      mark_ready_pickup: { Args: { _order_id: string }; Returns: undefined }
       refresh_order_from_items: { Args: { _oid: string }; Returns: undefined }
       rotate_attendance_secret: { Args: never; Returns: string }
       set_attendance_note: {
