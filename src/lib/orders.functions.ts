@@ -226,6 +226,65 @@ export const courierPickup = createServerFn({ method: "POST" })
     return res as { order_id: string; order_no: string; ekspedisi: string | null };
   });
 
+export const markReadyPickupByResi = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ no_resi: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: res, error } = await context.supabase.rpc("mark_ready_pickup_by_resi", {
+      _no_resi: data.no_resi.trim(),
+    });
+    if (error) throw new Error(error.message);
+    return res as { order_id: string; order_no: string; ekspedisi: string | null; no_resi: string };
+  });
+
+// ============ Shipping Carriers (master ekspedisi) ============
+
+export const listCarriers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("shipping_carriers")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+const carrierSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1),
+  active: z.boolean().default(true),
+  sort_order: z.number().int().default(0),
+});
+
+export const upsertCarrier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => carrierSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await requireStaff(context);
+    const { id, ...payload } = data;
+    if (id) {
+      const { error } = await context.supabase.from("shipping_carriers").update(payload).eq("id", id);
+      if (error) throw new Error(error.message);
+      return { ok: true, id };
+    }
+    const { data: ins, error } = await context.supabase
+      .from("shipping_carriers").insert(payload).select("id").single();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: ins.id };
+  });
+
+export const deleteCarrier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireStaff(context);
+    const { error } = await context.supabase.from("shipping_carriers").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const listPickupReady = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

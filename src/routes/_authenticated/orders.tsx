@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listOrders, listPrices, upsertOrder, deleteOrder,
   listOrderItems, upsertOrderItem, deleteOrderItem, listReadyStockAvailable,
-  markReadyPickup,
+  markReadyPickup, listCarriers,
 } from "@/lib/orders.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,7 @@ type HeaderForm = {
   picked_up_at?: string | null;
 };
 
-const EKSPEDISI_LIST = ["JNE", "J&T", "SiCepat", "Anteraja", "Ninja", "Pos Indonesia", "ID Express", "Lion Parcel", "GoSend", "Grab Express", "Lainnya"] as const;
+// Ekspedisi dikelola dinamis via table `shipping_carriers`
 
 type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual";
 
@@ -216,6 +216,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
   const ordersQ = useQuery({ queryKey: ["orders"], queryFn: () => fetchOrders() });
   const pricesQ = useQuery({ queryKey: ["material_prices"], queryFn: () => fetchPrices() });
+  const fetchCarriers = useServerFn(listCarriers);
+  const carriersQ = useQuery({ queryKey: ["shipping_carriers"], queryFn: () => fetchCarriers() });
+  const carriers = (carriersQ.data ?? []).filter((c: any) => c.active);
   const rsQ = useQuery({ queryKey: ["rs-available"], queryFn: () => fetchRs() });
 
   const priceMap = useMemo(() => {
@@ -540,7 +543,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   <SelectTrigger><SelectValue placeholder="Pilih ekspedisi"/></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none">— Tidak dipilih —</SelectItem>
-                    {EKSPEDISI_LIST.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                    {carriers.map((c: any) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

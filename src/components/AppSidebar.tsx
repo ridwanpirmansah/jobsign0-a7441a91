@@ -33,6 +33,7 @@ const adminItems = [
   { title: "Approval", url: "/approvals", icon: BadgeCheck },
   { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils },
   { title: "Customer", url: "/customers", icon: Building2 },
+  { title: "Scan Siap Kirim", url: "/me/ship", icon: ScanLine },
   { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
 ];
 const kurirItems = [
@@ -42,6 +43,7 @@ const ownerItems = [
   { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
   { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },
   { title: "Master Harga", url: "/owner/prices", icon: Tags },
+  { title: "Master Ekspedisi", url: "/owner/carriers", icon: Truck },
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
   { title: "Kelola User", url: "/users", icon: UserCog },
   { title: "Payroll", url: "/payroll", icon: Wallet },
@@ -153,25 +155,28 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-500">Karyawan</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {meItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}
-                    className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
-                    <Link to={item.url} onClick={handleNav}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {role !== "kurir" && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-slate-500">Karyawan</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {meItems.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}
+                      className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
+                      <Link to={item.url} onClick={handleNav}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
+
 
       <SidebarFooter className="border-t border-slate-800 bg-slate-950 p-2">
         {!collapsed && data?.profile && (

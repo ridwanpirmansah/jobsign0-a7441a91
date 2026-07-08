@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { ResiScanner } from "@/components/ResiScanner";
 import { Truck, PackageCheck, Search, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 
@@ -95,6 +96,8 @@ function PickupPage() {
           <CardTitle className="text-base flex items-center gap-2"><ScanLine className="h-4 w-4"/> Konfirmasi Pickup</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          <ResiScanner onScan={(t) => { if (!pickupMut.isPending) pickupMut.mutate(t); }} />
+          <div className="text-center text-xs text-muted-foreground">— atau ketik manual —</div>
           <div>
             <Label>No Resi</Label>
             <Input
