@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/users")({ component: UsersPage });
 
-type Role = "owner" | "admin" | "karyawan";
+type Role = "owner" | "admin" | "karyawan" | "kurir";
 
 function UsersPage() {
   const { data: me } = useCurrentUser();
@@ -30,7 +30,7 @@ function UsersPage() {
       });
       return (profiles.data ?? []).map((p) => {
         const rs = map.get(p.id) ?? [];
-        const top: Role = rs.includes("owner") ? "owner" : rs.includes("admin") ? "admin" : "karyawan";
+        const top: Role = rs.includes("owner") ? "owner" : rs.includes("admin") ? "admin" : rs.includes("kurir") ? "kurir" : "karyawan";
         return { ...p, role: top, roles: rs };
       });
     },
@@ -70,6 +70,7 @@ function UsersPage() {
                   <SelectItem value="owner">owner</SelectItem>
                   <SelectItem value="admin">admin</SelectItem>
                   <SelectItem value="karyawan">karyawan</SelectItem>
+                  <SelectItem value="kurir">kurir</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -94,6 +95,7 @@ function UsersPage() {
                         <SelectItem value="owner">owner</SelectItem>
                         <SelectItem value="admin">admin</SelectItem>
                         <SelectItem value="karyawan">karyawan</SelectItem>
+                        <SelectItem value="kurir">kurir</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>

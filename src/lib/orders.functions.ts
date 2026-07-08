@@ -56,6 +56,8 @@ const orderSchema = z.object({
   baut_fischer: z.number().min(0).default(0),
   outdoor_cost: z.number().min(0).nullable().optional(),
   notes: z.string().optional().nullable(),
+  no_resi: z.string().optional().nullable(),
+  ekspedisi: z.string().optional().nullable(),
 });
 
 export const upsertOrder = createServerFn({ method: "POST" })
@@ -184,3 +186,56 @@ export const listReadyStockAvailable = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+// ============ Shipment / Pickup ============
+
+export const markReadyPickup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("mark_ready_pickup", { _order_id: data.order_id });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const courierPickup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ no_resi: z.string().min(1), note: z.string().optional().nullable() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: res, error } = await context.supabase.rpc("courier_pickup", {
+      _no_resi: data.no_resi,
+      _note: data.note ?? undefined,
+    });
+    if (error) throw new Error(error.message);
+    return res as { order_id: string; order_no: string; ekspedisi: string | null };
+  });
+
+export const listPickupReady = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("orders")
+      .select("id, order_no, no_resi, ekspedisi, username, kota, text_neon, ready_pickup_at, picked_up_at, picked_up_by, co_date")
+      .not("ready_pickup_at", "is", null)
+      .is("picked_up_at", null)
+      .order("ready_pickup_at", { ascending: true })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const listMyPickups = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("orders")
+      .select("id, order_no, no_resi, ekspedisi, username, kota, text_neon, ready_pickup_at, picked_up_at")
+      .eq("picked_up_by", context.userId)
+      .order("picked_up_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listOrders, listPrices, upsertOrder, deleteOrder,
   listOrderItems, upsertOrderItem, deleteOrderItem, listReadyStockAvailable,
+  markReadyPickup,
 } from "@/lib/orders.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   ShoppingBag, Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, ArrowUpDown,
-  Package, Boxes, ChevronRight, ChevronDown,
+  Package, Boxes, ChevronRight, ChevronDown, Truck, PackageCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -66,7 +67,13 @@ type HeaderForm = {
   dp: string;
   split: string;
   notes: string;
+  no_resi: string;
+  ekspedisi: string;
+  ready_pickup_at?: string | null;
+  picked_up_at?: string | null;
 };
+
+const EKSPEDISI_LIST = ["JNE", "J&T", "SiCepat", "Anteraja", "Ninja", "Pos Indonesia", "ID Express", "Lion Parcel", "GoSend", "Grab Express", "Lainnya"] as const;
 
 type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual";
 
@@ -107,6 +114,7 @@ function emptyHeader(nextOrderNo = "", status: OrderStatus = "active"): HeaderFo
     co_date: new Date().toISOString().slice(0, 10),
     username: "", kota: "",
     payment: "", dp: "", split: "", notes: "",
+    no_resi: "", ekspedisi: "",
   };
 }
 
@@ -189,7 +197,18 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const saveItem = useServerFn(upsertOrderItem);
   const delItem = useServerFn(deleteOrderItem);
   const fetchRs = useServerFn(listReadyStockAvailable);
+  const markPickup = useServerFn(markReadyPickup);
   const qc = useQueryClient();
+
+  const markPickupMut = useMutation({
+    mutationFn: (orderId: string) => markPickup({ data: { order_id: orderId } }),
+    onSuccess: () => {
+      toast.success("Ditandai siap pickup");
+      setHeader((f) => ({ ...f, ready_pickup_at: new Date().toISOString() }));
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const ordersQ = useQuery({ queryKey: ["orders"], queryFn: () => fetchOrders() });
   const pricesQ = useQuery({ queryKey: ["material_prices"], queryFn: () => fetchPrices() });
@@ -284,6 +303,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       username: o.username ?? "", kota: o.kota ?? "",
       payment: String(o.payment ?? ""), dp: String(o.dp ?? ""), split: String(o.split ?? ""),
       notes: o.notes ?? "",
+      no_resi: o.no_resi ?? "", ekspedisi: o.ekspedisi ?? "",
+      ready_pickup_at: o.ready_pickup_at ?? null,
+      picked_up_at: o.picked_up_at ?? null,
     });
     setItems([]); // will be filled by itemsQ effect
     setExpandedItemKey(null);
@@ -298,6 +320,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       username: o.username ?? "", kota: o.kota ?? "",
       payment: String(o.payment ?? ""), dp: "", split: String(o.split ?? ""),
       notes: o.notes ?? "",
+      no_resi: "", ekspedisi: o.ekspedisi ?? "",
     });
     // clone items
     const srcItems = (o.order_items ?? []) as any[];
@@ -356,6 +379,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           modul: 0, socket_dc: 0, baut_fischer: 0,
           outdoor_cost: 0,
           notes: header.notes || null,
+          no_resi: header.no_resi.trim() || null,
+          ekspedisi: header.ekspedisi || null,
         },
       });
       const orderId = res.id!;
@@ -501,6 +526,42 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               <div><Label>Payment (Rp)</Label><Input type="number" value={header.payment} onChange={(e) => setHeader((f) => ({ ...f, payment: e.target.value }))}/></div>
               <div><Label>DP (Rp)</Label><Input type="number" value={header.dp} onChange={(e) => setHeader((f) => ({ ...f, dp: e.target.value }))}/></div>
               <div><Label>Split (Rp)</Label><Input type="number" value={header.split} onChange={(e) => setHeader((f) => ({ ...f, split: e.target.value }))}/></div>
+              <div>
+                <Label className="flex items-center gap-1"><Truck className="h-3.5 w-3.5"/> No Resi</Label>
+                <Input placeholder="Nomor resi pengiriman" value={header.no_resi} onChange={(e) => setHeader((f) => ({ ...f, no_resi: e.target.value }))}/>
+              </div>
+              <div>
+                <Label>Ekspedisi</Label>
+                <Select value={header.ekspedisi || "__none"} onValueChange={(v) => setHeader((f) => ({ ...f, ekspedisi: v === "__none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Pilih ekspedisi"/></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">— Tidak dipilih —</SelectItem>
+                    {EKSPEDISI_LIST.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {header.id && header.no_resi && (
+                <div className="sm:col-span-2 md:col-span-3 flex items-center gap-2 flex-wrap">
+                  {header.picked_up_at ? (
+                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                      <PackageCheck className="h-3.5 w-3.5 mr-1"/> Sudah diambil kurir · {new Date(header.picked_up_at).toLocaleString("id-ID")}
+                    </Badge>
+                  ) : header.ready_pickup_at ? (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                      <Truck className="h-3.5 w-3.5 mr-1"/> Siap pickup · menunggu kurir
+                    </Badge>
+                  ) : (
+                    <Button
+                      type="button" size="sm" variant="outline"
+                      className="border-amber-400 text-amber-700 hover:bg-amber-50"
+                      onClick={() => markPickupMut.mutate(header.id!)}
+                      disabled={markPickupMut.isPending}
+                    >
+                      <Truck className="h-3.5 w-3.5 mr-1"/> Tandai Siap Pickup
+                    </Button>
+                  )}
+                </div>
+              )}
               <div className="sm:col-span-2 md:col-span-3"><Label>Catatan Order</Label><Textarea rows={2} value={header.notes} onChange={(e) => setHeader((f) => ({ ...f, notes: e.target.value }))}/></div>
             </div>
 

@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt, Utensils,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt, Utensils, Truck,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -33,6 +33,10 @@ const adminItems = [
   { title: "Approval", url: "/approvals", icon: BadgeCheck },
   { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils },
   { title: "Customer", url: "/customers", icon: Building2 },
+  { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
+];
+const kurirItems = [
+  { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
 ];
 const ownerItems = [
   { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
@@ -113,6 +117,27 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}
+                      className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
+                      <Link to={item.url} onClick={handleNav}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {role === "kurir" && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-cyan-400/80">Kurir</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {kurirItems.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}
                       className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
