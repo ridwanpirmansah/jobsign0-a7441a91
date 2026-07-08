@@ -56,6 +56,8 @@ const orderSchema = z.object({
   baut_fischer: z.number().min(0).default(0),
   outdoor_cost: z.number().min(0).nullable().optional(),
   notes: z.string().optional().nullable(),
+  no_resi: z.string().optional().nullable(),
+  ekspedisi: z.string().optional().nullable(),
 });
 
 export const upsertOrder = createServerFn({ method: "POST" })
