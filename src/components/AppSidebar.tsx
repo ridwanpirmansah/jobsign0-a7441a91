@@ -132,6 +132,27 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
+        {role === "kurir" && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-cyan-400/80">Kurir</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {kurirItems.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}
+                      className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
+                      <Link to={item.url} onClick={handleNav}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         <SidebarGroup>
           <SidebarGroupLabel className="text-slate-500">Karyawan</SidebarGroupLabel>
           <SidebarGroupContent>
