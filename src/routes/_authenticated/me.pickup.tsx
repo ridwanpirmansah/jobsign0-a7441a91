@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ResiScanner } from "@/components/ResiScanner";
 import { Truck, PackageCheck, Search, ScanLine } from "lucide-react";
 import { toast } from "sonner";
+import { beepSuccess, beepError } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/me/pickup")({
   component: PickupPage,
@@ -36,12 +37,13 @@ function PickupPage() {
   const pickupMut = useMutation({
     mutationFn: (no_resi: string) => doPickup({ data: { no_resi, note: note.trim() || null } }),
     onSuccess: (res) => {
+      beepSuccess();
       toast.success(`Paket ${res.order_no} berhasil diambil${res.ekspedisi ? ` (${res.ekspedisi})` : ""}`);
       setResiInput(""); setNote("");
       qc.invalidateQueries({ queryKey: ["pickup-ready"] });
       qc.invalidateQueries({ queryKey: ["pickup-mine"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => { beepError(); toast.error(e.message); },
   });
 
   const filtered = useMemo(() => {

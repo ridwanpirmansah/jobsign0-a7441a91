@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, CheckCircle2, XCircle, ArrowLeft, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { speakId, beepError, primeSpeech } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/me/scan")({
   component: ScanPage,
@@ -82,12 +83,20 @@ function ScanPage() {
         : res.action === "break_end" ? "Selesai Istirahat — lanjut kerja"
         : res.action === "check_out_final" ? "Check-OUT (pulang)"
         : res.action;
+      const speech =
+        res.action === "check_in" ? "Check In berhasil, selamat bekerja"
+        : res.action === "check_out" ? "Check Out berhasil, selamat istirahat"
+        : res.action === "break_end" ? "Selamat kembali bekerja"
+        : res.action === "check_out_final" ? "Check Out berhasil, sampai jumpa besok"
+        : "Absensi berhasil";
+      speakId(speech);
       setLast({ ok: true, message: `${label} berhasil dicatat`, action: res.action });
       qc.invalidateQueries({ queryKey: ["att-today"] });
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
       qc.invalidateQueries({ queryKey: ["my-att"] });
     },
     onError: (e: Error) => {
+      beepError();
       setLast({ ok: false, message: e.message });
     },
     onSettled: () => {
@@ -97,6 +106,7 @@ function ScanPage() {
 
   const start = async () => {
     if (running) return;
+    primeSpeech();
     try {
       const scanner = new Html5Qrcode(containerId, { verbose: false });
       scannerRef.current = scanner;
