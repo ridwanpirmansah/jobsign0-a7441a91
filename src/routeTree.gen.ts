@@ -33,6 +33,7 @@ import { Route as AuthenticatedOwnerCarriersRouteImport } from './routes/_authen
 import { Route as AuthenticatedOwnerAttendanceQrRouteImport } from './routes/_authenticated/owner.attendance-qr'
 import { Route as AuthenticatedOwnerAttendanceHistoryRouteImport } from './routes/_authenticated/owner.attendance-history'
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner.analytics'
+import { Route as AuthenticatedMeShipRouteImport } from './routes/_authenticated/me.ship'
 import { Route as AuthenticatedMeScanRouteImport } from './routes/_authenticated/me.scan'
 import { Route as AuthenticatedMeRepairsRouteImport } from './routes/_authenticated/me.repairs'
 import { Route as AuthenticatedMePickupRouteImport } from './routes/_authenticated/me.pickup'
@@ -168,6 +169,11 @@ const AuthenticatedOwnerAnalyticsRoute =
     path: '/owner/analytics',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMeShipRoute = AuthenticatedMeShipRouteImport.update({
+  id: '/me/ship',
+  path: '/me/ship',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMeScanRoute = AuthenticatedMeScanRouteImport.update({
   id: '/me/scan',
   path: '/me/scan',
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/me/pickup': typeof AuthenticatedMePickupRoute
   '/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
+  '/me/ship': typeof AuthenticatedMeShipRoute
   '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
   '/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
@@ -259,6 +266,7 @@ export interface FileRoutesByTo {
   '/me/pickup': typeof AuthenticatedMePickupRoute
   '/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
+  '/me/ship': typeof AuthenticatedMeShipRoute
   '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
   '/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
@@ -293,6 +301,7 @@ export interface FileRoutesById {
   '/_authenticated/me/pickup': typeof AuthenticatedMePickupRoute
   '/_authenticated/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/_authenticated/me/scan': typeof AuthenticatedMeScanRoute
+  '/_authenticated/me/ship': typeof AuthenticatedMeShipRoute
   '/_authenticated/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/_authenticated/owner/attendance-history': typeof AuthenticatedOwnerAttendanceHistoryRoute
   '/_authenticated/owner/attendance-qr': typeof AuthenticatedOwnerAttendanceQrRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/me/pickup'
     | '/me/repairs'
     | '/me/scan'
+    | '/me/ship'
     | '/owner/analytics'
     | '/owner/attendance-history'
     | '/owner/attendance-qr'
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/me/pickup'
     | '/me/repairs'
     | '/me/scan'
+    | '/me/ship'
     | '/owner/analytics'
     | '/owner/attendance-history'
     | '/owner/attendance-qr'
@@ -392,6 +403,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me/pickup'
     | '/_authenticated/me/repairs'
     | '/_authenticated/me/scan'
+    | '/_authenticated/me/ship'
     | '/_authenticated/owner/analytics'
     | '/_authenticated/owner/attendance-history'
     | '/_authenticated/owner/attendance-qr'
@@ -581,6 +593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnerAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/me/ship': {
+      id: '/_authenticated/me/ship'
+      path: '/me/ship'
+      fullPath: '/me/ship'
+      preLoaderRoute: typeof AuthenticatedMeShipRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/me/scan': {
       id: '/_authenticated/me/scan'
       path: '/me/scan'
@@ -652,6 +671,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMePickupRoute: typeof AuthenticatedMePickupRoute
   AuthenticatedMeRepairsRoute: typeof AuthenticatedMeRepairsRoute
   AuthenticatedMeScanRoute: typeof AuthenticatedMeScanRoute
+  AuthenticatedMeShipRoute: typeof AuthenticatedMeShipRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
   AuthenticatedOwnerAttendanceHistoryRoute: typeof AuthenticatedOwnerAttendanceHistoryRoute
   AuthenticatedOwnerAttendanceQrRoute: typeof AuthenticatedOwnerAttendanceQrRoute
@@ -682,6 +702,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMePickupRoute: AuthenticatedMePickupRoute,
   AuthenticatedMeRepairsRoute: AuthenticatedMeRepairsRoute,
   AuthenticatedMeScanRoute: AuthenticatedMeScanRoute,
+  AuthenticatedMeShipRoute: AuthenticatedMeShipRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
   AuthenticatedOwnerAttendanceHistoryRoute:
     AuthenticatedOwnerAttendanceHistoryRoute,

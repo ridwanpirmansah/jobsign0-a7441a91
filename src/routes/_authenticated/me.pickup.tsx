@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { ResiScanner } from "@/components/ResiScanner";
 import { Truck, PackageCheck, Search, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 
