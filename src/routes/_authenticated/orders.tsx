@@ -514,6 +514,42 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               <div><Label>Payment (Rp)</Label><Input type="number" value={header.payment} onChange={(e) => setHeader((f) => ({ ...f, payment: e.target.value }))}/></div>
               <div><Label>DP (Rp)</Label><Input type="number" value={header.dp} onChange={(e) => setHeader((f) => ({ ...f, dp: e.target.value }))}/></div>
               <div><Label>Split (Rp)</Label><Input type="number" value={header.split} onChange={(e) => setHeader((f) => ({ ...f, split: e.target.value }))}/></div>
+              <div>
+                <Label className="flex items-center gap-1"><Truck className="h-3.5 w-3.5"/> No Resi</Label>
+                <Input placeholder="Nomor resi pengiriman" value={header.no_resi} onChange={(e) => setHeader((f) => ({ ...f, no_resi: e.target.value }))}/>
+              </div>
+              <div>
+                <Label>Ekspedisi</Label>
+                <Select value={header.ekspedisi || "__none"} onValueChange={(v) => setHeader((f) => ({ ...f, ekspedisi: v === "__none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Pilih ekspedisi"/></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">— Tidak dipilih —</SelectItem>
+                    {EKSPEDISI_LIST.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {header.id && header.no_resi && (
+                <div className="sm:col-span-2 md:col-span-3 flex items-center gap-2 flex-wrap">
+                  {header.picked_up_at ? (
+                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                      <PackageCheck className="h-3.5 w-3.5 mr-1"/> Sudah diambil kurir · {new Date(header.picked_up_at).toLocaleString("id-ID")}
+                    </Badge>
+                  ) : header.ready_pickup_at ? (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                      <Truck className="h-3.5 w-3.5 mr-1"/> Siap pickup · menunggu kurir
+                    </Badge>
+                  ) : (
+                    <Button
+                      type="button" size="sm" variant="outline"
+                      className="border-amber-400 text-amber-700 hover:bg-amber-50"
+                      onClick={() => markPickupMut.mutate(header.id!)}
+                      disabled={markPickupMut.isPending}
+                    >
+                      <Truck className="h-3.5 w-3.5 mr-1"/> Tandai Siap Pickup
+                    </Button>
+                  )}
+                </div>
+              )}
               <div className="sm:col-span-2 md:col-span-3"><Label>Catatan Order</Label><Textarea rows={2} value={header.notes} onChange={(e) => setHeader((f) => ({ ...f, notes: e.target.value }))}/></div>
             </div>
 
