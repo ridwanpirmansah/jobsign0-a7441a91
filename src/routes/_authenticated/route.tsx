@@ -6,9 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+    // Restrict role kurir: hanya boleh akses halaman pickup
+    const { data: roles } = await supabase
+      .from("user_roles").select("role").eq("user_id", data.user.id);
+    const roleList = (roles ?? []).map((r: any) => r.role);
+    const isOnlyKurir = roleList.length > 0 && roleList.every((r: string) => r === "kurir");
+    if (isOnlyKurir && !location.pathname.startsWith("/me/pickup")) {
+      throw redirect({ to: "/me/pickup" });
+    }
     return { user: data.user };
   },
   component: AuthLayout,
