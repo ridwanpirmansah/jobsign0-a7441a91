@@ -28,12 +28,13 @@ function ShipPage() {
   const mut = useMutation({
     mutationFn: (no_resi: string) => mark({ data: { no_resi } }),
     onSuccess: (res) => {
+      beepSuccess();
       toast.success(`#${res.order_no} ditandai siap kirim${res.ekspedisi ? ` (${res.ekspedisi})` : ""}`);
       setHistory((h) => [{ order_no: res.order_no, no_resi: res.no_resi, ekspedisi: res.ekspedisi, ts: Date.now() }, ...h].slice(0, 20));
       setManual("");
       qc.invalidateQueries({ queryKey: ["pickup-ready"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => { beepError(); toast.error(e.message); },
   });
 
   if (isLoading) return <p className="p-4 text-sm text-slate-500">Memuat…</p>;
