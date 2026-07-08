@@ -206,7 +206,7 @@ export const courierPickup = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: res, error } = await context.supabase.rpc("courier_pickup", {
       _no_resi: data.no_resi,
-      _note: data.note ?? null,
+      _note: data.note ?? undefined,
     });
     if (error) throw new Error(error.message);
     return res as { order_id: string; order_no: string; ekspedisi: string | null };
