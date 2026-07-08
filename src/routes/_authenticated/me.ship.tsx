@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ResiScanner } from "@/components/ResiScanner";
 import { PackageCheck, ScanLine, Truck } from "lucide-react";
 import { toast } from "sonner";
+import { beepSuccess, beepError } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/me/ship")({
   component: ShipPage,
