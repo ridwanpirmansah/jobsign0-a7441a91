@@ -34,6 +34,7 @@ import { Route as AuthenticatedOwnerAttendanceHistoryRouteImport } from './route
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner.analytics'
 import { Route as AuthenticatedMeScanRouteImport } from './routes/_authenticated/me.scan'
 import { Route as AuthenticatedMeRepairsRouteImport } from './routes/_authenticated/me.repairs'
+import { Route as AuthenticatedMePickupRouteImport } from './routes/_authenticated/me.pickup'
 import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
 import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
 import { Route as AuthenticatedMeAttendanceRouteImport } from './routes/_authenticated/me.attendance'
@@ -170,6 +171,11 @@ const AuthenticatedMeRepairsRoute = AuthenticatedMeRepairsRouteImport.update({
   path: '/me/repairs',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMePickupRoute = AuthenticatedMePickupRouteImport.update({
+  id: '/me/pickup',
+  path: '/me/pickup',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMeJobsRoute = AuthenticatedMeJobsRouteImport.update({
   id: '/me/jobs',
   path: '/me/jobs',
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/me/pickup': typeof AuthenticatedMePickupRoute
   '/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
   '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/me/pickup': typeof AuthenticatedMePickupRoute
   '/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/me/scan': typeof AuthenticatedMeScanRoute
   '/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
@@ -273,6 +281,7 @@ export interface FileRoutesById {
   '/_authenticated/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/_authenticated/me/earnings': typeof AuthenticatedMeEarningsRoute
   '/_authenticated/me/jobs': typeof AuthenticatedMeJobsRoute
+  '/_authenticated/me/pickup': typeof AuthenticatedMePickupRoute
   '/_authenticated/me/repairs': typeof AuthenticatedMeRepairsRoute
   '/_authenticated/me/scan': typeof AuthenticatedMeScanRoute
   '/_authenticated/owner/analytics': typeof AuthenticatedOwnerAnalyticsRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/me/attendance'
     | '/me/earnings'
     | '/me/jobs'
+    | '/me/pickup'
     | '/me/repairs'
     | '/me/scan'
     | '/owner/analytics'
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/me/attendance'
     | '/me/earnings'
     | '/me/jobs'
+    | '/me/pickup'
     | '/me/repairs'
     | '/me/scan'
     | '/owner/analytics'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me/attendance'
     | '/_authenticated/me/earnings'
     | '/_authenticated/me/jobs'
+    | '/_authenticated/me/pickup'
     | '/_authenticated/me/repairs'
     | '/_authenticated/me/scan'
     | '/_authenticated/owner/analytics'
@@ -563,6 +575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeRepairsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/me/pickup': {
+      id: '/_authenticated/me/pickup'
+      path: '/me/pickup'
+      fullPath: '/me/pickup'
+      preLoaderRoute: typeof AuthenticatedMePickupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/me/jobs': {
       id: '/_authenticated/me/jobs'
       path: '/me/jobs'
@@ -610,6 +629,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeAttendanceRoute: typeof AuthenticatedMeAttendanceRoute
   AuthenticatedMeEarningsRoute: typeof AuthenticatedMeEarningsRoute
   AuthenticatedMeJobsRoute: typeof AuthenticatedMeJobsRoute
+  AuthenticatedMePickupRoute: typeof AuthenticatedMePickupRoute
   AuthenticatedMeRepairsRoute: typeof AuthenticatedMeRepairsRoute
   AuthenticatedMeScanRoute: typeof AuthenticatedMeScanRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
@@ -638,6 +658,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeAttendanceRoute: AuthenticatedMeAttendanceRoute,
   AuthenticatedMeEarningsRoute: AuthenticatedMeEarningsRoute,
   AuthenticatedMeJobsRoute: AuthenticatedMeJobsRoute,
+  AuthenticatedMePickupRoute: AuthenticatedMePickupRoute,
   AuthenticatedMeRepairsRoute: AuthenticatedMeRepairsRoute,
   AuthenticatedMeScanRoute: AuthenticatedMeScanRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
