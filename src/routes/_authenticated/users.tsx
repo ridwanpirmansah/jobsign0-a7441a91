@@ -95,6 +95,7 @@ function UsersPage() {
                         <SelectItem value="owner">owner</SelectItem>
                         <SelectItem value="admin">admin</SelectItem>
                         <SelectItem value="karyawan">karyawan</SelectItem>
+                        <SelectItem value="kurir">kurir</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
