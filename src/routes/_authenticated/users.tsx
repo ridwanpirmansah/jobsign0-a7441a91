@@ -30,7 +30,7 @@ function UsersPage() {
       });
       return (profiles.data ?? []).map((p) => {
         const rs = map.get(p.id) ?? [];
-        const top: Role = rs.includes("owner") ? "owner" : rs.includes("admin") ? "admin" : "karyawan";
+        const top: Role = rs.includes("owner") ? "owner" : rs.includes("admin") ? "admin" : rs.includes("kurir") ? "kurir" : "karyawan";
         return { ...p, role: top, roles: rs };
       });
     },
