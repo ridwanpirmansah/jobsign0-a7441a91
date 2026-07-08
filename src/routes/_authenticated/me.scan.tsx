@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, CheckCircle2, XCircle, ArrowLeft, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { speakId, beepError, primeSpeech } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/me/scan")({
   component: ScanPage,
