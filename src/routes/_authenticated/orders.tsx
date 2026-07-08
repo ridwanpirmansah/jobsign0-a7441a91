@@ -543,7 +543,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   <SelectTrigger><SelectValue placeholder="Pilih ekspedisi"/></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none">— Tidak dipilih —</SelectItem>
-                    {EKSPEDISI_LIST.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                    {carriers.map((c: any) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
