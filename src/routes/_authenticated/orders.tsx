@@ -564,7 +564,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                           ekspedisi: header.ekspedisi,
                           co_date: header.co_date,
                           kota: header.kota,
-                          text_neon: header.text_neon,
+                          text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
                           username: header.username,
                           order_no: header.order_no,
                         })}
