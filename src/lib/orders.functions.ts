@@ -201,7 +201,7 @@ export const markReadyPickup = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireStaff(context);
     if (data.no_resi) {
-      const patch: Record<string, unknown> = { no_resi: data.no_resi };
+      const patch: { no_resi: string; ekspedisi?: string | null } = { no_resi: data.no_resi };
       if (data.ekspedisi !== undefined) patch.ekspedisi = data.ekspedisi || null;
       const { error: upErr } = await context.supabase
         .from("orders").update(patch).eq("id", data.order_id);
