@@ -291,6 +291,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       username: o.username ?? "", kota: o.kota ?? "",
       payment: String(o.payment ?? ""), dp: String(o.dp ?? ""), split: String(o.split ?? ""),
       notes: o.notes ?? "",
+      no_resi: o.no_resi ?? "", ekspedisi: o.ekspedisi ?? "",
+      ready_pickup_at: o.ready_pickup_at ?? null,
+      picked_up_at: o.picked_up_at ?? null,
     });
     setItems([]); // will be filled by itemsQ effect
     setExpandedItemKey(null);
