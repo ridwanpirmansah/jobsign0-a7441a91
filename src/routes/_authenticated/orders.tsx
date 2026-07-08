@@ -73,7 +73,7 @@ type HeaderForm = {
   picked_up_at?: string | null;
 };
 
-const EKSPEDISI_LIST = ["JNE", "J&T", "SiCepat", "Anteraja", "Ninja", "Pos Indonesia", "ID Express", "Lion Parcel", "GoSend", "Grab Express", "Lainnya"] as const;
+// Ekspedisi dikelola dinamis via table `shipping_carriers`
 
 type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual";
 
