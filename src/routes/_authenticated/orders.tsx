@@ -201,7 +201,11 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const qc = useQueryClient();
 
   const markPickupMut = useMutation({
-    mutationFn: (orderId: string) => markPickup({ data: { order_id: orderId } }),
+    mutationFn: (orderId: string) => markPickup({ data: {
+      order_id: orderId,
+      no_resi: header.no_resi.trim() || undefined,
+      ekspedisi: header.ekspedisi || null,
+    } }),
     onSuccess: () => {
       toast.success("Ditandai siap pickup");
       setHeader((f) => ({ ...f, ready_pickup_at: new Date().toISOString() }));

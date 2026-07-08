@@ -191,8 +191,22 @@ export const listReadyStockAvailable = createServerFn({ method: "GET" })
 
 export const markReadyPickup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({
+      order_id: z.string().uuid(),
+      no_resi: z.string().trim().min(1).optional(),
+      ekspedisi: z.string().trim().optional().nullable(),
+    }).parse(d),
+  )
   .handler(async ({ data, context }) => {
+    await requireStaff(context);
+    if (data.no_resi) {
+      const patch: { no_resi: string; ekspedisi?: string | null } = { no_resi: data.no_resi };
+      if (data.ekspedisi !== undefined) patch.ekspedisi = data.ekspedisi || null;
+      const { error: upErr } = await context.supabase
+        .from("orders").update(patch).eq("id", data.order_id);
+      if (upErr) throw new Error(upErr.message);
+    }
     const { error } = await context.supabase.rpc("mark_ready_pickup", { _order_id: data.order_id });
     if (error) throw new Error(error.message);
     return { ok: true };
