@@ -33,7 +33,23 @@ const adminItems = [
   { title: "Approval", url: "/approvals", icon: BadgeCheck },
   { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils },
   { title: "Customer", url: "/customers", icon: Building2 },
+  { title: "Scan Siap Kirim", url: "/me/ship", icon: ScanLine },
   { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
+];
+const kurirItems = [
+  { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
+];
+const ownerItems = [
+  { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
+  { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },
+  { title: "Master Harga", url: "/owner/prices", icon: Tags },
+  { title: "Master Ekspedisi", url: "/owner/carriers", icon: Truck },
+  { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
+  { title: "Kelola User", url: "/users", icon: UserCog },
+  { title: "Payroll", url: "/payroll", icon: Wallet },
+  { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
+  { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
+  { title: "Laporan", url: "/reports", icon: BarChart3 },
 ];
 const kurirItems = [
   { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
