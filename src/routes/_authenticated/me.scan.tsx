@@ -106,6 +106,7 @@ function ScanPage() {
 
   const start = async () => {
     if (running) return;
+    primeSpeech();
     try {
       const scanner = new Html5Qrcode(containerId, { verbose: false });
       scannerRef.current = scanner;
