@@ -37,12 +37,13 @@ function PickupPage() {
   const pickupMut = useMutation({
     mutationFn: (no_resi: string) => doPickup({ data: { no_resi, note: note.trim() || null } }),
     onSuccess: (res) => {
+      beepSuccess();
       toast.success(`Paket ${res.order_no} berhasil diambil${res.ekspedisi ? ` (${res.ekspedisi})` : ""}`);
       setResiInput(""); setNote("");
       qc.invalidateQueries({ queryKey: ["pickup-ready"] });
       qc.invalidateQueries({ queryKey: ["pickup-mine"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => { beepError(); toast.error(e.message); },
   });
 
   const filtered = useMemo(() => {
