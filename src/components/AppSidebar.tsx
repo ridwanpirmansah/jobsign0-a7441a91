@@ -51,20 +51,6 @@ const ownerItems = [
   { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
   { title: "Laporan", url: "/reports", icon: BarChart3 },
 ];
-const kurirItems = [
-  { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
-];
-const ownerItems = [
-  { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
-  { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },
-  { title: "Master Harga", url: "/owner/prices", icon: Tags },
-  { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
-  { title: "Kelola User", url: "/users", icon: UserCog },
-  { title: "Payroll", url: "/payroll", icon: Wallet },
-  { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
-  { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
-  { title: "Laporan", url: "/reports", icon: BarChart3 },
-];
 
 
 export function AppSidebar() {
