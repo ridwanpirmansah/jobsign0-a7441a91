@@ -66,7 +66,13 @@ type HeaderForm = {
   dp: string;
   split: string;
   notes: string;
+  no_resi: string;
+  ekspedisi: string;
+  ready_pickup_at?: string | null;
+  picked_up_at?: string | null;
 };
+
+const EKSPEDISI_LIST = ["JNE", "J&T", "SiCepat", "Anteraja", "Ninja", "Pos Indonesia", "ID Express", "Lion Parcel", "GoSend", "Grab Express", "Lainnya"] as const;
 
 type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual";
 
