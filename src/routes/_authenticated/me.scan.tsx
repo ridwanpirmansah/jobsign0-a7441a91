@@ -83,12 +83,20 @@ function ScanPage() {
         : res.action === "break_end" ? "Selesai Istirahat — lanjut kerja"
         : res.action === "check_out_final" ? "Check-OUT (pulang)"
         : res.action;
+      const speech =
+        res.action === "check_in" ? "Check In berhasil, selamat bekerja"
+        : res.action === "check_out" ? "Check Out berhasil, selamat istirahat"
+        : res.action === "break_end" ? "Selamat kembali bekerja"
+        : res.action === "check_out_final" ? "Check Out berhasil, sampai jumpa besok"
+        : "Absensi berhasil";
+      speakId(speech);
       setLast({ ok: true, message: `${label} berhasil dicatat`, action: res.action });
       qc.invalidateQueries({ queryKey: ["att-today"] });
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
       qc.invalidateQueries({ queryKey: ["my-att"] });
     },
     onError: (e: Error) => {
+      beepError();
       setLast({ ok: false, message: e.message });
     },
     onSettled: () => {
