@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Play, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { WorkflowTabs } from "@/components/WorkflowTabs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/projects/")({ component: ProjectsPage });
