@@ -143,10 +143,36 @@ function ScanPage() {
   useEffect(() => () => { stop(); }, []);
 
   useEffect(() => {
+    if (!settings?.enforce_location) return;
+    if (!("geolocation" in navigator)) {
+      setPosErr("Perangkat tidak mendukung geolokasi");
+      return;
+    }
+    const id = navigator.geolocation.watchPosition(
+      (p) => {
+        setPos({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy });
+        setPosErr(null);
+      },
+      (e) => setPosErr(e.message),
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, [settings?.enforce_location]);
+
+  useEffect(() => {
     if (!last) return;
     const id = setTimeout(() => setLast(null), 3500);
     return () => clearTimeout(id);
   }, [last]);
+
+  const workshopLat = settings?.workshop_lat ?? null;
+  const workshopLng = settings?.workshop_lng ?? null;
+  const radius = settings?.radius_meters ?? 100;
+  const distance =
+    pos && workshopLat != null && workshopLng != null
+      ? haversineMeters(workshopLat, workshopLng, pos.lat, pos.lng)
+      : null;
+  const inside = distance != null ? distance <= radius : null;
 
   return (
     <div className="space-y-6 max-w-xl">
