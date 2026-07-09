@@ -399,6 +399,32 @@ function AttendanceQrPage() {
               </a>
             )}
           </div>
+
+          {(() => {
+            const lat = parseFloat(locLat);
+            const lng = parseFloat(locLng);
+            const r = parseInt(locRadius, 10);
+            if (!isFinite(lat) || !isFinite(lng)) {
+              return (
+                <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                  Isi Latitude & Longitude (atau gunakan tombol "Pakai Lokasi Saya Sekarang") untuk menampilkan peta.
+                </div>
+              );
+            }
+            return (
+              <WorkshopRadiusMap
+                workshopLat={lat}
+                workshopLng={lng}
+                radius={isFinite(r) && r >= 10 ? r : 100}
+                editable
+                height={320}
+                onWorkshopChange={(la, ln) => {
+                  setLocLat(la.toFixed(6));
+                  setLocLng(ln.toFixed(6));
+                }}
+              />
+            );
+          })()}
         </CardContent>
       </Card>
 
