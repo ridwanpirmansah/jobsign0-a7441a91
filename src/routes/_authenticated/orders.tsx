@@ -189,8 +189,9 @@ function calcItemHpp(item: ItemForm, priceMap: Record<string, number>): number {
   return base + Math.round(base * 0.01);
 }
 
-export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock" }) {
+export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock" | "draft" }) {
   const isReady = mode === "ready_stock";
+  const isDraft = mode === "draft";
   const fetchOrders = useServerFn(listOrders);
   const fetchPrices = useServerFn(listPrices);
   const saveOrder = useServerFn(upsertOrder);
