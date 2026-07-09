@@ -452,7 +452,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const filtered = useMemo(() => {
     const list = ordersQ.data ?? [];
     const out = list.filter((o: any) => {
-      if (isReady ? o.status !== "ready_stock" : o.status === "ready_stock") return false;
+      if (isReady) { if (o.status !== "ready_stock") return false; }
+      else if (isDraft) { if (o.status !== "draft") return false; }
+      else { if (o.status === "ready_stock" || o.status === "draft") return false; }
       if (srcFilter !== "all" && o.source !== srcFilter) return false;
       if (!filter.trim()) return true;
       const q = filter.toLowerCase();
