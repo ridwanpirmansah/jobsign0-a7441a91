@@ -41,6 +41,8 @@ function ScanPage() {
   const [last, setLast] = useState<LastResult | null>(null);
   const processingRef = useRef(false);
   const lastTokenRef = useRef<string>("");
+  const [pos, setPos] = useState<{ lat: number; lng: number; acc: number } | null>(null);
+  const [posErr, setPosErr] = useState<string | null>(null);
 
   const { data: settings } = useQuery({
     queryKey: ["att-settings-meta"],
