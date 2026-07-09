@@ -81,8 +81,9 @@ function PickupPage() {
   }
 
   return (
-    <div className="p-3 sm:p-4 space-y-5 max-w-5xl">
-      <div className="flex items-center gap-2">
+    <div className="p-0 sm:p-4 space-y-3 sm:space-y-5 max-w-5xl">
+      <div className="flex items-center gap-2 px-3 sm:px-0 pt-3 sm:pt-0">
+
         <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 grid place-items-center text-white shadow">
           <Truck className="h-5 w-5"/>
         </div>
