@@ -193,10 +193,46 @@ function ScanPage() {
       )}
 
       {settings?.enforce_location && (
-        <Card className="border-sky-200 bg-sky-50">
-          <CardContent className="p-3 text-sm text-sky-800 flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Absensi wajib berada dalam radius {settings.radius_meters ?? 100} m dari workshop. Izinkan akses lokasi saat diminta.
+        <Card className={inside === false ? "border-rose-200" : inside ? "border-emerald-200" : "border-sky-200"}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-sky-600" />
+              Validasi Lokasi (radius {radius} m)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {workshopLat == null || workshopLng == null ? (
+              <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+                Admin belum menetapkan koordinat workshop. Hubungi admin.
+              </div>
+            ) : (
+              <WorkshopRadiusMap
+                workshopLat={workshopLat}
+                workshopLng={workshopLng}
+                radius={radius}
+                userLat={pos?.lat}
+                userLng={pos?.lng}
+                height={240}
+              />
+            )}
+            {posErr && (
+              <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">
+                Gagal membaca lokasi: {posErr}
+              </div>
+            )}
+            {!pos && !posErr && workshopLat != null && (
+              <div className="text-xs text-slate-500">Mengambil lokasi Anda… izinkan akses lokasi bila diminta.</div>
+            )}
+            {inside === false && (
+              <div className="text-xs font-medium text-rose-700">
+                Anda berada di luar radius workshop. Scan akan ditolak.
+              </div>
+            )}
+            {inside === true && (
+              <div className="text-xs font-medium text-emerald-700">
+                Anda berada di dalam radius. Silakan scan QR.
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
