@@ -300,7 +300,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   }, [open, header.id, itemsQ.data]);
 
   const openNew = () => {
-    setHeader(emptyHeader(isReady ? nextReadyStockNo : nextOrderNo, isReady ? "ready_stock" : "active"));
+    setHeader(emptyHeader(isReady ? nextReadyStockNo : nextOrderNo, isReady ? "ready_stock" : isDraft ? "draft" : "active"));
     const first = emptyItem(1, priceMap, "custom");
     setItems([first]);
     setExpandedItemKey(first._key);
