@@ -154,15 +154,22 @@
     font-size: 17px; /* bumps rem-based sizes ~6% larger */
   }
 
-  /* Main content area: edge-to-edge for max screen usage */
+  /* Main content: comfortable side padding on mobile */
   main {
-    padding: 0 !important;
+    padding: 0.75rem !important;
   }
-  main > * {
+
+  /* Edge-to-edge opt-in: pages that want to hug the screen edges */
+  main .edge-to-edge {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+  }
+  main .edge-to-edge [data-slot="card"] {
     border-left: 0 !important;
     border-right: 0 !important;
     border-radius: 0 !important;
   }
+
 
   /* Headings a touch larger and tighter */
   h1 { font-size: 1.6rem !important; line-height: 1.2 !important; }
