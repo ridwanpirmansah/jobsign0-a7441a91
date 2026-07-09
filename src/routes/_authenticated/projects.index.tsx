@@ -66,8 +66,9 @@ function ProjectsPage() {
   if (!isStaff(me?.role)) return <NoAccess />;
 
   return (
-    <div className="space-y-6 max-w-7xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-7xl p-2 sm:p-4">
+      <WorkflowTabs />
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Project</h1>
           <p className="text-sm text-slate-500">Kelola project neon sign</p>
