@@ -493,18 +493,42 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   ), [filtered]);
 
   return (
-    <div className="p-2 sm:p-4 space-y-4">
+    <div className={`p-2 sm:p-4 space-y-4 ${isDraft ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_18px,rgba(251,191,36,0.06)_18px,rgba(251,191,36,0.06)_20px)] min-h-full" : ""}`}>
+      <WorkflowTabs />
+
+      {isDraft && (
+        <div className="flex items-start gap-2 rounded-md border-2 border-dashed border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+          <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-white text-xs font-bold">D</span>
+          <div>
+            <div className="font-semibold">Halaman Draft</div>
+            <div className="text-amber-800">Order di sini belum aktif dan tidak masuk laporan. Ubah status ke <b>Aktif</b> saat pesanan sudah dikonfirmasi.</div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-2 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><ShoppingBag className="h-6 w-6"/> {isReady ? "Ready Stock" : "Order Neon Sign"}</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <ShoppingBag className="h-6 w-6 shrink-0"/>
+            <span className="truncate">{isReady ? "Ready Stock" : isDraft ? "Draft Order" : "Order Neon Sign"}</span>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isReady
               ? "Produk ready stock — tidak masuk laporan penjualan, tapi tetap muncul di Project untuk dikerjakan."
+              : isDraft
+              ? "Simpan rancangan order di sini sebelum dikonfirmasi menjadi order aktif."
               : "Satu order bisa berisi banyak produk (custom + ready-stock). HPP & profit dihitung otomatis dari total item."}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button onClick={openNew}><Plus className="h-4 w-4 mr-1"/> {isReady ? "Ready Stock Baru" : "Order Baru"}</Button></DialogTrigger>
+          <DialogTrigger asChild>
+            <Button
+              onClick={openNew}
+              className={isDraft ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}
+            >
+              <Plus className="h-4 w-4 mr-1"/> {isReady ? "Ready Stock Baru" : isDraft ? "Draft Baru" : "Order Baru"}
+            </Button>
+          </DialogTrigger>
           <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
 
             <DialogHeader className="-m-6 mb-0 p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-t-lg">
