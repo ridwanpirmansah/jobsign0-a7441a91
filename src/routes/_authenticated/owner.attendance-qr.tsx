@@ -13,6 +13,7 @@ import { RefreshCw, ShieldCheck, Download, CalendarDays, Printer, Infinity as In
 import { toast } from "sonner";
 import { computeToken, currentWindow, secondsLeftInWindow, WINDOW_SECONDS } from "@/lib/attendance-token";
 import { format } from "date-fns";
+import WorkshopRadiusMap from "@/components/WorkshopRadiusMap";
 
 export const Route = createFileRoute("/_authenticated/owner/attendance-qr")({
   component: AttendanceQrPage,
