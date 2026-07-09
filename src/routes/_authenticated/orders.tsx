@@ -481,7 +481,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       return 0;
     });
     return sorted;
-  }, [ordersQ.data, filter, srcFilter, isReady, sortKey, sortDir]);
+  }, [ordersQ.data, filter, srcFilter, isReady, isDraft, sortKey, sortDir]);
 
   const totals = useMemo(() => filtered.reduce(
     (acc: any, o: any) => {
