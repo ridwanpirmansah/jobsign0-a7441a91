@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Play, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { WorkflowTabs } from "@/components/WorkflowTabs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/projects/")({ component: ProjectsPage });
@@ -65,8 +66,9 @@ function ProjectsPage() {
   if (!isStaff(me?.role)) return <NoAccess />;
 
   return (
-    <div className="space-y-6 max-w-7xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-7xl p-2 sm:p-4">
+      <WorkflowTabs />
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Project</h1>
           <p className="text-sm text-slate-500">Kelola project neon sign</p>

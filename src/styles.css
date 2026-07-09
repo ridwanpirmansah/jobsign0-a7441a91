@@ -245,3 +245,8 @@
   .gap-3 { gap: 0.75rem; }
 }
 
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
