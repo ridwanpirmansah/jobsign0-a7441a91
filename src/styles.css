@@ -154,9 +154,14 @@
     font-size: 17px; /* bumps rem-based sizes ~6% larger */
   }
 
-  /* Main content area: tighter padding so content has more room */
+  /* Main content area: edge-to-edge for max screen usage */
   main {
-    padding: 1rem !important;
+    padding: 0 !important;
+  }
+  main > * {
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-radius: 0 !important;
   }
 
   /* Headings a touch larger and tighter */
@@ -186,10 +191,10 @@
   }
   label { font-size: 0.95rem !important; }
 
-  /* Cards: a bit more breathing room */
+  /* Cards: compact edge-hugging padding on mobile */
   [data-slot="card-content"],
   [data-slot="card-header"] {
-    padding: 1rem !important;
+    padding: 0.75rem !important;
   }
   [data-slot="card-title"] { font-size: 1.05rem !important; }
 
