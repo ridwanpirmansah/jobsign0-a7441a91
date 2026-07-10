@@ -894,10 +894,12 @@ function ItemCard({
             <SelectTrigger className="h-8 w-full sm:w-64"><SelectValue/></SelectTrigger>
             <SelectContent>
               <SelectItem value="custom">Custom (Neon Sign)</SelectItem>
-              <SelectItem value="ready_stock_ref">Ready Stock (pilih existing)</SelectItem>
+              <SelectItem value="ready_stock_ref">Ambil dari Ready Stock</SelectItem>
+              <SelectItem value="draft_ref">Ambil dari Draft</SelectItem>
               <SelectItem value="ready_stock_manual">Ready Stock / Manual</SelectItem>
             </SelectContent>
           </Select>
+
         </div>
 
         {item.kind === "custom" && (
