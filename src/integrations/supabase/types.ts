@@ -534,6 +534,7 @@ export type Database = {
           project_id: string | null
           socket_dc: number
           solder_cost: number
+          source_draft_order_id: string | null
           source_ready_stock_order_id: string | null
           tempel_cost: number
           text_neon: string | null
@@ -569,6 +570,7 @@ export type Database = {
           project_id?: string | null
           socket_dc?: number
           solder_cost?: number
+          source_draft_order_id?: string | null
           source_ready_stock_order_id?: string | null
           tempel_cost?: number
           text_neon?: string | null
@@ -604,6 +606,7 @@ export type Database = {
           project_id?: string | null
           socket_dc?: number
           solder_cost?: number
+          source_draft_order_id?: string | null
           source_ready_stock_order_id?: string | null
           tempel_cost?: number
           text_neon?: string | null
@@ -623,6 +626,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_source_draft_order_id_fkey"
+            columns: ["source_draft_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -1233,7 +1243,11 @@ export type Database = {
         | "lainnya"
         | "packing"
       job_log_status: "pending" | "approved" | "rejected"
-      order_item_kind: "custom" | "ready_stock_ref" | "ready_stock_manual"
+      order_item_kind:
+        | "custom"
+        | "ready_stock_ref"
+        | "ready_stock_manual"
+        | "draft_ref"
       order_source:
         | "shopee"
         | "tiktok"
@@ -1386,7 +1400,12 @@ export const Constants = {
         "packing",
       ],
       job_log_status: ["pending", "approved", "rejected"],
-      order_item_kind: ["custom", "ready_stock_ref", "ready_stock_manual"],
+      order_item_kind: [
+        "custom",
+        "ready_stock_ref",
+        "ready_stock_manual",
+        "draft_ref",
+      ],
       order_source: [
         "shopee",
         "tiktok",
