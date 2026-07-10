@@ -578,7 +578,7 @@ function ExpensesPage() {
   );
 }
 
-function KpiCard({ label, value, hint, tone, icon }: { label: string; value: string; hint?: string; tone: "rose"|"amber"|"indigo"|"emerald"|"orange"; icon: React.ReactNode }) {
+function KpiCard({ label, value, hint, tone, icon, active, onClick }: { label: string; value: string; hint?: string; tone: "rose"|"amber"|"indigo"|"emerald"|"orange"; icon: React.ReactNode; active?: boolean; onClick?: () => void }) {
   const tones: Record<string, string> = {
     rose: "from-rose-50 to-rose-100 text-rose-700",
     amber: "from-amber-50 to-amber-100 text-amber-700",
@@ -586,8 +586,15 @@ function KpiCard({ label, value, hint, tone, icon }: { label: string; value: str
     emerald: "from-emerald-50 to-emerald-100 text-emerald-700",
     orange: "from-orange-50 to-orange-100 text-orange-700",
   };
+  const ringMap: Record<string, string> = { orange: "ring-2 ring-orange-400" };
+  const interactive = !!onClick;
   return (
-    <Card className={`border-0 shadow-sm bg-gradient-to-br ${tones[tone]}`}>
+    <Card
+      className={`border-0 shadow-sm bg-gradient-to-br ${tones[tone]} ${interactive ? "cursor-pointer transition-all hover:shadow-md active:scale-[0.98]" : ""} ${active ? (ringMap[tone] ?? "ring-2 ring-slate-400") : ""}`}
+      onClick={onClick}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+    >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="text-[11px] uppercase tracking-wide font-semibold opacity-80">{label}</div>
@@ -599,6 +606,7 @@ function KpiCard({ label, value, hint, tone, icon }: { label: string; value: str
     </Card>
   );
 }
+
 
 function ExpenseDialog({
   open, onOpenChange, editing, onSaved,
