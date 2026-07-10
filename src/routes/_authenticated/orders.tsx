@@ -165,6 +165,8 @@ function itemFromDb(row: any): ItemForm {
     outdoor_cost: row.outdoor_cost == null ? "" : String(row.outdoor_cost),
     notes: row.notes ?? "",
     source_ready_stock_order_id: row.source_ready_stock_order_id ?? "",
+    source_draft_order_id: row.source_draft_order_id ?? "",
+
     manual_name: row.manual_name ?? "",
     manual_price: String(row.manual_price ?? ""),
     manual_hpp: String(row.manual_hpp ?? ""),
