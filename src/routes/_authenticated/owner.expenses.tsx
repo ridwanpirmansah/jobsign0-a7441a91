@@ -491,21 +491,44 @@ function ExpensesPage() {
       {/* List + filter */}
       <Card className="border-slate-200">
         <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Tag className="h-4 w-4 text-slate-500" /> Riwayat Pengeluaran
+          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+            <Tag className="h-4 w-4 text-slate-500" />
+            <span>Riwayat Pengeluaran{payFilter === "hutang" ? " — Belum Dibayar" : payFilter === "lunas" ? " — Sudah Lunas" : ""}</span>
+            {(payFilter !== "all" || catFilter !== "all") && (
+              <button
+                type="button"
+                onClick={() => { setPayFilter("all"); setCatFilter("all"); }}
+                className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+              >
+                × reset filter
+              </button>
+            )}
           </CardTitle>
-          <Select value={catFilter} onValueChange={(v) => setCatFilter(v as any)}>
-            <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Kategori</SelectItem>
-              {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={payFilter} onValueChange={(v) => setPayFilter(v as any)}>
+              <SelectTrigger className="w-[170px] h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="hutang">● Belum Dibayar</SelectItem>
+                <SelectItem value="lunas">● Sudah Lunas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={catFilter} onValueChange={(v) => setCatFilter(v as any)}>
+              <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Kategori</SelectItem>
+                {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {filtered.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">Tidak ada pengeluaran pada periode ini.</p>
+            <p className="text-sm text-slate-400 py-8 text-center">
+              {payFilter === "hutang" ? "Tidak ada pengeluaran hutang pada periode ini." : "Tidak ada pengeluaran pada periode ini."}
+            </p>
           ) : (
+
             <div className="space-y-2">
               {filtered.map((r) => {
                 const c = catMap[r.category];
