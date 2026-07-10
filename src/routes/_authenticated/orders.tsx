@@ -673,7 +673,10 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     index={idx}
                     priceMap={priceMap}
                     rsList={(rsQ.data ?? []) as any[]}
+                    draftsList={(draftsQ.data ?? []) as any[]}
                     excludeRsId={header.id}
+                    excludeDraftId={header.id}
+
                     expanded={expandedItemKey === it._key}
                     onToggleExpand={() => setExpandedItemKey((k) => k === it._key ? null : it._key)}
                     onChange={(patch) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, ...patch } : x))}
