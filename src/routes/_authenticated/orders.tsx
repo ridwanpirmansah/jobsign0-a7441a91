@@ -447,6 +447,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               ? (!it.use_outdoor ? 0 : (it.outdoor_cost === "" ? null : num(it.outdoor_cost)))
               : 0,
             source_ready_stock_order_id: it.kind === "ready_stock_ref" ? it.source_ready_stock_order_id : null,
+            source_draft_order_id: it.kind === "draft_ref" ? it.source_draft_order_id : null,
+
             manual_name: it.kind === "ready_stock_manual" ? it.manual_name : null,
             manual_price: it.kind === "ready_stock_manual" ? num(it.manual_price) : 0,
             manual_hpp: it.kind === "ready_stock_manual" ? num(it.manual_hpp) : 0,
