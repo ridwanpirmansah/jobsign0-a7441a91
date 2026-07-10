@@ -828,13 +828,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
 // -------- ItemCard --------
 function ItemCard({
-  item, index, priceMap, rsList, excludeRsId, expanded, onToggleExpand, onChange, onDelete,
+  item, index, priceMap, rsList, draftsList, excludeRsId, excludeDraftId, expanded, onToggleExpand, onChange, onDelete,
 }: {
   item: ItemForm;
   index: number;
   priceMap: Record<string, number>;
   rsList: any[];
+  draftsList: any[];
   excludeRsId?: string;
+  excludeDraftId?: string;
   expanded: boolean;
   onToggleExpand: () => void;
   onChange: (patch: Partial<ItemForm>) => void;
@@ -846,19 +848,26 @@ function ItemCard({
   const adaptorCost = item.adaptor_manual ? num(item.adaptor) : variantPrice;
   const itemHpp = item.kind === "ready_stock_ref"
     ? Number(rsList.find((r) => r.id === item.source_ready_stock_order_id)?.hpp ?? 0)
+    : item.kind === "draft_ref"
+    ? Number(draftsList.find((r) => r.id === item.source_draft_order_id)?.hpp ?? 0)
     : calcItemHpp(item, priceMap);
 
   const kindStyle = item.kind === "custom"
     ? { border: "border-l-4 border-l-indigo-500", bg: "bg-indigo-50/60", badge: "bg-indigo-100 text-indigo-800", label: "Custom" }
     : item.kind === "ready_stock_ref"
     ? { border: "border-l-4 border-l-emerald-500", bg: "bg-emerald-50/60", badge: "bg-emerald-100 text-emerald-800", label: "Ready Stock" }
-    : { border: "border-l-4 border-l-amber-500", bg: "bg-amber-50/60", badge: "bg-amber-100 text-amber-800", label: "Manual" };
+    : item.kind === "draft_ref"
+    ? { border: "border-l-4 border-l-amber-500", bg: "bg-amber-50/60", badge: "bg-amber-100 text-amber-800", label: "Draft" }
+    : { border: "border-l-4 border-l-orange-500", bg: "bg-orange-50/60", badge: "bg-orange-100 text-orange-800", label: "Manual" };
 
   const titleText = item.kind === "ready_stock_manual"
     ? (item.manual_name || "Ready Stock manual")
     : item.kind === "ready_stock_ref"
     ? (rsList.find((r) => r.id === item.source_ready_stock_order_id)?.text_neon || "Pilih ready stock…")
+    : item.kind === "draft_ref"
+    ? (draftsList.find((r) => r.id === item.source_draft_order_id)?.text_neon || "Pilih draft…")
     : (item.text_neon || "Belum diisi");
+
 
   return (
     <Card className={`border-slate-300 ${kindStyle.border} shadow-sm`}>
