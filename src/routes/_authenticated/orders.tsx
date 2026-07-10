@@ -176,7 +176,9 @@ function itemFromDb(row: any): ItemForm {
 function calcItemHpp(item: ItemForm, priceMap: Record<string, number>): number {
   if (item.kind === "ready_stock_manual") return num(item.manual_hpp);
   if (item.kind === "ready_stock_ref") return 0; // filled from ref on server
+  if (item.kind === "draft_ref") return 0; // filled from referenced draft on server
   // custom
+
   const led_meter = num(item.led_meter);
   const titik = num(item.titik);
   const p = num(item.akrilik_p);
