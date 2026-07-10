@@ -527,7 +527,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-white text-xs font-bold">D</span>
           <div>
             <div className="font-semibold">Halaman Draft</div>
-            <div className="text-amber-800">Order di sini belum aktif dan tidak masuk laporan. Ubah status ke <b>Aktif</b> saat pesanan sudah dikonfirmasi.</div>
+            <div className="text-amber-800">Order di sini belum aktif dan tidak masuk laporan. Nomor otomatis <b>DR-N</b>. Ubah status ke <b>Aktif</b>, atau draft akan otomatis hilang dari sini saat diambil oleh order aktif melalui opsi "Ambil dari Draft".</div>
           </div>
         </div>
       )}
