@@ -211,7 +211,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const saveItem = useServerFn(upsertOrderItem);
   const delItem = useServerFn(deleteOrderItem);
   const fetchRs = useServerFn(listReadyStockAvailable);
+  const fetchDrafts = useServerFn(listDraftAvailable);
   const markPickup = useServerFn(markReadyPickup);
+
   const qc = useQueryClient();
 
   const markPickupMut = useMutation({
