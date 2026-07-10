@@ -151,7 +151,13 @@ function ExpensesPage() {
   });
 
   const rows = data ?? [];
-  const filtered = catFilter === "all" ? rows : rows.filter((r) => r.category === catFilter);
+  const filtered = rows.filter((r) => {
+    if (catFilter !== "all" && r.category !== catFilter) return false;
+    if (payFilter === "hutang" && r.payment_status !== "hutang") return false;
+    if (payFilter === "lunas" && r.payment_status !== "lunas") return false;
+    return true;
+  });
+
 
   // KPI
   const total = rows.reduce((s, r) => s + Number(r.amount), 0);
