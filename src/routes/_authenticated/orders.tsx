@@ -385,12 +385,14 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       for (const it of alive) {
         if (it.kind === "custom" && !it.text_neon.trim()) throw new Error(`Item #${it.position}: TEXT wajib diisi`);
         if (it.kind === "ready_stock_ref" && !it.source_ready_stock_order_id) throw new Error(`Item #${it.position}: pilih ready-stock`);
+        if (it.kind === "draft_ref" && !it.source_draft_order_id) throw new Error(`Item #${it.position}: pilih draft`);
         if (it.kind === "ready_stock_manual" && !it.manual_name.trim()) throw new Error(`Item #${it.position}: nama produk wajib`);
       }
       if (!isDraftLike && !header.order_no.trim()) throw new Error("No. Order wajib diisi untuk status Aktif/Retur");
 
       // For legacy compat, keep required text_neon at header level (use first item's label)
-      const firstLabel = alive[0].kind === "custom" ? alive[0].text_neon : alive[0].manual_name || "Ready Stock";
+      const firstLabel = alive[0].kind === "custom" ? alive[0].text_neon : alive[0].manual_name || (alive[0].kind === "draft_ref" ? "Draft" : "Ready Stock");
+
 
       const res = await saveOrder({
         data: {
