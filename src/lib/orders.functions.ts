@@ -12,7 +12,7 @@ export const listOrders = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("orders")
-      .select("*, order_items!order_items_order_id_fkey(id, position, kind, text_neon, manual_name, titik, item_hpp, manual_price, source_ready_stock_order_id)")
+      .select("*, order_items!order_items_order_id_fkey(id, position, kind, text_neon, manual_name, titik, item_hpp, manual_price, source_ready_stock_order_id, source_draft_order_id)")
       .order("co_date", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(500);
