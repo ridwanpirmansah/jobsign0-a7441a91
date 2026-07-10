@@ -26,8 +26,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   ShoppingBag, Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, ArrowUpDown,
-  Package, Boxes, ChevronRight, ChevronDown, Truck, PackageCheck, Wand2, Printer,
+  Package, Boxes, ChevronRight, ChevronDown, Truck, PackageCheck, Wand2, Printer, FileEdit,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { generateResiNumber, printResiPdf } from "@/lib/resi-pdf";
 import { WorkflowTabs } from "@/components/WorkflowTabs";
