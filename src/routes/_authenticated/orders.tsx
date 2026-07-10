@@ -79,7 +79,7 @@ type HeaderForm = {
 
 // Ekspedisi dikelola dinamis via table `shipping_carriers`
 
-type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual";
+type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual" | "draft_ref";
 
 type ItemForm = {
   id?: string;                // DB id if existing
@@ -106,11 +106,14 @@ type ItemForm = {
   notes: string;
   // ready_stock_ref
   source_ready_stock_order_id: string;
+  // draft_ref
+  source_draft_order_id: string;
   // ready_stock_manual
   manual_name: string;
   manual_price: string;
   manual_hpp: string;
 };
+
 
 function emptyHeader(nextOrderNo = "", status: OrderStatus = "active"): HeaderForm {
   return {
