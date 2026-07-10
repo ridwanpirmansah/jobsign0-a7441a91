@@ -365,10 +365,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         const rs = (rsQ.data ?? []).find((r: any) => r.id === i.source_ready_stock_order_id);
         return s + Number(rs?.hpp ?? 0);
       }
+      if (i.kind === "draft_ref") {
+        const dr = (draftsQ.data ?? []).find((r: any) => r.id === i.source_draft_order_id);
+        return s + Number(dr?.hpp ?? 0);
+      }
       return s + calcItemHpp(i, priceMap);
     }, 0),
-    [items, priceMap, rsQ.data],
+    [items, priceMap, rsQ.data, draftsQ.data],
   );
+
   const totalPay = num(header.payment) + num(header.split);
   const totalProfit = totalPay - totalItemsHpp;
 
