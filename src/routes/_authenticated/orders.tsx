@@ -137,7 +137,9 @@ function emptyItem(pos: number, defaults: Record<string, number> = {}, kind: Ite
     baut_fischer: String(defaults.baut_fischer_default ?? 0),
     use_outdoor: false, outdoor_cost: "", notes: "",
     source_ready_stock_order_id: "",
+    source_draft_order_id: "",
     manual_name: "", manual_price: "", manual_hpp: "",
+
   };
 }
 
