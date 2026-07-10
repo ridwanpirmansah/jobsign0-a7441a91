@@ -969,6 +969,30 @@ function ItemCard({
           </div>
         )}
 
+        {item.kind === "draft_ref" && (
+          <div className="space-y-2">
+            <Label>Pilih Draft</Label>
+            <Select value={item.source_draft_order_id} onValueChange={(v) => onChange({ source_draft_order_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Pilih draft yang akan dijadikan order..."/></SelectTrigger>
+              <SelectContent>
+                {draftsList.filter((r) => r.id !== excludeDraftId).map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    <FileEdit className="h-3 w-3 inline mr-1"/> {r.order_no} — {r.text_neon || "(tanpa nama)"}
+                    {r.username ? ` · ${r.username}` : ""} · HPP Rp {rp(Number(r.hpp))}
+                  </SelectItem>
+                ))}
+                {draftsList.length === 0 && <div className="p-2 text-xs text-muted-foreground">Belum ada draft tersedia.</div>}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+              Setelah order ini disimpan sebagai <b>Aktif/Retur/Ready Stock</b>, draft yang dipilih otomatis mengikuti nomor order ini dan hilang dari halaman Draft.
+            </p>
+            <div><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
+          </div>
+        )}
+
+
+
         {item.kind === "ready_stock_manual" && (
           <div className="grid sm:grid-cols-3 gap-2">
             <div className="sm:col-span-3"><Label>Nama Produk *</Label><Input value={item.manual_name} onChange={(e) => onChange({ manual_name: e.target.value })}/></div>
