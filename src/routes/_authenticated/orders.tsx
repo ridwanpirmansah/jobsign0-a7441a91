@@ -463,6 +463,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["rs-available"] });
+      qc.invalidateQueries({ queryKey: ["draft-available"] });
+
     },
     onError: (e: any) => toast.error(e?.message ?? "Gagal simpan"),
   });
