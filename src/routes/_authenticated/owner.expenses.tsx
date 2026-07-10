@@ -115,6 +115,8 @@ function ExpensesPage() {
   const [pickerOpenMobile, setPickerOpenMobile] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [catFilter, setCatFilter] = useState<Category | "all">("all");
+  const [payFilter, setPayFilter] = useState<"all" | "hutang" | "lunas">("all");
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ExpenseRow | null>(null);
 
