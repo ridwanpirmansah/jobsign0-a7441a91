@@ -802,7 +802,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                         <TableRow key={it.id} className="bg-muted/10">
                           <TableCell></TableCell>
                           <TableCell colSpan={5} className="text-xs pl-8">
-                            <span className="text-muted-foreground">#{it.position} · {it.kind === "custom" ? "Custom" : it.kind === "ready_stock_ref" ? "Ready Stock (ref)" : "Ready Stock (manual)"}</span>
+                            <span className="text-muted-foreground">#{it.position} · {it.kind === "custom" ? "Custom" : it.kind === "ready_stock_ref" ? "Ready Stock (ref)" : it.kind === "draft_ref" ? "Draft (ref)" : "Ready Stock (manual)"}</span>
                           </TableCell>
                           <TableCell className="text-xs">{it.text_neon || it.manual_name || "-"}</TableCell>
                           <TableCell className="text-right text-xs">{it.titik ?? 0}</TableCell>
