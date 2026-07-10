@@ -388,8 +388,17 @@ function ExpensesPage() {
         <KpiCard label="Beban Usaha (P&L)" value={fmtIDR(pnlTotal)} hint="Masuk laporan laba/rugi" tone="amber" icon={<TrendingDown className="h-4 w-4" />} />
         <KpiCard label="Belanja Bahan Pokok" value={fmtIDR(hppTotal)} hint="Sudah dihitung di HPP" tone="indigo" icon={<Package2 className="h-4 w-4" />} />
         <KpiCard label="Rata-rata / Hari" value={fmtIDR(avgDaily)} hint={`Periode ${range.days} hari`} tone="emerald" icon={<Banknote className="h-4 w-4" />} />
-        <KpiCard label="Belum Dibayar" value={fmtIDR(unpaidTotal)} hint={`${unpaidCount} transaksi hutang`} tone="orange" icon={<Wallet className="h-4 w-4" />} />
+        <KpiCard
+          label="Belum Dibayar"
+          value={fmtIDR(unpaidTotal)}
+          hint={payFilter === "hutang" ? "Klik lagi untuk reset filter" : `${unpaidCount} transaksi · klik untuk filter`}
+          tone="orange"
+          icon={<Wallet className="h-4 w-4" />}
+          active={payFilter === "hutang"}
+          onClick={() => setPayFilter((p) => (p === "hutang" ? "all" : "hutang"))}
+        />
       </div>
+
 
 
       {isLoading && <p className="text-sm text-slate-500">Memuat data…</p>}
