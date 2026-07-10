@@ -189,6 +189,20 @@ export const listReadyStockAvailable = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const listDraftAvailable = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("orders")
+      .select("id, order_no, text_neon, hpp, payment, titik, username, kota")
+      .eq("status", "draft")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+
 // ============ Shipment / Pickup ============
 
 export const markReadyPickup = createServerFn({ method: "POST" })
