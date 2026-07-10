@@ -12,7 +12,7 @@ export const listOrders = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("orders")
-      .select("*, order_items!order_items_order_id_fkey(id, position, kind, text_neon, manual_name, titik, item_hpp, manual_price, source_ready_stock_order_id)")
+      .select("*, order_items!order_items_order_id_fkey(id, position, kind, text_neon, manual_name, titik, item_hpp, manual_price, source_ready_stock_order_id, source_draft_order_id)")
       .order("co_date", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(500);
@@ -126,7 +126,7 @@ const itemSchema = z.object({
   id: z.string().uuid().optional(),
   order_id: z.string().uuid(),
   position: z.number().int().min(1),
-  kind: z.enum(["custom", "ready_stock_ref", "ready_stock_manual"]),
+  kind: z.enum(["custom", "ready_stock_ref", "ready_stock_manual", "draft_ref"]),
   text_neon: z.string().nullable().optional(),
   akrilik_p: z.number().min(0).default(0),
   akrilik_l: z.number().min(0).default(0),
@@ -141,11 +141,13 @@ const itemSchema = z.object({
   baut_fischer: z.number().min(0).default(0),
   outdoor_cost: z.number().min(0).nullable().optional(),
   source_ready_stock_order_id: z.string().uuid().nullable().optional(),
+  source_draft_order_id: z.string().uuid().nullable().optional(),
   manual_name: z.string().nullable().optional(),
   manual_price: z.number().min(0).default(0),
   manual_hpp: z.number().min(0).default(0),
   notes: z.string().nullable().optional(),
 });
+
 
 export const upsertOrderItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -186,6 +188,20 @@ export const listReadyStockAvailable = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+export const listDraftAvailable = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("orders")
+      .select("id, order_no, text_neon, hpp, payment, titik, username, kota")
+      .eq("status", "draft")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
 
 // ============ Shipment / Pickup ============
 

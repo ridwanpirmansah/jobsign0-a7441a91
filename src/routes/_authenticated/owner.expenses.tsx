@@ -115,6 +115,8 @@ function ExpensesPage() {
   const [pickerOpenMobile, setPickerOpenMobile] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [catFilter, setCatFilter] = useState<Category | "all">("all");
+  const [payFilter, setPayFilter] = useState<"all" | "hutang" | "lunas">("all");
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ExpenseRow | null>(null);
 
@@ -149,7 +151,13 @@ function ExpensesPage() {
   });
 
   const rows = data ?? [];
-  const filtered = catFilter === "all" ? rows : rows.filter((r) => r.category === catFilter);
+  const filtered = rows.filter((r) => {
+    if (catFilter !== "all" && r.category !== catFilter) return false;
+    if (payFilter === "hutang" && r.payment_status !== "hutang") return false;
+    if (payFilter === "lunas" && r.payment_status !== "lunas") return false;
+    return true;
+  });
+
 
   // KPI
   const total = rows.reduce((s, r) => s + Number(r.amount), 0);
@@ -380,8 +388,17 @@ function ExpensesPage() {
         <KpiCard label="Beban Usaha (P&L)" value={fmtIDR(pnlTotal)} hint="Masuk laporan laba/rugi" tone="amber" icon={<TrendingDown className="h-4 w-4" />} />
         <KpiCard label="Belanja Bahan Pokok" value={fmtIDR(hppTotal)} hint="Sudah dihitung di HPP" tone="indigo" icon={<Package2 className="h-4 w-4" />} />
         <KpiCard label="Rata-rata / Hari" value={fmtIDR(avgDaily)} hint={`Periode ${range.days} hari`} tone="emerald" icon={<Banknote className="h-4 w-4" />} />
-        <KpiCard label="Belum Dibayar" value={fmtIDR(unpaidTotal)} hint={`${unpaidCount} transaksi hutang`} tone="orange" icon={<Wallet className="h-4 w-4" />} />
+        <KpiCard
+          label="Belum Dibayar"
+          value={fmtIDR(unpaidTotal)}
+          hint={payFilter === "hutang" ? "Klik lagi untuk reset filter" : `${unpaidCount} transaksi · klik untuk filter`}
+          tone="orange"
+          icon={<Wallet className="h-4 w-4" />}
+          active={payFilter === "hutang"}
+          onClick={() => setPayFilter((p) => (p === "hutang" ? "all" : "hutang"))}
+        />
       </div>
+
 
 
       {isLoading && <p className="text-sm text-slate-500">Memuat data…</p>}
@@ -474,21 +491,44 @@ function ExpensesPage() {
       {/* List + filter */}
       <Card className="border-slate-200">
         <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Tag className="h-4 w-4 text-slate-500" /> Riwayat Pengeluaran
+          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+            <Tag className="h-4 w-4 text-slate-500" />
+            <span>Riwayat Pengeluaran{payFilter === "hutang" ? " — Belum Dibayar" : payFilter === "lunas" ? " — Sudah Lunas" : ""}</span>
+            {(payFilter !== "all" || catFilter !== "all") && (
+              <button
+                type="button"
+                onClick={() => { setPayFilter("all"); setCatFilter("all"); }}
+                className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+              >
+                × reset filter
+              </button>
+            )}
           </CardTitle>
-          <Select value={catFilter} onValueChange={(v) => setCatFilter(v as any)}>
-            <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Kategori</SelectItem>
-              {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={payFilter} onValueChange={(v) => setPayFilter(v as any)}>
+              <SelectTrigger className="w-[170px] h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="hutang">● Belum Dibayar</SelectItem>
+                <SelectItem value="lunas">● Sudah Lunas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={catFilter} onValueChange={(v) => setCatFilter(v as any)}>
+              <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Kategori</SelectItem>
+                {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {filtered.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">Tidak ada pengeluaran pada periode ini.</p>
+            <p className="text-sm text-slate-400 py-8 text-center">
+              {payFilter === "hutang" ? "Tidak ada pengeluaran hutang pada periode ini." : "Tidak ada pengeluaran pada periode ini."}
+            </p>
           ) : (
+
             <div className="space-y-2">
               {filtered.map((r) => {
                 const c = catMap[r.category];
@@ -561,7 +601,7 @@ function ExpensesPage() {
   );
 }
 
-function KpiCard({ label, value, hint, tone, icon }: { label: string; value: string; hint?: string; tone: "rose"|"amber"|"indigo"|"emerald"|"orange"; icon: React.ReactNode }) {
+function KpiCard({ label, value, hint, tone, icon, active, onClick }: { label: string; value: string; hint?: string; tone: "rose"|"amber"|"indigo"|"emerald"|"orange"; icon: React.ReactNode; active?: boolean; onClick?: () => void }) {
   const tones: Record<string, string> = {
     rose: "from-rose-50 to-rose-100 text-rose-700",
     amber: "from-amber-50 to-amber-100 text-amber-700",
@@ -569,8 +609,15 @@ function KpiCard({ label, value, hint, tone, icon }: { label: string; value: str
     emerald: "from-emerald-50 to-emerald-100 text-emerald-700",
     orange: "from-orange-50 to-orange-100 text-orange-700",
   };
+  const ringMap: Record<string, string> = { orange: "ring-2 ring-orange-400" };
+  const interactive = !!onClick;
   return (
-    <Card className={`border-0 shadow-sm bg-gradient-to-br ${tones[tone]}`}>
+    <Card
+      className={`border-0 shadow-sm bg-gradient-to-br ${tones[tone]} ${interactive ? "cursor-pointer transition-all hover:shadow-md active:scale-[0.98]" : ""} ${active ? (ringMap[tone] ?? "ring-2 ring-slate-400") : ""}`}
+      onClick={onClick}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+    >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="text-[11px] uppercase tracking-wide font-semibold opacity-80">{label}</div>
@@ -582,6 +629,7 @@ function KpiCard({ label, value, hint, tone, icon }: { label: string; value: str
     </Card>
   );
 }
+
 
 function ExpenseDialog({
   open, onOpenChange, editing, onSaved,

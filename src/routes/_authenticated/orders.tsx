@@ -4,9 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listOrders, listPrices, upsertOrder, deleteOrder,
-  listOrderItems, upsertOrderItem, deleteOrderItem, listReadyStockAvailable,
+  listOrderItems, upsertOrderItem, deleteOrderItem, listReadyStockAvailable, listDraftAvailable,
   markReadyPickup, listCarriers,
 } from "@/lib/orders.functions";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,8 +26,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   ShoppingBag, Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, ArrowUpDown,
-  Package, Boxes, ChevronRight, ChevronDown, Truck, PackageCheck, Wand2, Printer,
+  Package, Boxes, ChevronRight, ChevronDown, Truck, PackageCheck, Wand2, Printer, FileEdit,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { generateResiNumber, printResiPdf } from "@/lib/resi-pdf";
 import { WorkflowTabs } from "@/components/WorkflowTabs";
@@ -77,7 +79,7 @@ type HeaderForm = {
 
 // Ekspedisi dikelola dinamis via table `shipping_carriers`
 
-type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual";
+type ItemKind = "custom" | "ready_stock_ref" | "ready_stock_manual" | "draft_ref";
 
 type ItemForm = {
   id?: string;                // DB id if existing
@@ -104,11 +106,14 @@ type ItemForm = {
   notes: string;
   // ready_stock_ref
   source_ready_stock_order_id: string;
+  // draft_ref
+  source_draft_order_id: string;
   // ready_stock_manual
   manual_name: string;
   manual_price: string;
   manual_hpp: string;
 };
+
 
 function emptyHeader(nextOrderNo = "", status: OrderStatus = "active"): HeaderForm {
   return {
@@ -132,7 +137,9 @@ function emptyItem(pos: number, defaults: Record<string, number> = {}, kind: Ite
     baut_fischer: String(defaults.baut_fischer_default ?? 0),
     use_outdoor: false, outdoor_cost: "", notes: "",
     source_ready_stock_order_id: "",
+    source_draft_order_id: "",
     manual_name: "", manual_price: "", manual_hpp: "",
+
   };
 }
 
@@ -158,6 +165,8 @@ function itemFromDb(row: any): ItemForm {
     outdoor_cost: row.outdoor_cost == null ? "" : String(row.outdoor_cost),
     notes: row.notes ?? "",
     source_ready_stock_order_id: row.source_ready_stock_order_id ?? "",
+    source_draft_order_id: row.source_draft_order_id ?? "",
+
     manual_name: row.manual_name ?? "",
     manual_price: String(row.manual_price ?? ""),
     manual_hpp: String(row.manual_hpp ?? ""),
@@ -167,7 +176,9 @@ function itemFromDb(row: any): ItemForm {
 function calcItemHpp(item: ItemForm, priceMap: Record<string, number>): number {
   if (item.kind === "ready_stock_manual") return num(item.manual_hpp);
   if (item.kind === "ready_stock_ref") return 0; // filled from ref on server
+  if (item.kind === "draft_ref") return 0; // filled from referenced draft on server
   // custom
+
   const led_meter = num(item.led_meter);
   const titik = num(item.titik);
   const p = num(item.akrilik_p);
@@ -200,7 +211,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const saveItem = useServerFn(upsertOrderItem);
   const delItem = useServerFn(deleteOrderItem);
   const fetchRs = useServerFn(listReadyStockAvailable);
+  const fetchDrafts = useServerFn(listDraftAvailable);
   const markPickup = useServerFn(markReadyPickup);
+
   const qc = useQueryClient();
 
   const markPickupMut = useMutation({
@@ -223,6 +236,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const carriersQ = useQuery({ queryKey: ["shipping_carriers"], queryFn: () => fetchCarriers() });
   const carriers = (carriersQ.data ?? []).filter((c: any) => c.active);
   const rsQ = useQuery({ queryKey: ["rs-available"], queryFn: () => fetchRs() });
+  const draftsQ = useQuery({ queryKey: ["draft-available"], queryFn: () => fetchDrafts() });
+
 
   const priceMap = useMemo(() => {
     const m: Record<string, number> = {};
@@ -350,10 +365,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         const rs = (rsQ.data ?? []).find((r: any) => r.id === i.source_ready_stock_order_id);
         return s + Number(rs?.hpp ?? 0);
       }
+      if (i.kind === "draft_ref") {
+        const dr = (draftsQ.data ?? []).find((r: any) => r.id === i.source_draft_order_id);
+        return s + Number(dr?.hpp ?? 0);
+      }
       return s + calcItemHpp(i, priceMap);
     }, 0),
-    [items, priceMap, rsQ.data],
+    [items, priceMap, rsQ.data, draftsQ.data],
   );
+
   const totalPay = num(header.payment) + num(header.split);
   const totalProfit = totalPay - totalItemsHpp;
 
@@ -365,12 +385,14 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       for (const it of alive) {
         if (it.kind === "custom" && !it.text_neon.trim()) throw new Error(`Item #${it.position}: TEXT wajib diisi`);
         if (it.kind === "ready_stock_ref" && !it.source_ready_stock_order_id) throw new Error(`Item #${it.position}: pilih ready-stock`);
+        if (it.kind === "draft_ref" && !it.source_draft_order_id) throw new Error(`Item #${it.position}: pilih draft`);
         if (it.kind === "ready_stock_manual" && !it.manual_name.trim()) throw new Error(`Item #${it.position}: nama produk wajib`);
       }
       if (!isDraftLike && !header.order_no.trim()) throw new Error("No. Order wajib diisi untuk status Aktif/Retur");
 
       // For legacy compat, keep required text_neon at header level (use first item's label)
-      const firstLabel = alive[0].kind === "custom" ? alive[0].text_neon : alive[0].manual_name || "Ready Stock";
+      const firstLabel = alive[0].kind === "custom" ? alive[0].text_neon : alive[0].manual_name || (alive[0].kind === "draft_ref" ? "Draft" : "Ready Stock");
+
 
       const res = await saveOrder({
         data: {
@@ -425,6 +447,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               ? (!it.use_outdoor ? 0 : (it.outdoor_cost === "" ? null : num(it.outdoor_cost)))
               : 0,
             source_ready_stock_order_id: it.kind === "ready_stock_ref" ? it.source_ready_stock_order_id : null,
+            source_draft_order_id: it.kind === "draft_ref" ? it.source_draft_order_id : null,
+
             manual_name: it.kind === "ready_stock_manual" ? it.manual_name : null,
             manual_price: it.kind === "ready_stock_manual" ? num(it.manual_price) : 0,
             manual_hpp: it.kind === "ready_stock_manual" ? num(it.manual_hpp) : 0,
@@ -439,6 +463,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["rs-available"] });
+      qc.invalidateQueries({ queryKey: ["draft-available"] });
+
     },
     onError: (e: any) => toast.error(e?.message ?? "Gagal simpan"),
   });
@@ -501,7 +527,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-white text-xs font-bold">D</span>
           <div>
             <div className="font-semibold">Halaman Draft</div>
-            <div className="text-amber-800">Order di sini belum aktif dan tidak masuk laporan. Ubah status ke <b>Aktif</b> saat pesanan sudah dikonfirmasi.</div>
+            <div className="text-amber-800">Order di sini belum aktif dan tidak masuk laporan. Nomor otomatis <b>DR-N</b>. Ubah status ke <b>Aktif</b>, atau draft akan otomatis hilang dari sini saat diambil oleh order aktif melalui opsi "Ambil dari Draft".</div>
           </div>
         </div>
       )}
@@ -647,7 +673,10 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     index={idx}
                     priceMap={priceMap}
                     rsList={(rsQ.data ?? []) as any[]}
+                    draftsList={(draftsQ.data ?? []) as any[]}
                     excludeRsId={header.id}
+                    excludeDraftId={header.id}
+
                     expanded={expandedItemKey === it._key}
                     onToggleExpand={() => setExpandedItemKey((k) => k === it._key ? null : it._key)}
                     onChange={(patch) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, ...patch } : x))}
@@ -773,7 +802,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                         <TableRow key={it.id} className="bg-muted/10">
                           <TableCell></TableCell>
                           <TableCell colSpan={5} className="text-xs pl-8">
-                            <span className="text-muted-foreground">#{it.position} · {it.kind === "custom" ? "Custom" : it.kind === "ready_stock_ref" ? "Ready Stock (ref)" : "Ready Stock (manual)"}</span>
+                            <span className="text-muted-foreground">#{it.position} · {it.kind === "custom" ? "Custom" : it.kind === "ready_stock_ref" ? "Ready Stock (ref)" : it.kind === "draft_ref" ? "Draft (ref)" : "Ready Stock (manual)"}</span>
                           </TableCell>
                           <TableCell className="text-xs">{it.text_neon || it.manual_name || "-"}</TableCell>
                           <TableCell className="text-right text-xs">{it.titik ?? 0}</TableCell>
@@ -799,13 +828,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
 // -------- ItemCard --------
 function ItemCard({
-  item, index, priceMap, rsList, excludeRsId, expanded, onToggleExpand, onChange, onDelete,
+  item, index, priceMap, rsList, draftsList, excludeRsId, excludeDraftId, expanded, onToggleExpand, onChange, onDelete,
 }: {
   item: ItemForm;
   index: number;
   priceMap: Record<string, number>;
   rsList: any[];
+  draftsList: any[];
   excludeRsId?: string;
+  excludeDraftId?: string;
   expanded: boolean;
   onToggleExpand: () => void;
   onChange: (patch: Partial<ItemForm>) => void;
@@ -817,19 +848,26 @@ function ItemCard({
   const adaptorCost = item.adaptor_manual ? num(item.adaptor) : variantPrice;
   const itemHpp = item.kind === "ready_stock_ref"
     ? Number(rsList.find((r) => r.id === item.source_ready_stock_order_id)?.hpp ?? 0)
+    : item.kind === "draft_ref"
+    ? Number(draftsList.find((r) => r.id === item.source_draft_order_id)?.hpp ?? 0)
     : calcItemHpp(item, priceMap);
 
   const kindStyle = item.kind === "custom"
     ? { border: "border-l-4 border-l-indigo-500", bg: "bg-indigo-50/60", badge: "bg-indigo-100 text-indigo-800", label: "Custom" }
     : item.kind === "ready_stock_ref"
     ? { border: "border-l-4 border-l-emerald-500", bg: "bg-emerald-50/60", badge: "bg-emerald-100 text-emerald-800", label: "Ready Stock" }
-    : { border: "border-l-4 border-l-amber-500", bg: "bg-amber-50/60", badge: "bg-amber-100 text-amber-800", label: "Manual" };
+    : item.kind === "draft_ref"
+    ? { border: "border-l-4 border-l-amber-500", bg: "bg-amber-50/60", badge: "bg-amber-100 text-amber-800", label: "Draft" }
+    : { border: "border-l-4 border-l-orange-500", bg: "bg-orange-50/60", badge: "bg-orange-100 text-orange-800", label: "Manual" };
 
   const titleText = item.kind === "ready_stock_manual"
     ? (item.manual_name || "Ready Stock manual")
     : item.kind === "ready_stock_ref"
     ? (rsList.find((r) => r.id === item.source_ready_stock_order_id)?.text_neon || "Pilih ready stock…")
+    : item.kind === "draft_ref"
+    ? (draftsList.find((r) => r.id === item.source_draft_order_id)?.text_neon || "Pilih draft…")
     : (item.text_neon || "Belum diisi");
+
 
   return (
     <Card className={`border-slate-300 ${kindStyle.border} shadow-sm`}>
@@ -856,10 +894,12 @@ function ItemCard({
             <SelectTrigger className="h-8 w-full sm:w-64"><SelectValue/></SelectTrigger>
             <SelectContent>
               <SelectItem value="custom">Custom (Neon Sign)</SelectItem>
-              <SelectItem value="ready_stock_ref">Ready Stock (pilih existing)</SelectItem>
+              <SelectItem value="ready_stock_ref">Ambil dari Ready Stock</SelectItem>
+              <SelectItem value="draft_ref">Ambil dari Draft</SelectItem>
               <SelectItem value="ready_stock_manual">Ready Stock / Manual</SelectItem>
             </SelectContent>
           </Select>
+
         </div>
 
         {item.kind === "custom" && (
@@ -928,6 +968,30 @@ function ItemCard({
             <div><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
           </div>
         )}
+
+        {item.kind === "draft_ref" && (
+          <div className="space-y-2">
+            <Label>Pilih Draft</Label>
+            <Select value={item.source_draft_order_id} onValueChange={(v) => onChange({ source_draft_order_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Pilih draft yang akan dijadikan order..."/></SelectTrigger>
+              <SelectContent>
+                {draftsList.filter((r) => r.id !== excludeDraftId).map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    <FileEdit className="h-3 w-3 inline mr-1"/> {r.order_no} — {r.text_neon || "(tanpa nama)"}
+                    {r.username ? ` · ${r.username}` : ""} · HPP Rp {rp(Number(r.hpp))}
+                  </SelectItem>
+                ))}
+                {draftsList.length === 0 && <div className="p-2 text-xs text-muted-foreground">Belum ada draft tersedia.</div>}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+              Setelah order ini disimpan sebagai <b>Aktif/Retur/Ready Stock</b>, draft yang dipilih otomatis mengikuti nomor order ini dan hilang dari halaman Draft.
+            </p>
+            <div><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
+          </div>
+        )}
+
+
 
         {item.kind === "ready_stock_manual" && (
           <div className="grid sm:grid-cols-3 gap-2">

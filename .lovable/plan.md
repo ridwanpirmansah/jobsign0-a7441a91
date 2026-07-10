@@ -1,32 +1,53 @@
-## 1. Fix Duplikat Project saat Buat Order Baru
+## Dua fitur
 
-**Penyebab**: Saat order dibuat dengan status `active`, trigger `sync_order_to_project` langsung membuat project dengan code = `order_no` (karena items belum ada). Setelah itu items disimpan dan trigger `sync_item_to_project` membuat project per-item (`order_no-1`, `order_no-2`, dst). Hasilnya project pertama (code = order_no) selalu tersisa sebagai duplikat.
+### 1. Order bisa mengambil item dari Draft (mirip Ready Stock)
 
-**Solusi (migrasi SQL)**: Ubah `sync_item_to_project` agar, saat item pertama diproses, membersihkan project header yang dibuat oleh `sync_order_to_project` (project dengan `parent_order_id = ord.id` dan `code = ord.order_no` yang belum memiliki `job_logs`), lalu detach `orders.project_id`. Hasil: order tanpa items tetap punya 1 project (legacy path); order dengan items hanya punya project per-item, tidak duplikat.
+**Perubahan penomoran draft**
+- Ubah trigger DB `assign_order_no`: draft yang belum di-link ke order dapat kode otomatis `DR-N` (mirip `RS-N`). Draft lama yang masih `order_no = '0'` di-backfill jadi `DR-1, DR-2, ...`.
+- UI daftar Draft menampilkan kode `DR-xx` (bukan "0" lagi).
 
-## 2. Fitur Tracking Paket + Role Kurir
+**Item kind baru: `draft_ref`**
+- Tambah nilai baru pada dropdown "Tambah Produk" di form order: **"Ambil dari Draft"** (sebelah "Ambil dari Ready Stock"). Menampilkan daftar draft yang belum di-link ke order lain: kode `DR-xx`, judul, HPP, titik.
+- Item `draft_ref` menyimpan `source_draft_order_id`. HPP-nya diambil dari HPP draft tersebut (sama pola dengan `ready_stock_ref` yang sudah ada).
+- Trigger `calc_order_item_costs` diperluas untuk kind ini.
 
-### Database (migrasi)
-- Tambah kolom `orders.no_resi TEXT`, `orders.ekspedisi TEXT`, `orders.ready_pickup_at TIMESTAMPTZ`, `orders.picked_up_at TIMESTAMPTZ`, `orders.picked_up_by UUID` (references profiles).
-- Tambah enum value `'kurir'` ke `app_role`.
-- Tabel baru `public.shipment_events` (order_id, event `ready_pickup|picked_up`, actor_id, note, created_at) untuk histori scan.
-- RLS: staff (admin/owner) full akses, kurir bisa SELECT orders dengan `ready_pickup_at IS NOT NULL AND picked_up_at IS NULL` atau yang dia sudah pickup; INSERT event untuk dirinya sendiri.
-- Fungsi `mark_ready_pickup(_order_id)` (staff) & `courier_pickup(_no_resi)` (kurir) — set timestamp + insert event.
+**Konversi draft saat order disimpan (bukan draft lagi)**
+- Trigger baru `absorb_referenced_draft`: setelah `order_items` di-insert/update dengan `kind = 'draft_ref'` dan parent order berstatus `active/return/ready_stock`, draft yang dirujuk otomatis:
+  - `status` → `active` (mengikuti parent) sehingga hilang dari halaman Draft dan tidak lagi muncul di picker draft.
+  - `order_no` di-set mengikuti parent: `<parent.order_no>-D<position>` (mirip pola project child `ORD-1`).
+  - `parent_order_id` di-set ke id order utama.
+  - Proyek yang sudah ada dari draft tersebut di-relink ke parent (title & kode diikutkan) — memakai jalur `sync_order_to_project` yang sudah ada.
+- Kalau item `draft_ref` di-hapus dari order, draft dikembalikan ke `status = 'draft'` dan `order_no` di-reset jadi `DR-N` baru.
 
-### UI
-- **Form Order** (`orders.tsx`): tambah input **No Resi** & **Ekspedisi** (JNE / J&T / SiCepat / Anteraja / Ninja / Pos / Lainnya) di section header.
-- **Halaman Orders**: tombol "Tandai Siap Pickup" untuk order status `active` yang punya no_resi. Badge status pengiriman (Belum siap / Siap pickup / Sudah diambil).
-- **Halaman Kurir baru** `/me/pickup`: daftar paket siap pickup (grouped by ekspedisi), tombol scan/input no resi untuk konfirmasi pickup. Lihat riwayat pickup.
-- **Sidebar**: menu "Pickup Paket" muncul untuk role kurir.
-- **User management** (`users.tsx`): tambahkan opsi role `kurir`.
+**UI kecil**
+- Header Draft di halaman `drafts.tsx` beri kalimat tambahan: "Draft yang sudah diambil oleh order aktif akan hilang dari sini."
+- Ikon `FileEdit` / warna amber untuk item `draft_ref` di daftar produk dalam order.
 
-### File yang diubah/ditambah
-- Migrasi baru untuk schema + fungsi + RLS
-- `src/routes/_authenticated/orders.tsx` — input resi/ekspedisi + tombol mark ready
-- `src/routes/_authenticated/me.pickup.tsx` — halaman baru kurir
-- `src/components/AppSidebar.tsx` — menu kurir
-- `src/routes/_authenticated/users.tsx` — role kurir
-- `src/hooks/useCurrentUser.ts` & `useAuth.tsx` — tambahkan role `kurir`
-- `src/lib/orders.functions.ts` — extend schema resi/ekspedisi + server fn pickup
+**File yang tersentuh**
+- Migration SQL: enum item kind + trigger `assign_order_no` + trigger `calc_order_item_costs` + trigger `absorb_referenced_draft` + backfill `DR-N`.
+- `src/lib/orders.functions.ts`: tambah `listDraftAvailable`, perluas `itemSchema` menerima `source_draft_order_id` + kind `draft_ref`.
+- `src/routes/_authenticated/orders.tsx`: tambah pilihan "Ambil dari Draft" di `ItemCard` (parallel dengan ready-stock).
+- `src/routes/_authenticated/drafts.tsx`: kalimat penjelas (opsional).
 
-Setelah plan disetujui, migrasi dijalankan lebih dulu (approval user), lalu kode UI diupdate menyesuaikan tipe baru.
+### 2. Filter pengeluaran "Belum Dibayar" (hutang)
+
+Dua-duanya diaktifkan seperti permintaan:
+
+**A. Kartu KPI "Belum Dibayar" bisa diklik**
+- Klik kartu → toggle mode filter "hutang saja". Kartu muncul dengan ring/glow orange saat aktif, klik lagi = matikan.
+- Judul list berubah jadi "Riwayat Pengeluaran — Belum Dibayar" saat aktif; tombol "×" kecil untuk hapus filter.
+
+**B. Kategori dropdown dapat opsi "Belum Dibayar"**
+- Dropdown filter di header list ditambah section: `Semua Kategori`, **`● Belum Dibayar (hutang)`**, `● Sudah Lunas`, lalu daftar kategori.
+- Pilihan status & kategori bekerja mandiri; bisa dikombinasikan (misal: filter kartu "Belum Dibayar" aktif + kategori "Iklan" = hutang iklan saja).
+
+**Perilaku data**
+- Filter hanya untuk tampilan list — KPI Total/PnL/HPP/Avg tetap dihitung dari seluruh periode agar konsisten. KPI "Belum Dibayar" tetap ringkasan periode.
+- Kalau tidak ada baris cocok, tampil pesan "Tidak ada pengeluaran hutang pada periode ini."
+
+**File yang tersentuh**
+- `src/routes/_authenticated/owner.expenses.tsx`: state `payFilter: 'all' | 'hutang' | 'lunas'`, KPI card diberi `onClick`, dropdown diperluas, computed `filtered` menyaring dua sumbu (kategori + status), header list ditambah chip filter aktif + tombol reset.
+
+### Catatan
+- Tidak ada perubahan pada halaman lain, sidebar, atau permission — semua fitur di dalam alur yang sudah ada.
+- Semua trigger DB pakai `SECURITY DEFINER` dengan `search_path` eksplisit sesuai pola project.
