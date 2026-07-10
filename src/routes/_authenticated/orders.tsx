@@ -236,6 +236,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const carriersQ = useQuery({ queryKey: ["shipping_carriers"], queryFn: () => fetchCarriers() });
   const carriers = (carriersQ.data ?? []).filter((c: any) => c.active);
   const rsQ = useQuery({ queryKey: ["rs-available"], queryFn: () => fetchRs() });
+  const draftsQ = useQuery({ queryKey: ["draft-available"], queryFn: () => fetchDrafts() });
+
 
   const priceMap = useMemo(() => {
     const m: Record<string, number> = {};
