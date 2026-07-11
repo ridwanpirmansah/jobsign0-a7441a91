@@ -1,53 +1,40 @@
-## Dua fitur
+## Restore Data Order Historis
 
-### 1. Order bisa mengambil item dari Draft (mirip Ready Stock)
+Import 333 baris orderan dari `RESTORE_DATA_BELANJA-2.xlsx` ke tabel `orders`.
 
-**Perubahan penomoran draft**
-- Ubah trigger DB `assign_order_no`: draft yang belum di-link ke order dapat kode otomatis `DR-N` (mirip `RS-N`). Draft lama yang masih `order_no = '0'` di-backfill jadi `DR-1, DR-2, ...`.
-- UI daftar Draft menampilkan kode `DR-xx` (bukan "0" lagi).
+### Yang akan diimpor per baris
+- **Source** — SHOPEE/DIRECT/TIKTOK (di-lowercase → `shopee` / `direct` / `tiktok`)
+- **co_date** ← kolom `tanggal`
+- **username** ← kolom `Username`
+- **kota** ← kolom `Kota`
+- **text_neon** ← kolom `Text Neon`
+- **status** — `Retur`/`retur` → `return`, sisanya (`aktif`) → `active`
+- **akrilik_p** ← `Panjang`, **akrilik_l** ← `Lebar`
+- **led_meter** ← `Panjang Led`
+- **titik** ← `Titik`
+- **payment** ← `Payment`, **split** ← `Split`
+- **order_no** ← kolom nomor asli (1–352)
 
-**Item kind baru: `draft_ref`**
-- Tambah nilai baru pada dropdown "Tambah Produk" di form order: **"Ambil dari Draft"** (sebelah "Ambil dari Ready Stock"). Menampilkan daftar draft yang belum di-link ke order lain: kode `DR-xx`, judul, HPP, titik.
-- Item `draft_ref` menyimpan `source_draft_order_id`. HPP-nya diambil dari HPP draft tersebut (sama pola dengan `ready_stock_ref` yang sudah ada).
-- Trigger `calc_order_item_costs` diperluas untuk kind ini.
+Kolom lain (adaptor, modul, socket_dc, kabel_meter, dst.) dibiarkan default agar trigger `calc_order_costs` menghitung HPP otomatis dari `material_prices`. Field turunan (`hpp`, `profit`, `led_cost`, dst.) akan otomatis dihitung ulang.
 
-**Konversi draft saat order disimpan (bukan draft lagi)**
-- Trigger baru `absorb_referenced_draft`: setelah `order_items` di-insert/update dengan `kind = 'draft_ref'` dan parent order berstatus `active/return/ready_stock`, draft yang dirujuk otomatis:
-  - `status` → `active` (mengikuti parent) sehingga hilang dari halaman Draft dan tidak lagi muncul di picker draft.
-  - `order_no` di-set mengikuti parent: `<parent.order_no>-D<position>` (mirip pola project child `ORD-1`).
-  - `parent_order_id` di-set ke id order utama.
-  - Proyek yang sudah ada dari draft tersebut di-relink ke parent (title & kode diikutkan) — memakai jalur `sync_order_to_project` yang sudah ada.
-- Kalau item `draft_ref` di-hapus dari order, draft dikembalikan ke `status = 'draft'` dan `order_no` di-reset jadi `DR-N` baru.
+### Penomoran order
+- Angka nol tidak diubah: nomor 1–352 dipakai apa adanya.
+- **Tidak ada bentrok dengan data existing** — nomor aktif di DB saat ini mulai dari 354.
+- **1 duplikat terdeteksi**: nomor `308` muncul 2× (silapoenyare 24-Apr & zahra_net 2-Mei). Baris kedua (tanggal lebih baru) diberi suffix → `308A`. Aturan yang sama otomatis dipakai jika ada duplikat lain (B, C, dst.).
 
-**UI kecil**
-- Header Draft di halaman `drafts.tsx` beri kalimat tambahan: "Draft yang sudah diambil oleh order aktif akan hilang dari sini."
-- Ikon `FileEdit` / warna amber untuk item `draft_ref` di daftar produk dalam order.
+### Menghindari trigger `assign_order_no` menimpa nomor
+Trigger `assign_order_no` di-BYPASS dengan cara insert lewat `ALTER TABLE ... DISABLE TRIGGER assign_order_no_trg` di dalam satu transaksi, insert 333 baris, lalu enable kembali. Trigger `calc_order_costs` (untuk hitung HPP) tetap aktif.
 
-**File yang tersentuh**
-- Migration SQL: enum item kind + trigger `assign_order_no` + trigger `calc_order_item_costs` + trigger `absorb_referenced_draft` + backfill `DR-N`.
-- `src/lib/orders.functions.ts`: tambah `listDraftAvailable`, perluas `itemSchema` menerima `source_draft_order_id` + kind `draft_ref`.
-- `src/routes/_authenticated/orders.tsx`: tambah pilihan "Ambil dari Draft" di `ItemCard` (parallel dengan ready-stock).
-- `src/routes/_authenticated/drafts.tsx`: kalimat penjelas (opsional).
-
-### 2. Filter pengeluaran "Belum Dibayar" (hutang)
-
-Dua-duanya diaktifkan seperti permintaan:
-
-**A. Kartu KPI "Belum Dibayar" bisa diklik**
-- Klik kartu → toggle mode filter "hutang saja". Kartu muncul dengan ring/glow orange saat aktif, klik lagi = matikan.
-- Judul list berubah jadi "Riwayat Pengeluaran — Belum Dibayar" saat aktif; tombol "×" kecil untuk hapus filter.
-
-**B. Kategori dropdown dapat opsi "Belum Dibayar"**
-- Dropdown filter di header list ditambah section: `Semua Kategori`, **`● Belum Dibayar (hutang)`**, `● Sudah Lunas`, lalu daftar kategori.
-- Pilihan status & kategori bekerja mandiri; bisa dikombinasikan (misal: filter kartu "Belum Dibayar" aktif + kategori "Iklan" = hutang iklan saja).
-
-**Perilaku data**
-- Filter hanya untuk tampilan list — KPI Total/PnL/HPP/Avg tetap dihitung dari seluruh periode agar konsisten. KPI "Belum Dibayar" tetap ringkasan periode.
-- Kalau tidak ada baris cocok, tampil pesan "Tidak ada pengeluaran hutang pada periode ini."
-
-**File yang tersentuh**
-- `src/routes/_authenticated/owner.expenses.tsx`: state `payFilter: 'all' | 'hutang' | 'lunas'`, KPI card diberi `onClick`, dropdown diperluas, computed `filtered` menyaring dua sumbu (kategori + status), header list ditambah chip filter aktif + tombol reset.
+### Langkah eksekusi
+1. Baca ulang Excel → normalisasi tipe (angka, tanggal ISO, string trim).
+2. Deteksi duplikat `no`, urutkan by tanggal, tambahkan suffix huruf pada baris ke-2+.
+3. Bangun payload JSON 333 rows dengan `created_by = NULL` (data historis, bukan milik user tertentu).
+4. Panggil `supabase--insert` sekali (satu SQL transaksi):
+   - `ALTER TABLE orders DISABLE TRIGGER trg_assign_order_no;`
+   - `INSERT INTO orders (source, status, order_no, co_date, username, kota, text_neon, akrilik_p, akrilik_l, led_meter, titik, payment, split) VALUES (...) x333;`
+   - `ALTER TABLE orders ENABLE TRIGGER trg_assign_order_no;`
+5. Verifikasi jumlah baris masuk dan spot-check 3 baris (pertama, terakhir, duplikat 308/308A).
 
 ### Catatan
-- Tidak ada perubahan pada halaman lain, sidebar, atau permission — semua fitur di dalam alur yang sudah ada.
-- Semua trigger DB pakai `SECURITY DEFINER` dengan `search_path` eksplisit sesuai pola project.
+- Semua orderan diberi status `active` (schema tidak punya status `completed`; `active` adalah status "berjalan/selesai normal" yang tetap muncul di laporan omzet/profit).
+- Data historis ini tidak ikut sistem project/job_logs (tidak ada items) — hanya muncul di daftar order & laporan finansial.
