@@ -522,6 +522,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     }, { payment: 0, hpp: 0, profit: 0 },
   ), [filtered]);
 
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
   return (
     <div className={`p-2 sm:p-4 space-y-4 ${isDraft ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_18px,rgba(251,191,36,0.06)_18px,rgba(251,191,36,0.06)_20px)] min-h-full" : ""}`}>
       <WorkflowTabs />
