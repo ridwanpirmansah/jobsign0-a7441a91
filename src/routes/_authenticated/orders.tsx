@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { generateResiNumber, printResiPdf } from "@/lib/resi-pdf";
 import { WorkflowTabs } from "@/components/WorkflowTabs";
+import { TablePagination } from "@/components/TablePagination";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: () => <OrdersPage mode="orders" />,
@@ -252,6 +253,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [header, setHeader] = useState<HeaderForm>(emptyHeader());
   const [items, setItems] = useState<ItemForm[]>([]);
   const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [filter, srcFilter, mode]);
 
   const addNewItem = () => {
     setItems((arr) => {
@@ -518,6 +522,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     }, { payment: 0, hpp: 0, profit: 0 },
   ), [filtered]);
 
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
   return (
     <div className={`p-2 sm:p-4 space-y-4 ${isDraft ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_18px,rgba(251,191,36,0.06)_18px,rgba(251,191,36,0.06)_20px)] min-h-full" : ""}`}>
       <WorkflowTabs />
@@ -761,7 +767,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((o: any) => {
+                {paged.map((o: any) => {
                   const its = (o.order_items ?? []) as any[];
                   const isExp = !!expanded[o.id];
                   const firstText = its.length ? (its[0].text_neon || its[0].manual_name || "Item") : (o.text_neon || "-");
@@ -817,6 +823,11 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                 {filtered.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">Belum ada order</TableCell></TableRow>}
               </TableBody>
             </Table>
+          )}
+          {filtered.length > 0 && (
+            <div className="pt-3">
+              <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} label="order" />
+            </div>
           )}
         </CardContent>
       </Card>

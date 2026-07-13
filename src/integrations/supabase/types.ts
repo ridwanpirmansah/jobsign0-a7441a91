@@ -1163,6 +1163,10 @@ export type Database = {
         Args: { _lat?: number; _lng?: number; _token: string }
         Returns: Json
       }
+      close_projects_for_order: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
       courier_pickup: {
         Args: { _no_resi: string; _note?: string }
         Returns: Json

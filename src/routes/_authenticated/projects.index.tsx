@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Play, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import { WorkflowTabs } from "@/components/WorkflowTabs";
+import { TablePagination } from "@/components/TablePagination";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/projects/")({ component: ProjectsPage });
@@ -62,6 +63,12 @@ function ProjectsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const list = projects ?? [];
+  const paged = useMemo(() => list.slice((page - 1) * pageSize, page * pageSize), [list, page, pageSize]);
+  useEffect(() => { setPage(1); }, [list.length]);
+
   if (meLoading) return <p className="text-sm text-slate-500">Memuat…</p>;
   if (!isStaff(me?.role)) return <NoAccess />;
 
@@ -105,7 +112,7 @@ function ProjectsPage() {
           <Table>
             <TableHeader><TableRow><TableHead>Kode</TableHead><TableHead>Judul</TableHead><TableHead>Customer</TableHead><TableHead>Deadline</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
-              {projects?.map((p) => (
+              {paged.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs">{p.code}</TableCell>
                   <TableCell className="font-medium">{p.title}</TableCell>
@@ -139,9 +146,14 @@ function ProjectsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {!projects?.length && <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Belum ada project</TableCell></TableRow>}
+              {!list.length && <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Belum ada project</TableCell></TableRow>}
             </TableBody>
           </Table>
+          {list.length > 0 && (
+            <div className="p-3 border-t">
+              <TablePagination page={page} pageSize={pageSize} total={list.length} onPageChange={setPage} onPageSizeChange={setPageSize} label="project" />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
