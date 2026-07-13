@@ -146,9 +146,14 @@ function ProjectsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {!projects?.length && <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Belum ada project</TableCell></TableRow>}
+              {!list.length && <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Belum ada project</TableCell></TableRow>}
             </TableBody>
           </Table>
+          {list.length > 0 && (
+            <div className="p-3 border-t">
+              <TablePagination page={page} pageSize={pageSize} total={list.length} onPageChange={setPage} onPageSizeChange={setPageSize} label="project" />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
