@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Play, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import { WorkflowTabs } from "@/components/WorkflowTabs";
+import { TablePagination } from "@/components/TablePagination";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/projects/")({ component: ProjectsPage });
