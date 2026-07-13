@@ -767,7 +767,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((o: any) => {
+                {paged.map((o: any) => {
                   const its = (o.order_items ?? []) as any[];
                   const isExp = !!expanded[o.id];
                   const firstText = its.length ? (its[0].text_neon || its[0].manual_name || "Item") : (o.text_neon || "-");
