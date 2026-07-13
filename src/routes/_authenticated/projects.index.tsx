@@ -112,7 +112,7 @@ function ProjectsPage() {
           <Table>
             <TableHeader><TableRow><TableHead>Kode</TableHead><TableHead>Judul</TableHead><TableHead>Customer</TableHead><TableHead>Deadline</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
-              {projects?.map((p) => (
+              {paged.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs">{p.code}</TableCell>
                   <TableCell className="font-medium">{p.title}</TableCell>
