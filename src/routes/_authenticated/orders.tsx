@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { generateResiNumber, printResiPdf } from "@/lib/resi-pdf";
 import { WorkflowTabs } from "@/components/WorkflowTabs";
+import { TablePagination } from "@/components/TablePagination";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: () => <OrdersPage mode="orders" />,
