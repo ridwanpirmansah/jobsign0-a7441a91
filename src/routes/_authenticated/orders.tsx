@@ -253,6 +253,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [header, setHeader] = useState<HeaderForm>(emptyHeader());
   const [items, setItems] = useState<ItemForm[]>([]);
   const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [filter, srcFilter, mode]);
 
   const addNewItem = () => {
     setItems((arr) => {
