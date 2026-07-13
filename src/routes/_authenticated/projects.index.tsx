@@ -63,6 +63,12 @@ function ProjectsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const list = projects ?? [];
+  const paged = useMemo(() => list.slice((page - 1) * pageSize, page * pageSize), [list, page, pageSize]);
+  useEffect(() => { setPage(1); }, [list.length]);
+
   if (meLoading) return <p className="text-sm text-slate-500">Memuat…</p>;
   if (!isStaff(me?.role)) return <NoAccess />;
 
