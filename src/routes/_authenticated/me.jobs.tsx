@@ -88,29 +88,48 @@ function MyJobs() {
   const selectedProject = projects?.find((p) => p.id === projectId);
 
   // Build a unified list of rate rows for display
-  type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null };
+  type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null; pricing_mode: "per_unit" | "area"; min_amount: number };
+  const ratesMeta = useMemo(() => {
+    const m = new Map<string, { pricing_mode: "per_unit" | "area"; min_amount: number }>();
+    (rates ?? []).forEach((r) => {
+      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string };
+      m.set(r.id, { pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area", min_amount: Number(anyR.min_amount ?? 0) });
+    });
+    return m;
+  }, [rates]);
   const rateRows: Row[] = useMemo(() => {
     if (projectId) {
-      return (rateAvail ?? []).map((r) => ({
-        rate_id: r.rate_id,
-        rate_name: r.rate_name,
+      return (rateAvail ?? []).map((r) => {
+        const meta = ratesMeta.get(r.rate_id) ?? { pricing_mode: "per_unit" as const, min_amount: 0 };
+        return {
+          rate_id: r.rate_id,
+          rate_name: r.rate_name,
+          unit: r.unit,
+          rate_per_unit: Number(r.rate_per_unit),
+          remaining: meta.pricing_mode === "area" ? null : Number(r.remaining_points),
+          total: meta.pricing_mode === "area" ? null : Number(r.total_points),
+          claimed: meta.pricing_mode === "area" ? null : Number(r.claimed_points),
+          pricing_mode: meta.pricing_mode,
+          min_amount: meta.min_amount,
+        };
+      });
+    }
+    return (rates ?? []).map((r) => {
+      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string };
+      return {
+        rate_id: r.id,
+        rate_name: r.name,
         unit: r.unit,
         rate_per_unit: Number(r.rate_per_unit),
-        remaining: Number(r.remaining_points),
-        total: Number(r.total_points),
-        claimed: Number(r.claimed_points),
-      }));
-    }
-    return (rates ?? []).map((r) => ({
-      rate_id: r.id,
-      rate_name: r.name,
-      unit: r.unit,
-      rate_per_unit: Number(r.rate_per_unit),
-      remaining: null,
-      total: null,
-      claimed: null,
-    }));
-  }, [projectId, rateAvail, rates]);
+        remaining: null,
+        total: null,
+        claimed: null,
+        pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area",
+        min_amount: Number(anyR.min_amount ?? 0),
+      };
+    });
+  }, [projectId, rateAvail, rates, ratesMeta]);
+
 
   const submitMut = useMutation({
     mutationFn: async (args: { rateId: string; qty: number }) => {
