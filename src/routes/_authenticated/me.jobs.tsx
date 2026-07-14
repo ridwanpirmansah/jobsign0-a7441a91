@@ -31,8 +31,8 @@ function MyJobs() {
   const [projectId, setProjectId] = useState<string>("");
   const [note, setNote] = useState("");
   const [qtyMap, setQtyMap] = useState<Record<string, string>>({});
-  const [plMap, setPlMap] = useState<Record<string, { p: string; l: string }>>({});
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
+
 
 
   // Active employees (for admin/owner on-behalf submission)
