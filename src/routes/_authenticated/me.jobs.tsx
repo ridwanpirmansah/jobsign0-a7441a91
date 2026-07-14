@@ -85,7 +85,28 @@ function MyJobs() {
     },
   });
 
+  // Auto akrilik dimensions from project's parent order (for area-based rates)
+  const { data: projectAkrilik } = useQuery({
+    enabled: !!projectId,
+    queryKey: ["project-akrilik", projectId],
+    queryFn: async () => {
+      const { data: proj } = await supabase.from("projects").select("parent_order_id").eq("id", projectId).maybeSingle();
+      const parentId = proj?.parent_order_id;
+      if (!parentId) return { p: 0, l: 0 };
+      const { data: ord } = await supabase.from("orders").select("akrilik_p, akrilik_l").eq("id", parentId).maybeSingle();
+      let p = Number(ord?.akrilik_p ?? 0);
+      let l = Number(ord?.akrilik_l ?? 0);
+      if (!p || !l) {
+        const { data: items } = await supabase.from("order_items").select("akrilik_p, akrilik_l").eq("order_id", parentId);
+        const it = (items ?? []).find((i) => Number(i.akrilik_p) > 0 && Number(i.akrilik_l) > 0);
+        if (it) { p = Number(it.akrilik_p); l = Number(it.akrilik_l); }
+      }
+      return { p, l };
+    },
+  });
+
   const selectedProject = projects?.find((p) => p.id === projectId);
+
 
   // Build a unified list of rate rows for display
   type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null; pricing_mode: "per_unit" | "area"; min_amount: number };
