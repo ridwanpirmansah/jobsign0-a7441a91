@@ -332,9 +332,8 @@ function MyJobs() {
             <div className="grid gap-2 sm:grid-cols-2">
               {rateRows.map((r) => {
                 const isArea = r.pricing_mode === "area";
-                const pl = plMap[r.rate_id] ?? { p: "", l: "" };
-                const pNum = Number(pl.p) || 0;
-                const lNum = Number(pl.l) || 0;
+                const pNum = isArea ? Number(projectAkrilik?.p ?? 0) : 0;
+                const lNum = isArea ? Number(projectAkrilik?.l ?? 0) : 0;
                 const areaQty = pNum * lNum;
                 const qty = qtyMap[r.rate_id] ?? "";
                 const qtyNum = isArea ? areaQty : (Number(qty) || 0);
@@ -343,6 +342,8 @@ function MyJobs() {
                 const minApplied = r.min_amount > 0 && qtyNum > 0 && rawPreview < r.min_amount;
                 const full = !isArea && r.remaining !== null && r.remaining <= 0;
                 const hasRemaining = !isArea && r.remaining !== null && r.remaining > 0;
+                const areaMissing = isArea && projectId && (!pNum || !lNum);
+                const areaNoProject = isArea && !projectId;
                 return (
                   <div key={r.rate_id} className={`rounded-lg border p-3 ${full ? "bg-slate-50 opacity-60" : "bg-white"}`}>
                     <div className="flex items-start justify-between gap-2">
@@ -354,7 +355,7 @@ function MyJobs() {
                         </div>
                       </div>
                       {isArea ? (
-                        <Badge variant="outline" className="text-xs">P × L</Badge>
+                        <Badge variant="outline" className="text-xs">P × L (otomatis)</Badge>
                       ) : r.remaining !== null && (
                         <Badge variant={full ? "secondary" : "outline"} className="text-xs">
                           Sisa {r.remaining}/{r.total}
@@ -362,22 +363,18 @@ function MyJobs() {
                       )}
                     </div>
                     {isArea ? (
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        <Input
-                          type="number" step="0.01" min="0" placeholder="Panjang"
-                          value={pl.p}
-                          onChange={(e) => setPlMap((m) => ({ ...m, [r.rate_id]: { p: e.target.value, l: pl.l } }))}
-                          className="h-9"
-                        />
-                        <Input
-                          type="number" step="0.01" min="0" placeholder="Lebar"
-                          value={pl.l}
-                          onChange={(e) => setPlMap((m) => ({ ...m, [r.rate_id]: { p: pl.p, l: e.target.value } }))}
-                          className="h-9"
-                        />
-                        <div className="col-span-2 text-xs text-slate-500">
-                          Qty (area) = <span className="font-semibold text-slate-900">{areaQty || 0}</span> {r.unit}
-                        </div>
+                      <div className="mt-3 rounded-md bg-slate-50 border border-slate-200 p-2 text-xs space-y-1">
+                        {areaNoProject ? (
+                          <div className="text-amber-700">Pilih project terlebih dahulu untuk mengambil ukuran akrilik.</div>
+                        ) : areaMissing ? (
+                          <div className="text-amber-700">Ukuran akrilik pada order belum diisi. Hubungi admin untuk melengkapi Akrilik P/L pada order.</div>
+                        ) : (
+                          <div className="flex items-center justify-between text-slate-700">
+                            <span>Panjang: <span className="font-semibold text-slate-900">{pNum}</span> cm</span>
+                            <span>Lebar: <span className="font-semibold text-slate-900">{lNum}</span> cm</span>
+                            <span>Qty: <span className="font-semibold text-slate-900">{areaQty}</span> {r.unit}</span>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="mt-3 flex items-center gap-2">
@@ -422,18 +419,16 @@ function MyJobs() {
                           type="button" size="sm"
                           className="bg-green-500 hover:bg-green-600 text-white"
                           disabled={!qtyNum || full || submitMut.isPending || !effectiveEmpId}
-                          onClick={() => {
-                            submitMut.mutate({ rateId: r.rate_id, qty: qtyNum });
-                            if (isArea) setPlMap((m) => ({ ...m, [r.rate_id]: { p: "", l: "" } }));
-                          }}
+                          onClick={() => submitMut.mutate({ rateId: r.rate_id, qty: qtyNum })}
                         >
-                          Simpan
+                          {isArea ? "Klaim" : "Simpan"}
                         </Button>
                       </div>
                     </div>
                   </div>
                 );
               })}
+
 
               {!rateRows.length && <div className="text-sm text-slate-500 py-4">Belum ada tarif aktif.</div>}
             </div>
