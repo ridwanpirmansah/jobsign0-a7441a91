@@ -790,9 +790,19 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                             {STATUS_LABEL[(o.status as OrderStatus) ?? "active"] ?? o.status ?? "Aktif"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs">{o.username ?? "-"}<div className="text-muted-foreground">{o.kota ?? ""}</div></TableCell>
+                        <TableCell className="text-xs max-w-[160px]">
+                          <div className="truncate" title={o.username ?? ""} style={{ direction: "rtl", textAlign: "left" }}>
+                            <bdi>{o.username ?? "-"}</bdi>
+                          </div>
+                          <div className="truncate text-muted-foreground" title={o.kota ?? ""} style={{ direction: "rtl", textAlign: "left" }}>
+                            <bdi>{o.kota ?? ""}</bdi>
+                          </div>
+                        </TableCell>
                         <TableCell className="max-w-xs truncate">
-                          {firstText}<span className="text-xs text-muted-foreground">{moreLabel}</span>
+                          <button type="button" onClick={() => openEdit(o)} className="text-left hover:underline text-primary" title={firstText}>
+                            {firstText}
+                          </button>
+                          <span className="text-xs text-muted-foreground">{moreLabel}</span>
                         </TableCell>
                         <TableCell className="text-right">{o.titik}</TableCell>
                         <TableCell className="text-right">{rp(Number(o.hpp))}</TableCell>
