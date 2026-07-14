@@ -31,7 +31,9 @@ function MyJobs() {
   const [projectId, setProjectId] = useState<string>("");
   const [note, setNote] = useState("");
   const [qtyMap, setQtyMap] = useState<Record<string, string>>({});
+  const [plMap, setPlMap] = useState<Record<string, { p: string; l: string }>>({});
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
+
 
   // Active employees (for admin/owner on-behalf submission)
   const { data: employees } = useQuery({
@@ -86,29 +88,48 @@ function MyJobs() {
   const selectedProject = projects?.find((p) => p.id === projectId);
 
   // Build a unified list of rate rows for display
-  type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null };
+  type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null; pricing_mode: "per_unit" | "area"; min_amount: number };
+  const ratesMeta = useMemo(() => {
+    const m = new Map<string, { pricing_mode: "per_unit" | "area"; min_amount: number }>();
+    (rates ?? []).forEach((r) => {
+      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string };
+      m.set(r.id, { pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area", min_amount: Number(anyR.min_amount ?? 0) });
+    });
+    return m;
+  }, [rates]);
   const rateRows: Row[] = useMemo(() => {
     if (projectId) {
-      return (rateAvail ?? []).map((r) => ({
-        rate_id: r.rate_id,
-        rate_name: r.rate_name,
+      return (rateAvail ?? []).map((r) => {
+        const meta = ratesMeta.get(r.rate_id) ?? { pricing_mode: "per_unit" as const, min_amount: 0 };
+        return {
+          rate_id: r.rate_id,
+          rate_name: r.rate_name,
+          unit: r.unit,
+          rate_per_unit: Number(r.rate_per_unit),
+          remaining: meta.pricing_mode === "area" ? null : Number(r.remaining_points),
+          total: meta.pricing_mode === "area" ? null : Number(r.total_points),
+          claimed: meta.pricing_mode === "area" ? null : Number(r.claimed_points),
+          pricing_mode: meta.pricing_mode,
+          min_amount: meta.min_amount,
+        };
+      });
+    }
+    return (rates ?? []).map((r) => {
+      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string };
+      return {
+        rate_id: r.id,
+        rate_name: r.name,
         unit: r.unit,
         rate_per_unit: Number(r.rate_per_unit),
-        remaining: Number(r.remaining_points),
-        total: Number(r.total_points),
-        claimed: Number(r.claimed_points),
-      }));
-    }
-    return (rates ?? []).map((r) => ({
-      rate_id: r.id,
-      rate_name: r.name,
-      unit: r.unit,
-      rate_per_unit: Number(r.rate_per_unit),
-      remaining: null,
-      total: null,
-      claimed: null,
-    }));
-  }, [projectId, rateAvail, rates]);
+        remaining: null,
+        total: null,
+        claimed: null,
+        pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area",
+        min_amount: Number(anyR.min_amount ?? 0),
+      };
+    });
+  }, [projectId, rateAvail, rates, ratesMeta]);
+
 
   const submitMut = useMutation({
     mutationFn: async (args: { rateId: string; qty: number }) => {
@@ -289,46 +310,81 @@ function MyJobs() {
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {rateRows.map((r) => {
+                const isArea = r.pricing_mode === "area";
+                const pl = plMap[r.rate_id] ?? { p: "", l: "" };
+                const pNum = Number(pl.p) || 0;
+                const lNum = Number(pl.l) || 0;
+                const areaQty = pNum * lNum;
                 const qty = qtyMap[r.rate_id] ?? "";
-                const qtyNum = Number(qty) || 0;
-                const preview = qtyNum * r.rate_per_unit;
-                const full = r.remaining !== null && r.remaining <= 0;
-                const hasRemaining = r.remaining !== null && r.remaining > 0;
+                const qtyNum = isArea ? areaQty : (Number(qty) || 0);
+                const rawPreview = qtyNum * r.rate_per_unit;
+                const preview = r.min_amount > 0 ? Math.max(rawPreview, r.min_amount) : rawPreview;
+                const minApplied = r.min_amount > 0 && qtyNum > 0 && rawPreview < r.min_amount;
+                const full = !isArea && r.remaining !== null && r.remaining <= 0;
+                const hasRemaining = !isArea && r.remaining !== null && r.remaining > 0;
                 return (
                   <div key={r.rate_id} className={`rounded-lg border p-3 ${full ? "bg-slate-50 opacity-60" : "bg-white"}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="font-semibold text-slate-900">{r.rate_name}</div>
-                        <div className="text-xs text-slate-500">{fmtIDR(r.rate_per_unit)}/{r.unit}</div>
+                        <div className="text-xs text-slate-500">
+                          {fmtIDR(r.rate_per_unit)}/{r.unit}
+                          {r.min_amount > 0 && <> · min {fmtIDR(r.min_amount)}</>}
+                        </div>
                       </div>
-                      {r.remaining !== null && (
+                      {isArea ? (
+                        <Badge variant="outline" className="text-xs">P × L</Badge>
+                      ) : r.remaining !== null && (
                         <Badge variant={full ? "secondary" : "outline"} className="text-xs">
                           Sisa {r.remaining}/{r.total}
                         </Badge>
                       )}
                     </div>
-                    <div className="mt-3 flex items-center gap-2">
-                      <Input
-                        type="number" step="0.01" min="0" max={r.remaining ?? undefined}
-                        placeholder="Qty"
-                        value={qty}
-                        onChange={(e) => setQtyMap((m) => ({ ...m, [r.rate_id]: e.target.value }))}
-                        disabled={full}
-                        className="h-9"
-                      />
-                      {hasRemaining && (
-                        <Button
-                          type="button" size="sm" variant="outline"
-                          className="bg-sky-400 hover:bg-sky-500 text-white border-sky-400 hover:border-sky-500"
-                          onClick={() => setQtyMap((m) => ({ ...m, [r.rate_id]: String(r.remaining) }))}
-                          title="Isi otomatis seluruh sisa titik"
-                        >
-                          <CheckCheck className="h-4 w-4 mr-1" /> Semua
-                        </Button>
-                      )}
-                    </div>
+                    {isArea ? (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <Input
+                          type="number" step="0.01" min="0" placeholder="Panjang"
+                          value={pl.p}
+                          onChange={(e) => setPlMap((m) => ({ ...m, [r.rate_id]: { p: e.target.value, l: pl.l } }))}
+                          className="h-9"
+                        />
+                        <Input
+                          type="number" step="0.01" min="0" placeholder="Lebar"
+                          value={pl.l}
+                          onChange={(e) => setPlMap((m) => ({ ...m, [r.rate_id]: { p: pl.p, l: e.target.value } }))}
+                          className="h-9"
+                        />
+                        <div className="col-span-2 text-xs text-slate-500">
+                          Qty (area) = <span className="font-semibold text-slate-900">{areaQty || 0}</span> {r.unit}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex items-center gap-2">
+                        <Input
+                          type="number" step="0.01" min="0" max={r.remaining ?? undefined}
+                          placeholder="Qty"
+                          value={qty}
+                          onChange={(e) => setQtyMap((m) => ({ ...m, [r.rate_id]: e.target.value }))}
+                          disabled={full}
+                          className="h-9"
+                        />
+                        {hasRemaining && (
+                          <Button
+                            type="button" size="sm" variant="outline"
+                            className="bg-sky-400 hover:bg-sky-500 text-white border-sky-400 hover:border-sky-500"
+                            onClick={() => setQtyMap((m) => ({ ...m, [r.rate_id]: String(r.remaining) }))}
+                            title="Isi otomatis seluruh sisa titik"
+                          >
+                            <CheckCheck className="h-4 w-4 mr-1" /> Semua
+                          </Button>
+                        )}
+                      </div>
+                    )}
                     <div className="mt-2 flex items-center justify-between">
-                      <div className="text-xs text-slate-500">Upah: <span className="font-semibold text-slate-900">{fmtIDR(preview)}</span></div>
+                      <div className="text-xs text-slate-500">
+                        Upah: <span className="font-semibold text-slate-900">{fmtIDR(preview)}</span>
+                        {minApplied && <span className="ml-1 text-amber-600">(min)</span>}
+                      </div>
                       <div className="flex gap-2">
                         {hasRemaining && (
                           <Button
@@ -345,7 +401,10 @@ function MyJobs() {
                           type="button" size="sm"
                           className="bg-green-500 hover:bg-green-600 text-white"
                           disabled={!qtyNum || full || submitMut.isPending || !effectiveEmpId}
-                          onClick={() => submitMut.mutate({ rateId: r.rate_id, qty: qtyNum })}
+                          onClick={() => {
+                            submitMut.mutate({ rateId: r.rate_id, qty: qtyNum });
+                            if (isArea) setPlMap((m) => ({ ...m, [r.rate_id]: { p: "", l: "" } }));
+                          }}
                         >
                           Simpan
                         </Button>
@@ -354,6 +413,7 @@ function MyJobs() {
                   </div>
                 );
               })}
+
               {!rateRows.length && <div className="text-sm text-slate-500 py-4">Belum ada tarif aktif.</div>}
             </div>
             {!effectiveEmpId && (

@@ -452,8 +452,10 @@ export type Database = {
           active: boolean
           created_at: string
           id: string
+          min_amount: number
           name: string
           note: string | null
+          pricing_mode: string
           rate_per_unit: number
           unit: string
           updated_at: string
@@ -462,8 +464,10 @@ export type Database = {
           active?: boolean
           created_at?: string
           id?: string
+          min_amount?: number
           name: string
           note?: string | null
+          pricing_mode?: string
           rate_per_unit: number
           unit?: string
           updated_at?: string
@@ -472,8 +476,10 @@ export type Database = {
           active?: boolean
           created_at?: string
           id?: string
+          min_amount?: number
           name?: string
           note?: string | null
+          pricing_mode?: string
           rate_per_unit?: number
           unit?: string
           updated_at?: string
