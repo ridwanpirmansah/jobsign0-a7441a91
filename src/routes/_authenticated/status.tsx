@@ -29,14 +29,14 @@ type Row = {
 };
 
 const STEPS: { key: Step; label: string; short: string; icon: React.ComponentType<{ className?: string }>; color: string }[] = [
-  { key: "waiting",  label: "Waiting",         short: "Antrian",    icon: Clock,         color: "bg-slate-400" },
+  { key: "waiting",  label: "Menunggu pengrajin", short: "Antrian",    icon: Clock,         color: "bg-slate-400" },
   { key: "cutting",  label: "Cutting Akrilik", short: "Potong Akrlk", icon: Scissors,      color: "bg-orange-500" },
   { key: "potong",   label: "Potong",          short: "Potong LED", icon: Ruler,         color: "bg-blue-500" },
   { key: "solder",   label: "Solder",          short: "Solder", icon: Zap,           color: "bg-amber-500" },
   { key: "tempel",   label: "Tempel LED",      short: "Tempel", icon: Sparkles,      color: "bg-emerald-500" },
-  { key: "kabel",    label: "Kabel",           short: "Kabel",  icon: Cable,         color: "bg-purple-500" },
-  { key: "packing",  label: "Packing",         short: "Dikemas", icon: PackageCheck,  color: "bg-teal-500" },
-  { key: "shipping", label: "Dikirim",         short: "Dikieim", icon: Truck,         color: "bg-green-600" },
+  { key: "kabel",    label: "Proses Pengkabelan", short: "Pengkabelan",  icon: Cable,         color: "bg-purple-500" },
+  { key: "packing",  label: "Sedang dikemas",  short: "Dikemas", icon: PackageCheck,  color: "bg-teal-500" },
+  { key: "shipping", label: "Dikirim",         short: "Dikirim", icon: Truck,         color: "bg-green-600" },
 ];
 
 const STEP_INDEX: Record<Step, number> = STEPS.reduce((acc, s, i) => ({ ...acc, [s.key]: i }), {} as Record<Step, number>);
