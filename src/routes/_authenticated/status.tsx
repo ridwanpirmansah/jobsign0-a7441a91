@@ -6,8 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw } from "lucide-react";
-import { format } from "date-fns";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle } from "lucide-react";
+import { format, differenceInCalendarDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_authenticated/status")({
@@ -15,10 +15,11 @@ export const Route = createFileRoute("/_authenticated/status")({
   head: () => ({ meta: [{ title: "Status Orderan" }] }),
 });
 
-type Step = "waiting" | "cutting" | "potong" | "solder" | "kabel" | "tempel" | "packing" | "shipping";
+type Step = "waiting" | "cutting" | "potong" | "solder" | "tempel" | "kabel" | "packing" | "shipping";
 type Row = {
   project_id: string; project_code: string; project_title: string;
   customer_name: string | null; total_points: number;
+  deadline: string | null;
   order_id: string | null; order_no: string | null; order_status: string | null;
   co_date: string | null; ekspedisi: string | null; no_resi: string | null;
   ready_pickup_at: string | null; picked_up_at: string | null;
@@ -32,13 +33,25 @@ const STEPS: { key: Step; label: string; short: string; icon: React.ComponentTyp
   { key: "cutting",  label: "Cutting Akrilik", short: "Cut",    icon: Scissors,      color: "bg-orange-500" },
   { key: "potong",   label: "Potong",          short: "Potong", icon: Ruler,         color: "bg-blue-500" },
   { key: "solder",   label: "Solder",          short: "Solder", icon: Zap,           color: "bg-amber-500" },
-  { key: "kabel",    label: "Kabel",           short: "Kabel",  icon: Cable,         color: "bg-purple-500" },
   { key: "tempel",   label: "Tempel LED",      short: "Tempel", icon: Sparkles,      color: "bg-emerald-500" },
+  { key: "kabel",    label: "Kabel",           short: "Kabel",  icon: Cable,         color: "bg-purple-500" },
   { key: "packing",  label: "Packing",         short: "Pack",   icon: PackageCheck,  color: "bg-teal-500" },
   { key: "shipping", label: "Dikirim",         short: "Kirim",  icon: Truck,         color: "bg-green-600" },
 ];
 
 const STEP_INDEX: Record<Step, number> = STEPS.reduce((acc, s, i) => ({ ...acc, [s.key]: i }), {} as Record<Step, number>);
+
+function deadlineMeta(deadline: string | null) {
+  if (!deadline) return null;
+  const days = differenceInCalendarDays(new Date(deadline), new Date());
+  let tone = "bg-slate-100 text-slate-600 border-slate-200";
+  let label = `${days} hari lagi`;
+  if (days < 0) { tone = "bg-red-100 text-red-700 border-red-200"; label = `Lewat ${Math.abs(days)}h`; }
+  else if (days === 0) { tone = "bg-red-100 text-red-700 border-red-200"; label = "Hari ini"; }
+  else if (days <= 2) { tone = "bg-orange-100 text-orange-700 border-orange-200"; label = `${days} hari lagi`; }
+  else if (days <= 5) { tone = "bg-amber-100 text-amber-700 border-amber-200"; }
+  return { days, tone, label };
+}
 
 function StatusPage() {
   const [filter, setFilter] = useState("");
@@ -64,7 +77,7 @@ function StatusPage() {
   }, [rows, filter]);
 
   const stepCounts = useMemo(() => {
-    const m: Record<Step, number> = { waiting: 0, cutting: 0, potong: 0, solder: 0, kabel: 0, tempel: 0, packing: 0, shipping: 0 };
+    const m: Record<Step, number> = { waiting: 0, cutting: 0, potong: 0, solder: 0, tempel: 0, kabel: 0, packing: 0, shipping: 0 };
     (rows ?? []).forEach((r) => { m[r.current_step] = (m[r.current_step] ?? 0) + 1; });
     return m;
   }, [rows]);
@@ -72,13 +85,13 @@ function StatusPage() {
   return (
     <div className="mx-auto max-w-6xl p-3 sm:p-6 space-y-4 pb-24">
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Status Orderan</h1>
           <p className="text-xs sm:text-sm text-slate-500">Pantau progres pengerjaan setiap orderan secara real-time.</p>
         </div>
         <button
           onClick={() => refetch()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 shrink-0"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Refresh
         </button>
@@ -89,11 +102,11 @@ function StatusPage() {
         {STEPS.map((s) => {
           const Icon = s.icon;
           return (
-            <div key={s.key} className="rounded-xl border border-slate-200 bg-white p-2 text-center">
+            <div key={s.key} className="rounded-xl border border-slate-200 bg-white p-2 text-center min-w-0">
               <div className={`mx-auto grid h-8 w-8 place-items-center rounded-lg ${s.color} text-white`}>
                 <Icon className="h-4 w-4" />
               </div>
-              <div className="mt-1 text-[10px] font-medium text-slate-600 leading-tight">{s.short}</div>
+              <div className="mt-1 text-[10px] font-medium text-slate-600 leading-tight truncate">{s.short}</div>
               <div className="text-sm font-bold text-slate-900">{stepCounts[s.key] ?? 0}</div>
             </div>
           );
@@ -128,15 +141,17 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
   const cur = STEP_INDEX[row.current_step];
   const stepMeta = STEPS[cur];
   const Icon = stepMeta.icon;
+  const dl = deadlineMeta(row.deadline);
+  const urgent = dl && dl.days <= 0;
   return (
     <button
       type="button"
       onClick={onClick}
-      className="text-left rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.99]"
+      className={`w-full min-w-0 overflow-hidden text-left rounded-2xl border bg-white p-3 sm:p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.99] ${urgent ? "border-red-300 ring-1 ring-red-200" : "border-slate-200"}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="font-mono text-[10px] uppercase tracking-wide text-slate-400">{row.order_no ?? row.project_code}</div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+        <div className="min-w-0">
+          <div className="font-mono text-[10px] uppercase tracking-wide text-slate-400 truncate">{row.order_no ?? row.project_code}</div>
           <div className="font-semibold text-slate-900 truncate">{row.project_title}</div>
           {row.customer_name && (
             <div className="text-xs text-slate-500 truncate">👤 {row.customer_name}</div>
@@ -155,21 +170,30 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
           return (
             <div
               key={s.key}
-              className={`h-1.5 flex-1 rounded-full ${done ? s.color : active ? s.color : "bg-slate-200"} ${active ? "ring-2 ring-offset-1 ring-slate-300" : ""}`}
+              className={`h-1.5 flex-1 min-w-0 rounded-full ${done ? s.color : active ? s.color : "bg-slate-200"} ${active ? "ring-2 ring-offset-1 ring-slate-300" : ""}`}
               title={s.label}
             />
           );
         })}
       </div>
-      <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500">
-        <span>{stepMeta.label}</span>
-        <span>{cur + 1}/{STEPS.length}</span>
+      <div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-slate-500 min-w-0">
+        <span className="truncate">{stepMeta.label}</span>
+        <span className="shrink-0">{cur + 1}/{STEPS.length}</span>
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-        <span>{row.co_date ? format(new Date(row.co_date), "dd MMM yyyy", { locale: idLocale }) : "-"}</span>
-        {row.no_resi && <span className="font-mono">📦 {row.no_resi}</span>}
+      <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-500 min-w-0">
+        <span className="truncate">{row.co_date ? format(new Date(row.co_date), "dd MMM yyyy", { locale: idLocale }) : "-"}</span>
+        {row.no_resi && (
+          <span className="font-mono truncate max-w-[55%] text-right" title={row.no_resi}>📦 {row.no_resi}</span>
+        )}
       </div>
+
+      {dl && (
+        <div className={`mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${dl.tone}`}>
+          {urgent && <AlertTriangle className="h-3 w-3" />}
+          Deadline: {format(new Date(row.deadline!), "dd MMM", { locale: idLocale })} · {dl.label}
+        </div>
+      )}
     </button>
   );
 }
@@ -184,11 +208,13 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
       return data as unknown as {
         project: { id: string; code: string; title: string; status: string; total_points: number; contract_value: number; deadline: string | null; description: string | null };
         customer: { name: string | null; phone: string | null };
-        order: { id: string; order_no: string; status: string; co_date: string | null; text_neon: string | null; kota: string | null; username: string | null; ekspedisi: string | null; no_resi: string | null; ready_pickup_at: string | null; picked_up_at: string | null; akrilik_p: number | null; akrilik_l: number | null; led_meter: number | null; titik: number | null; notes: string | null } | null;
+        order: { id: string; order_no: string; status: string; co_date: string | null; text_neon: string | null; kota: string | null; username: string | null; ekspedisi: string | null; no_resi: string | null; ready_pickup_at: string | null; picked_up_at: string | null; akrilik_p: number | null; akrilik_l: number | null; led_meter: number | null; titik: number | null; kabel_meter: number | null; kabel_socket_meter: number | null; notes: string | null } | null;
         claims: Array<{ rate_name: string; unit: string; qty: number; status: string; is_repair: boolean; employee_name: string; log_date: string }>;
       };
     },
   });
+
+  const dl = data ? deadlineMeta(data.project.deadline) : null;
 
   return (
     <Dialog open={!!projectId} onOpenChange={onOpenChange}>
@@ -204,6 +230,12 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
               <div className="font-mono text-[11px] text-slate-500">{data.order?.order_no ?? data.project.code}</div>
               <div className="font-semibold text-slate-900">{data.project.title}</div>
               {data.order?.text_neon && <div className="text-xs text-slate-600 mt-1">Text: {data.order.text_neon}</div>}
+              {dl && (
+                <div className={`mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${dl.tone}`}>
+                  {dl.days <= 0 && <AlertTriangle className="h-3 w-3" />}
+                  Deadline: {format(new Date(data.project.deadline!), "dd MMM yyyy", { locale: idLocale })} · {dl.label}
+                </div>
+              )}
             </section>
 
             <section className="grid grid-cols-2 gap-2 text-xs">
@@ -215,6 +247,8 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
               <Info label="LED (m)" value={String(data.order?.led_meter ?? "-")} />
               <Info label="Akrilik P" value={data.order?.akrilik_p ? `${data.order.akrilik_p} cm` : "-"} />
               <Info label="Akrilik L" value={data.order?.akrilik_l ? `${data.order.akrilik_l} cm` : "-"} />
+              <Info label="Kabel (m)" value={data.order?.kabel_meter != null ? `${data.order.kabel_meter} m` : "-"} />
+              <Info label="Kabel Socket (m)" value={data.order?.kabel_socket_meter != null ? `${data.order.kabel_socket_meter} m` : "-"} />
               <Info label="Ekspedisi" value={data.order?.ekspedisi ?? "-"} />
               <Info label="No. Resi" value={data.order?.no_resi ?? "-"} />
             </section>
@@ -273,7 +307,7 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-2">
+    <div className="rounded-lg border border-slate-200 bg-white p-2 min-w-0">
       <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
       <div className="text-slate-900 truncate" title={value}>{value}</div>
     </div>
