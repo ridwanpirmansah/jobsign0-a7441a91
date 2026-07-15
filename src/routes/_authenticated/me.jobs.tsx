@@ -127,9 +127,10 @@ function MyJobs() {
           rate_name: r.rate_name,
           unit: r.unit,
           rate_per_unit: Number(r.rate_per_unit),
-          remaining: meta.pricing_mode === "area" ? null : Number(r.remaining_points),
+          // For area rates, "remaining" acts as "0 if already claimed, 1 if still available"
+          remaining: meta.pricing_mode === "area" ? (Number(r.claimed_points) > 0 ? 0 : 1) : Number(r.remaining_points),
           total: meta.pricing_mode === "area" ? null : Number(r.total_points),
-          claimed: meta.pricing_mode === "area" ? null : Number(r.claimed_points),
+          claimed: meta.pricing_mode === "area" ? Number(r.claimed_points) : Number(r.claimed_points),
           pricing_mode: meta.pricing_mode,
           min_amount: meta.min_amount,
         };
@@ -150,6 +151,7 @@ function MyJobs() {
       };
     });
   }, [projectId, rateAvail, rates, ratesMeta]);
+
 
 
   const submitMut = useMutation({
@@ -341,11 +343,14 @@ function MyJobs() {
                 const preview = r.min_amount > 0 ? Math.max(rawPreview, r.min_amount) : rawPreview;
                 const minApplied = r.min_amount > 0 && qtyNum > 0 && rawPreview < r.min_amount;
                 const full = !isArea && r.remaining !== null && r.remaining <= 0;
+                const areaClaimed = isArea && projectId && Number(r.claimed ?? 0) > 0;
                 const hasRemaining = !isArea && r.remaining !== null && r.remaining > 0;
-                const areaMissing = isArea && projectId && (!pNum || !lNum);
+                const areaMissing = isArea && projectId && !areaClaimed && (!pNum || !lNum);
                 const areaNoProject = isArea && !projectId;
+                const areaClaimable = isArea && !!projectId && !areaClaimed && !areaMissing;
+                const disabledClaim = full || areaClaimed || areaMissing || areaNoProject;
                 return (
-                  <div key={r.rate_id} className={`rounded-lg border p-3 ${full ? "bg-slate-50 opacity-60" : "bg-white"}`}>
+                  <div key={r.rate_id} className={`rounded-lg border p-3 ${(full || areaClaimed) ? "bg-slate-50 opacity-60" : "bg-white"}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="font-semibold text-slate-900">{r.rate_name}</div>
@@ -355,7 +360,9 @@ function MyJobs() {
                         </div>
                       </div>
                       {isArea ? (
-                        <Badge variant="outline" className="text-xs">P × L (otomatis)</Badge>
+                        areaClaimed
+                          ? <Badge variant="secondary" className="text-xs">Sudah diklaim</Badge>
+                          : <Badge variant="outline" className="text-xs">P × L (otomatis)</Badge>
                       ) : r.remaining !== null && (
                         <Badge variant={full ? "secondary" : "outline"} className="text-xs">
                           Sisa {r.remaining}/{r.total}
@@ -366,6 +373,8 @@ function MyJobs() {
                       <div className="mt-3 rounded-md bg-slate-50 border border-slate-200 p-2 text-xs space-y-1">
                         {areaNoProject ? (
                           <div className="text-amber-700">Pilih project terlebih dahulu untuk mengambil ukuran akrilik.</div>
+                        ) : areaClaimed ? (
+                          <div className="text-slate-600">Sudah diklaim oleh karyawan lain. Hanya 1 orang yang boleh mengklaim jenis garapan ini per project.</div>
                         ) : areaMissing ? (
                           <div className="text-amber-700">Ukuran akrilik pada order belum diisi. Hubungi admin untuk melengkapi Akrilik P/L pada order.</div>
                         ) : (
@@ -398,6 +407,7 @@ function MyJobs() {
                         )}
                       </div>
                     )}
+
                     <div className="mt-2 flex items-center justify-between">
                       <div className="text-xs text-slate-500">
                         Upah: <span className="font-semibold text-slate-900">{fmtIDR(preview)}</span>
@@ -415,14 +425,17 @@ function MyJobs() {
                             Klaim Semua
                           </Button>
                         )}
-                        <Button
-                          type="button" size="sm"
-                          className="bg-green-500 hover:bg-green-600 text-white"
-                          disabled={!qtyNum || full || submitMut.isPending || !effectiveEmpId}
-                          onClick={() => submitMut.mutate({ rateId: r.rate_id, qty: qtyNum })}
-                        >
-                          {isArea ? "Klaim" : "Simpan"}
-                        </Button>
+                        {(!isArea || areaClaimable) && (
+                          <Button
+                            type="button" size="sm"
+                            className="bg-green-500 hover:bg-green-600 text-white"
+                            disabled={!qtyNum || disabledClaim || submitMut.isPending || !effectiveEmpId}
+                            onClick={() => submitMut.mutate({ rateId: r.rate_id, qty: qtyNum })}
+                          >
+                            {isArea ? "Klaim" : "Simpan"}
+                          </Button>
+                        )}
+
                       </div>
                     </div>
                   </div>

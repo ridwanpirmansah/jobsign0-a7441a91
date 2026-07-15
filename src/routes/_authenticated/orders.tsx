@@ -341,27 +341,41 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     setOpen(true);
   };
 
-  const openDuplicate = (o: any) => {
+  const openDuplicate = async (o: any) => {
     setHeader({
       source: o.source, status: (o.status as OrderStatus) ?? "active",
       order_no: isReady ? nextReadyStockNo : nextOrderNo,
       co_date: new Date().toISOString().slice(0, 10),
-      username: o.username ?? "", kota: o.kota ?? "",
+      username: "", kota: "",
       payment: String(o.payment ?? ""), dp: "", split: String(o.split ?? ""),
       notes: o.notes ?? "",
       no_resi: "", ekspedisi: o.ekspedisi ?? "",
     });
-    // clone items
-    const srcItems = (o.order_items ?? []) as any[];
-    if (srcItems.length) {
-      // Only clone summary; deep clone requires refetch - keep simple: single item from header row copy
-      // Better: fetch items of that order and clone. For now: create 1 custom placeholder if we lack detail.
-      setItems([emptyItem(1, priceMap)]);
-    } else {
-      setItems([emptyItem(1, priceMap)]);
-    }
+    setItems([emptyItem(1, priceMap)]);
+    setExpandedItemKey(null);
     setOpen(true);
+    // Deep clone items from source order
+    try {
+      const rows = await fetchItems({ data: { orderId: o.id } });
+      if (Array.isArray(rows) && rows.length) {
+        const cloned = (rows as any[]).map((row, idx) => {
+          const item = itemFromDb(row);
+          // Strip DB identifiers so save creates new rows
+          return {
+            ...item,
+            id: undefined,
+            _key: `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+            position: idx + 1,
+          };
+        });
+        setItems(cloned);
+        setExpandedItemKey(cloned.length === 1 ? cloned[0]._key : null);
+      }
+    } catch (e) {
+      console.error("Failed to clone items", e);
+    }
   };
+
 
   const totalItemsHpp = useMemo(() =>
     items.filter((i) => !i._deleted).reduce((s, i) => {
