@@ -69,7 +69,12 @@ function MyJobs() {
   const { data: rates } = useQuery({
     queryKey: ["rates-active"],
     queryFn: async () => {
-      const { data } = await supabase.from("job_rates").select("*").eq("active", true).order("name");
+      const { data } = await supabase
+        .from("job_rates")
+        .select("*")
+        .eq("active", true)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
       return data ?? [];
     },
   });
@@ -159,7 +164,7 @@ function MyJobs() {
       if (!effectiveEmpId) throw new Error("Pilih karyawan terlebih dahulu");
       if (!args.qty || args.qty <= 0) throw new Error("Qty harus lebih dari 0");
       const row = rateRows.find((r) => r.rate_id === args.rateId);
-      if (row?.remaining !== null && row && args.qty > row.remaining!) {
+      if (row?.pricing_mode !== "area" && row?.remaining !== null && row && args.qty > row.remaining!) {
         throw new Error(`Sisa titik ${row.rate_name} hanya ${row.remaining}`);
       }
       const { error } = await supabase.from("job_logs").insert({
