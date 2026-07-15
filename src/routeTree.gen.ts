@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedStatusRouteImport } from './routes/_authenticated/status'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedReadyStockRouteImport } from './routes/_authenticated/ready-stock'
 import { Route as AuthenticatedRatesRouteImport } from './routes/_authenticated/rates'
@@ -60,6 +61,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStatusRoute = AuthenticatedStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
@@ -233,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/rates': typeof AuthenticatedRatesRoute
   '/ready-stock': typeof AuthenticatedReadyStockRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/status': typeof AuthenticatedStatusRoute
   '/users': typeof AuthenticatedUsersRoute
   '/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/me/earnings': typeof AuthenticatedMeEarningsRoute
@@ -267,6 +274,7 @@ export interface FileRoutesByTo {
   '/rates': typeof AuthenticatedRatesRoute
   '/ready-stock': typeof AuthenticatedReadyStockRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/status': typeof AuthenticatedStatusRoute
   '/users': typeof AuthenticatedUsersRoute
   '/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/me/earnings': typeof AuthenticatedMeEarningsRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/_authenticated/rates': typeof AuthenticatedRatesRoute
   '/_authenticated/ready-stock': typeof AuthenticatedReadyStockRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/status': typeof AuthenticatedStatusRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/me/attendance': typeof AuthenticatedMeAttendanceRoute
   '/_authenticated/me/earnings': typeof AuthenticatedMeEarningsRoute
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/rates'
     | '/ready-stock'
     | '/reports'
+    | '/status'
     | '/users'
     | '/me/attendance'
     | '/me/earnings'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/rates'
     | '/ready-stock'
     | '/reports'
+    | '/status'
     | '/users'
     | '/me/attendance'
     | '/me/earnings'
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rates'
     | '/_authenticated/ready-stock'
     | '/_authenticated/reports'
+    | '/_authenticated/status'
     | '/_authenticated/users'
     | '/_authenticated/me/attendance'
     | '/_authenticated/me/earnings'
@@ -463,6 +475,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/status': {
+      id: '/_authenticated/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof AuthenticatedStatusRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports': {
@@ -684,6 +703,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRatesRoute: typeof AuthenticatedRatesRoute
   AuthenticatedReadyStockRoute: typeof AuthenticatedReadyStockRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedStatusRoute: typeof AuthenticatedStatusRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedMeAttendanceRoute: typeof AuthenticatedMeAttendanceRoute
   AuthenticatedMeEarningsRoute: typeof AuthenticatedMeEarningsRoute
@@ -716,6 +736,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRatesRoute: AuthenticatedRatesRoute,
   AuthenticatedReadyStockRoute: AuthenticatedReadyStockRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedStatusRoute: AuthenticatedStatusRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedMeAttendanceRoute: AuthenticatedMeAttendanceRoute,
   AuthenticatedMeEarningsRoute: AuthenticatedMeEarningsRoute,
@@ -748,13 +769,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

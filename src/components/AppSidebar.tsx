@@ -3,8 +3,9 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt, Utensils, Truck,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt, Utensils, Truck, Activity,
 } from "lucide-react";
+
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -17,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const meItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Status Orderan", url: "/status", icon: Activity },
   { title: "Scan Absensi", url: "/me/scan", icon: ScanLine },
   { title: "Input Garapan", url: "/me/jobs", icon: ClipboardList },
   { title: "Klaim Reparasi", url: "/me/repairs", icon: Wrench },
@@ -37,8 +39,10 @@ const adminItems = [
   { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
 ];
 const kurirItems = [
+  { title: "Status Orderan", url: "/status", icon: Activity },
   { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
 ];
+
 const ownerItems = [
   { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
   { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },

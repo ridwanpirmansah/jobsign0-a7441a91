@@ -1178,6 +1178,35 @@ export type Database = {
         Args: { _no_resi: string; _note?: string }
         Returns: Json
       }
+      get_active_pipeline: {
+        Args: never
+        Returns: {
+          co_date: string
+          current_step: string
+          customer_name: string
+          cut_qty: number
+          ekspedisi: string
+          has_cut: boolean
+          has_kabel: boolean
+          has_potong: boolean
+          has_solder: boolean
+          has_tempel: boolean
+          kabel_qty: number
+          no_resi: string
+          order_id: string
+          order_no: string
+          order_status: string
+          picked_up_at: string
+          potong_qty: number
+          project_code: string
+          project_id: string
+          project_title: string
+          ready_pickup_at: string
+          solder_qty: number
+          tempel_qty: number
+          total_points: number
+        }[]
+      }
       get_attendance_secret: { Args: never; Returns: string }
       get_available_projects: {
         Args: never
@@ -1193,6 +1222,10 @@ export type Database = {
       }
       get_daily_attendance_token: { Args: { _date?: string }; Returns: string }
       get_permanent_attendance_token: { Args: never; Returns: string }
+      get_project_detail_for_worker: {
+        Args: { _project_id: string }
+        Returns: Json
+      }
       get_project_rate_availability: {
         Args: { _project_id: string }
         Returns: {
