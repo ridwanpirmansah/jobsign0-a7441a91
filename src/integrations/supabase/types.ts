@@ -1185,6 +1185,7 @@ export type Database = {
           current_step: string
           customer_name: string
           cut_qty: number
+          deadline: string
           ekspedisi: string
           has_cut: boolean
           has_kabel: boolean
