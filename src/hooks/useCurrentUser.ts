@@ -9,10 +9,11 @@ export function useCurrentUser() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const [{ data: profile }, { data: roles }, { data: emp }] = await Promise.all([
+      const [{ data: profile }, { data: roles }, { data: emp }, { data: perms }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
         supabase.from("employees").select("*").eq("profile_id", user.id).maybeSingle(),
+        (supabase as any).from("user_feature_permissions").select("feature_key,enabled").eq("user_id", user.id),
       ]);
       const roleList = (roles ?? []).map((r) => r.role as AppRole);
       const role: AppRole = roleList.includes("owner")
@@ -22,7 +23,9 @@ export function useCurrentUser() {
         : roleList.includes("kurir")
         ? "kurir"
         : "karyawan";
-      return { user, profile, role, roles: roleList, employee: emp };
+      const overrides: Record<string, boolean> = {};
+      for (const p of (perms as any[]) ?? []) overrides[p.feature_key] = p.enabled;
+      return { user, profile, role, roles: roleList, employee: emp, overrides };
     },
     staleTime: 30_000,
   });
