@@ -146,7 +146,7 @@ export default function WorkshopRadiusMap({
 
       {distance != null && (
         <div
-          className={`absolute top-2 left-2 z-[400] rounded-md px-2.5 py-1 text-xs font-semibold shadow ${
+          className={`absolute top-2 right-2 z-[400] rounded-md px-2.5 py-1 text-xs font-semibold shadow ${
             inside
               ? "bg-emerald-600 text-white"
               : "bg-rose-600 text-white"

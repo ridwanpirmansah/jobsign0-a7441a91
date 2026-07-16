@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { markReadyPickupByResi } from "@/lib/orders.functions";
-import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +18,6 @@ export const Route = createFileRoute("/_authenticated/me/ship")({
 });
 
 function ShipPage() {
-  const { data: me, isLoading } = useCurrentUser();
   const qc = useQueryClient();
   const mark = useServerFn(markReadyPickupByResi);
   const [manual, setManual] = useState("");
@@ -37,15 +35,6 @@ function ShipPage() {
     onError: (e: Error) => { beepError(); toast.error(e.message); },
   });
 
-  if (isLoading) return <p className="p-4 text-sm text-slate-500">Memuat…</p>;
-  if (!me || !isStaff(me.role)) {
-    return (
-      <Card className="max-w-md mx-auto mt-8">
-        <CardHeader><CardTitle>Akses ditolak</CardTitle></CardHeader>
-        <CardContent><p className="text-sm text-slate-500">Halaman ini hanya untuk staff workshop.</p></CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="edge-to-edge p-0 sm:p-4 space-y-3 sm:space-y-5 max-w-4xl">
