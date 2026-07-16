@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt, Utensils, Truck, Activity,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt, Utensils, Truck, Activity, Shield,
 } from "lucide-react";
 
 import {
@@ -13,43 +13,43 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useQueryClient } from "@tanstack/react-query";
+import { hasFeature, type FeatureKey } from "@/lib/features";
 
-const meItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Status Orderan", url: "/status", icon: Activity },
-  { title: "Scan Absensi", url: "/me/scan", icon: ScanLine },
-  { title: "Input Garapan", url: "/me/jobs", icon: ClipboardList },
-  { title: "Klaim Reparasi", url: "/me/repairs", icon: Wrench },
-  { title: "Absensi Saya", url: "/me/attendance", icon: CalendarCheck },
-  { title: "Pendapatan Saya", url: "/me/earnings", icon: Wallet },
-  { title: "Cashbon", url: "/cashbon", icon: BadgeDollarSign },
+type NavItem = { title: string; url: string; icon: any; feature?: FeatureKey };
+
+const meItems: NavItem[] = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, feature: "dashboard" },
+  { title: "Status Orderan", url: "/status", icon: Activity, feature: "status" },
+  { title: "Scan Absensi", url: "/me/scan", icon: ScanLine, feature: "me/scan" },
+  { title: "Input Garapan", url: "/me/jobs", icon: ClipboardList, feature: "me/jobs" },
+  { title: "Klaim Reparasi", url: "/me/repairs", icon: Wrench, feature: "me/repairs" },
+  { title: "Absensi Saya", url: "/me/attendance", icon: CalendarCheck, feature: "me/attendance" },
+  { title: "Pendapatan Saya", url: "/me/earnings", icon: Wallet, feature: "me/earnings" },
+  { title: "Cashbon", url: "/cashbon", icon: BadgeDollarSign, feature: "cashbon" },
+  { title: "Scan Siap Kirim", url: "/me/ship", icon: ScanLine, feature: "me/ship" },
 ];
-const adminItems = [
-  { title: "Order", url: "/orders", icon: ShoppingBag },
-  { title: "Ready Stock", url: "/ready-stock", icon: Package },
-  { title: "Project", url: "/projects", icon: FolderKanban },
-  { title: "Karyawan", url: "/employees", icon: Users },
-  { title: "Tarif Borongan", url: "/rates", icon: DollarSign },
-  { title: "Approval", url: "/approvals", icon: BadgeCheck },
-  { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils },
-  { title: "Customer", url: "/customers", icon: Building2 },
-  { title: "Scan Siap Kirim", url: "/me/ship", icon: ScanLine },
-  { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
-];
-const kurirItems = [
-  { title: "Status Orderan", url: "/status", icon: Activity },
-  { title: "Pickup Paket", url: "/me/pickup", icon: Truck },
+const adminItems: NavItem[] = [
+  { title: "Order", url: "/orders", icon: ShoppingBag, feature: "orders" },
+  { title: "Ready Stock", url: "/ready-stock", icon: Package, feature: "ready-stock" },
+  { title: "Project", url: "/projects", icon: FolderKanban, feature: "projects" },
+  { title: "Karyawan", url: "/employees", icon: Users, feature: "employees" },
+  { title: "Tarif Borongan", url: "/rates", icon: DollarSign, feature: "rates" },
+  { title: "Approval", url: "/approvals", icon: BadgeCheck, feature: "approvals" },
+  { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils, feature: "consumption" },
+  { title: "Customer", url: "/customers", icon: Building2, feature: "customers" },
+  { title: "Pickup Paket", url: "/me/pickup", icon: Truck, feature: "me/pickup" },
 ];
 
-const ownerItems = [
+const ownerItems: NavItem[] = [
   { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
   { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },
   { title: "Master Harga", url: "/owner/prices", icon: Tags },
   { title: "Master Ekspedisi", url: "/owner/carriers", icon: Truck },
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
   { title: "Kelola User", url: "/users", icon: UserCog },
+  { title: "Setelan Akses Fitur", url: "/owner/permissions", icon: Shield },
   { title: "Payroll", url: "/payroll", icon: Wallet },
   { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
   { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
@@ -63,6 +63,7 @@ export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { data } = useCurrentUser();
   const role = data?.role;
+  const overrides = data?.overrides ?? {};
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -78,6 +79,12 @@ export function AppSidebar() {
   };
 
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
+
+  const filterItems = (items: NavItem[]) =>
+    items.filter((i) => !i.feature || hasFeature(role, i.feature, overrides));
+
+  const visibleMe = filterItems(meItems);
+  const visibleAdmin = filterItems(adminItems);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-slate-800 bg-slate-950 text-slate-200">
@@ -117,12 +124,12 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {isStaff(role) && (
+        {visibleAdmin.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-slate-500">Operasional</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminItems.map((item) => (
+                {visibleAdmin.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}
                       className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
@@ -138,33 +145,12 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {role === "kurir" && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-cyan-400/80">Kurir</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {kurirItems.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}
-                      className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
-                      <Link to={item.url} onClick={handleNav}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {role !== "kurir" && (
+        {visibleMe.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-slate-500">Karyawan</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {meItems.map((item) => (
+                {visibleMe.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}
                       className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
