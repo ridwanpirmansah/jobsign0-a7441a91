@@ -1,4 +1,5 @@
 // Audio + haptic feedback for scanner interactions.
+// Loud, sharp courier-scanner style beep (JNT/SPX-like).
 
 let audioCtx: AudioContext | null = null;
 function getCtx(): AudioContext | null {
@@ -16,7 +17,11 @@ function getCtx(): AudioContext | null {
   }
 }
 
-function tone(freq: number, durationMs: number, opts: { type?: OscillatorType; gain?: number; delayMs?: number } = {}) {
+function tone(
+  freq: number,
+  durationMs: number,
+  opts: { type?: OscillatorType; gain?: number; delayMs?: number } = {},
+) {
   const ctx = getCtx();
   if (!ctx) return;
   const start = ctx.currentTime + (opts.delayMs ?? 0) / 1000;
@@ -25,13 +30,31 @@ function tone(freq: number, durationMs: number, opts: { type?: OscillatorType; g
   const g = ctx.createGain();
   osc.type = opts.type ?? "square";
   osc.frequency.setValueAtTime(freq, start);
-  const peak = opts.gain ?? 0.18;
+  const peak = opts.gain ?? 0.9;
   g.gain.setValueAtTime(0.0001, start);
-  g.gain.exponentialRampToValueAtTime(peak, start + 0.01);
+  g.gain.exponentialRampToValueAtTime(peak, start + 0.008);
+  g.gain.setValueAtTime(peak, end - 0.01);
   g.gain.exponentialRampToValueAtTime(0.0001, end);
   osc.connect(g).connect(ctx.destination);
   osc.start(start);
   osc.stop(end + 0.02);
+}
+
+/** Loud, sharp "tiit" — layered oscillators for a fuller, louder tone. */
+export function beepSuccess() {
+  // Layered square + sine to punch through phone speakers.
+  tone(2700, 160, { type: "square", gain: 0.95 });
+  tone(2700, 160, { type: "sine", gain: 0.6 });
+  tone(5400, 160, { type: "square", gain: 0.35 }); // harmonic
+  vibrate(60);
+}
+
+/** Loud double-buzz + vibrate for failed scans. */
+export function beepError() {
+  tone(240, 220, { type: "sawtooth", gain: 0.9 });
+  tone(240, 220, { type: "square", gain: 0.5 });
+  tone(180, 260, { type: "sawtooth", gain: 0.9, delayMs: 240 });
+  vibrate([100, 60, 200]);
 }
 
 function vibrate(pattern: number | number[]) {
@@ -40,19 +63,6 @@ function vibrate(pattern: number | number[]) {
       navigator.vibrate(pattern);
     }
   } catch { /* ignore */ }
-}
-
-/** Sharp short "tiit" like courier scanners (JNT/SPX style). */
-export function beepSuccess() {
-  tone(2600, 120, { type: "square", gain: 0.22 });
-  vibrate(40);
-}
-
-/** Low double-buzz + vibrate for failed scans. */
-export function beepError() {
-  tone(220, 180, { type: "sawtooth", gain: 0.25 });
-  tone(180, 220, { type: "sawtooth", gain: 0.25, delayMs: 200 });
-  vibrate([80, 60, 160]);
 }
 
 /** Speak Indonesian phrase via Web Speech API. Falls back silently. */
