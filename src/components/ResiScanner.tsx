@@ -29,12 +29,35 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
           Html5QrcodeSupportedFormats.EAN_8,
           Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.CODABAR,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
         ],
-      });
+        useBarCodeDetectorIfSupported: true,
+      } as any);
       scannerRef.current = scanner;
       await scanner.start(
-        { facingMode: "environment" },
-        { fps: 12, qrbox: { width: 260, height: 140 } },
+        { facingMode: { ideal: "environment" } as any },
+        {
+          fps: 15,
+          // Wide, tall qrbox positioned near top so the phone can be held
+          // close to the barcode — no need to move far to fit it inside.
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const width = Math.floor(Math.min(viewfinderWidth * 0.95, 520));
+            const height = Math.floor(Math.min(viewfinderHeight * 0.65, 260));
+            return { width, height };
+          },
+          aspectRatio: 4 / 3,
+          videoConstraints: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            // iOS Safari benefits from continuous focus.
+            advanced: [{ focusMode: "continuous" }, { focusMode: "auto" }],
+          } as any,
+          disableFlip: false,
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        } as any,
         (decoded) => {
           const now = Date.now();
           const t = decoded.trim();
@@ -45,6 +68,21 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
         },
         () => {},
       );
+
+      // Try to nudge iOS auto-focus after start.
+      try {
+        const video = document.querySelector<HTMLVideoElement>(`#${containerId} video`);
+        const stream = video?.srcObject as MediaStream | null;
+        const track = stream?.getVideoTracks?.()[0];
+        const caps: any = track?.getCapabilities?.() ?? {};
+        const constraints: any = {};
+        if (caps.focusMode?.includes?.("continuous")) constraints.focusMode = "continuous";
+        if (caps.zoom) constraints.zoom = Math.min(caps.zoom.max ?? 1, Math.max(caps.zoom.min ?? 1, 1.5));
+        if (Object.keys(constraints).length && track) {
+          await track.applyConstraints({ advanced: [constraints] } as any);
+        }
+      } catch { /* ignore */ }
+
       setRunning(true);
     } catch (e: any) {
       setError(e?.message ?? "Kamera tidak bisa diakses");
@@ -65,7 +103,13 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
 
   return (
     <div className={className}>
-      <div id={containerId} className="w-full max-w-md mx-auto rounded-lg overflow-hidden bg-black/90 aspect-[16/10]" />
+      <div
+        id={containerId}
+        className="w-full max-w-md mx-auto rounded-lg overflow-hidden bg-black/90 aspect-[4/3] [&_video]:object-cover"
+      />
+      <p className="text-[11px] text-muted-foreground text-center mt-1">
+        Dekatkan kamera hingga barcode mengisi kotak. iOS: tunggu 1-2 detik agar fokus otomatis mengunci.
+      </p>
       <div className="mt-2 flex gap-2 justify-center">
         {!running ? (
           <Button size="sm" onClick={start}><Camera className="h-4 w-4 mr-1"/> Mulai Scan</Button>

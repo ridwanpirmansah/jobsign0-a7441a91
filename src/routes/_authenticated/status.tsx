@@ -6,9 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResiScanner } from "@/components/ResiScanner";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine } from "lucide-react";
 import { format, differenceInCalendarDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { beepSuccess, beepError } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/status")({
   component: StatusPage,
@@ -56,6 +60,9 @@ function deadlineMeta(deadline: string | null) {
 function StatusPage() {
   const [filter, setFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<"co_date_desc" | "co_date_asc" | "deadline_asc" | "deadline_desc" | "progress_asc" | "progress_desc">("co_date_desc");
+  const [stepFilter, setStepFilter] = useState<Step | "all">("all");
 
   const { data: rows, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["active-pipeline"],
@@ -69,18 +76,57 @@ function StatusPage() {
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    if (!q) return rows ?? [];
-    return (rows ?? []).filter((r) =>
-      [r.project_code, r.project_title, r.order_no, r.customer_name, r.no_resi]
-        .some((v) => String(v ?? "").toLowerCase().includes(q))
-    );
-  }, [rows, filter]);
+    let list = (rows ?? []).filter((r) => {
+      if (stepFilter !== "all" && r.current_step !== stepFilter) return false;
+      if (!q) return true;
+      return [r.project_code, r.project_title, r.order_no, r.customer_name, r.no_resi]
+        .some((v) => String(v ?? "").toLowerCase().includes(q));
+    });
+    const cmp = (a: Row, b: Row): number => {
+      switch (sortBy) {
+        case "co_date_asc":
+          return (a.co_date ?? "").localeCompare(b.co_date ?? "");
+        case "co_date_desc":
+          return (b.co_date ?? "").localeCompare(a.co_date ?? "");
+        case "deadline_asc":
+          return (a.deadline ?? "9999-12-31").localeCompare(b.deadline ?? "9999-12-31");
+        case "deadline_desc":
+          return (b.deadline ?? "0000-01-01").localeCompare(a.deadline ?? "0000-01-01");
+        case "progress_asc":
+          return STEP_INDEX[a.current_step] - STEP_INDEX[b.current_step];
+        case "progress_desc":
+          return STEP_INDEX[b.current_step] - STEP_INDEX[a.current_step];
+      }
+    };
+    return [...list].sort(cmp);
+  }, [rows, filter, stepFilter, sortBy]);
 
   const stepCounts = useMemo(() => {
     const m: Record<Step, number> = { waiting: 0, cutting: 0, potong: 0, solder: 0, tempel: 0, kabel: 0, packing: 0, shipping: 0 };
     (rows ?? []).forEach((r) => { m[r.current_step] = (m[r.current_step] ?? 0) + 1; });
     return m;
   }, [rows]);
+
+  const handleScan = (raw: string) => {
+    const text = raw.trim();
+    if (!text) return;
+    const match = (rows ?? []).find((r) => {
+      const resi = String(r.no_resi ?? "").trim();
+      const orderNo = String(r.order_no ?? "").trim();
+      return resi && text === resi
+        || (resi && text.toLowerCase() === resi.toLowerCase())
+        || (orderNo && text.toLowerCase() === orderNo.toLowerCase());
+    });
+    if (match) {
+      beepSuccess();
+      toast.success(`Ditemukan #${match.order_no ?? match.project_code}`);
+      setSelectedId(match.project_id);
+      setScanOpen(false);
+    } else {
+      beepError();
+      toast.error(`Resi/order "${text}" tidak ditemukan pada orderan aktif`);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl p-3 sm:p-6 space-y-4 pb-24">
@@ -89,36 +135,69 @@ function StatusPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Status Orderan</h1>
           <p className="text-xs sm:text-sm text-slate-500">Pantau progres pengerjaan setiap orderan secara real-time.</p>
         </div>
-        <button
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 shrink-0"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />Refresh
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setScanOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-medium text-cyan-800 hover:bg-cyan-100"
+          >
+            <ScanLine className="h-3.5 w-3.5" /> Scan Resi
+          </button>
+          <button
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />Refresh
+          </button>
+        </div>
       </div>
 
-      {/* Step legend / summary chips */}
+      {/* Step legend / summary chips — click to filter */}
       <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
         {STEPS.map((s) => {
           const Icon = s.icon;
+          const active = stepFilter === s.key;
           return (
-            <div key={s.key} className="rounded-xl border border-slate-200 bg-white p-2 text-center min-w-0">
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setStepFilter((cur) => cur === s.key ? "all" : s.key)}
+              className={`rounded-xl border p-2 text-center min-w-0 transition ${active ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900" : "border-slate-200 bg-white hover:border-slate-300"}`}
+            >
               <div className={`mx-auto grid h-8 w-8 place-items-center rounded-lg ${s.color} text-white`}>
                 <Icon className="h-4 w-4" />
               </div>
               <div className="mt-1 text-[10px] font-medium text-slate-600 leading-tight truncate">{s.short}</div>
               <div className="text-sm font-bold text-slate-900">{stepCounts[s.key] ?? 0}</div>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      <Input
-        placeholder="Cari no order / project / customer / resi..."
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        className="max-w-md"
-      />
+      <div className="flex items-center gap-2 flex-wrap">
+        <Input
+          placeholder="Cari no order / project / customer / resi..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="max-w-md"
+        />
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="co_date_desc">Tanggal CO — Terbaru</SelectItem>
+            <SelectItem value="co_date_asc">Tanggal CO — Terlama</SelectItem>
+            <SelectItem value="deadline_asc">Deadline — Terdekat</SelectItem>
+            <SelectItem value="deadline_desc">Deadline — Terjauh</SelectItem>
+            <SelectItem value="progress_asc">Progress — Terkecil dulu</SelectItem>
+            <SelectItem value="progress_desc">Progress — Terbesar dulu</SelectItem>
+          </SelectContent>
+        </Select>
+        {stepFilter !== "all" && (
+          <button
+            onClick={() => setStepFilter("all")}
+            className="text-xs text-slate-500 underline hover:text-slate-800"
+          >Reset filter tahap</button>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="text-sm text-slate-500 py-8 text-center">Memuat…</div>
@@ -133,6 +212,28 @@ function StatusPage() {
       )}
 
       <DetailDialog projectId={selectedId} onOpenChange={(o) => !o && setSelectedId(null)} />
+
+      <Dialog open={scanOpen} onOpenChange={setScanOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ScanLine className="h-4 w-4"/> Scan Resi Paket</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">Scan barcode resi untuk membuka detail orderan tanpa harus mencari manual.</p>
+          <ResiScanner onScan={handleScan} active={scanOpen} />
+          <div>
+            <Input
+              autoFocus placeholder="Atau ketik nomor resi / order lalu Enter"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const v = (e.target as HTMLInputElement).value;
+                  handleScan(v);
+                }
+              }}
+              className="font-mono"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
