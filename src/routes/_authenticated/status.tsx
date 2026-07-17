@@ -6,9 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResiScanner } from "@/components/ResiScanner";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine } from "lucide-react";
 import { format, differenceInCalendarDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { beepSuccess, beepError } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/status")({
   component: StatusPage,
