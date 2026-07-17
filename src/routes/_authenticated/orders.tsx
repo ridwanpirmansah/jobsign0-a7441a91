@@ -728,6 +728,13 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   <div className="text-muted-foreground text-xs">Profit</div>
                   <div className={`text-lg font-semibold ${totalProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>Rp {rp(totalProfit)}</div>
                 </div>
+                <div className="sm:col-span-3 rounded-md border border-emerald-200 bg-emerald-50 p-2 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wide">Rekomendasi Harga Marketplace</div>
+                    <div className="text-[11px] text-emerald-700">HPP × 1.20 (markup 20%) — sudah termasuk biaya admin marketplace.</div>
+                  </div>
+                  <div className="text-xl font-bold text-emerald-700 whitespace-nowrap">Rp {rp(totalItemsHpp * 1.2)}</div>
+                </div>
               </CardContent>
             </Card>
 
