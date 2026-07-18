@@ -325,6 +325,5 @@ function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean })
         )}
       </CardContent>
     </Card>
-    </div>
   );
 }
