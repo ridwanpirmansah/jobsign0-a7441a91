@@ -50,6 +50,7 @@ function RatesPage() {
         rate_per_unit: form.rate_per_unit,
         min_amount: form.min_amount,
         pricing_mode: form.pricing_mode,
+        area_scope: form.pricing_mode === "area" ? form.area_scope : "project",
         sort_order: form.sort_order,
         note: form.note || null,
       };
