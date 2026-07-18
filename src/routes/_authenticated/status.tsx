@@ -77,6 +77,9 @@ function StatusPage() {
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     let list = (rows ?? []).filter((r) => {
+      // Exclude ready-stock orders from active pipeline
+      if ((r.order_status ?? "") === "ready_stock") return false;
+      if (String(r.order_no ?? "").toUpperCase().startsWith("RS-")) return false;
       if (stepFilter !== "all" && r.current_step !== stepFilter) return false;
       if (!q) return true;
       return [r.project_code, r.project_title, r.order_no, r.customer_name, r.no_resi]
