@@ -137,8 +137,9 @@ function RatesPage() {
           <TableHeader><TableRow><TableHead>Urutan</TableHead><TableHead>Nama</TableHead><TableHead>Mode</TableHead><TableHead>Satuan</TableHead><TableHead className="text-right">Tarif</TableHead><TableHead className="text-right">Min Upah</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
           <TableBody>
             {rates?.map((r, index) => {
-              const anyR = r as typeof r & { pricing_mode?: PricingMode; min_amount?: number | string };
+              const anyR = r as typeof r & { pricing_mode?: PricingMode; min_amount?: number | string; area_scope?: AreaScope };
               const mode = (anyR.pricing_mode ?? "per_unit") as PricingMode;
+              const scope = (anyR.area_scope ?? "project") as AreaScope;
               const minA = Number(anyR.min_amount ?? 0);
               return (
                 <TableRow key={r.id}>
