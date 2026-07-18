@@ -139,7 +139,9 @@ function ProjectsPage() {
       };
       const va = get(a); const vb = get(b);
       if (typeof va === "number" && typeof vb === "number") return sortDir === "asc" ? va - vb : vb - va;
-      return sortDir === "asc" ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+      return sortDir === "asc"
+        ? String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: "base" })
+        : String(vb).localeCompare(String(va), undefined, { numeric: true, sensitivity: "base" });
     });
     return arr;
   }, [projects, filter, statusFilter, sortKey, sortDir]);

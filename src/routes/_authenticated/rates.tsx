@@ -19,8 +19,9 @@ export const Route = createFileRoute("/_authenticated/rates")({ component: Rates
 function fmtIDR(n: number) { return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0); }
 
 type PricingMode = "per_unit" | "area";
-type FormState = { name: string; unit: string; rate_per_unit: number; min_amount: number; pricing_mode: PricingMode; sort_order: number; note: string };
-const emptyForm: FormState = { name: "", unit: "titik", rate_per_unit: 0, min_amount: 0, pricing_mode: "per_unit", sort_order: 0, note: "" };
+type AreaScope = "project" | "order";
+type FormState = { name: string; unit: string; rate_per_unit: number; min_amount: number; pricing_mode: PricingMode; area_scope: AreaScope; sort_order: number; note: string };
+const emptyForm: FormState = { name: "", unit: "titik", rate_per_unit: 0, min_amount: 0, pricing_mode: "per_unit", area_scope: "project", sort_order: 0, note: "" };
 
 function RatesPage() {
   const { data: me } = useCurrentUser();
@@ -49,6 +50,7 @@ function RatesPage() {
         rate_per_unit: form.rate_per_unit,
         min_amount: form.min_amount,
         pricing_mode: form.pricing_mode,
+        area_scope: form.pricing_mode === "area" ? form.area_scope : "project",
         sort_order: form.sort_order,
         note: form.note || null,
       };
@@ -118,9 +120,24 @@ function RatesPage() {
                 </div>
               </div>
               {form.pricing_mode === "area" && (
-                <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded p-2">
-                  Mode area: qty otomatis dari ukuran akrilik order (P × L). Karyawan cukup klaim sekali; jenis garapan ini tidak terikat jumlah titik.
-                </p>
+                <>
+                  <div>
+                    <Label>Cakupan Perhitungan Area</Label>
+                    <Select value={form.area_scope} onValueChange={(v) => setForm({ ...form, area_scope: v as AreaScope })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="project">Per Project (satu produk)</SelectItem>
+                        <SelectItem value="order">Per Order (jumlah semua produk)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Pilih <b>Per Order</b> untuk jenis seperti <i>Packing</i> — qty otomatis dari total (P × L) seluruh produk dalam satu order, dan hanya 1 karyawan yang boleh mengklaim per order.
+                    </p>
+                  </div>
+                  <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded p-2">
+                    Mode area: qty otomatis dari ukuran akrilik order (P × L). Karyawan cukup klaim sekali; jenis garapan ini tidak terikat jumlah titik.
+                  </p>
+                </>
               )}
               <div><Label>Urutan Tampil</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></div>
               <div><Label>Catatan</Label><Input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></div>
@@ -135,8 +152,9 @@ function RatesPage() {
           <TableHeader><TableRow><TableHead>Urutan</TableHead><TableHead>Nama</TableHead><TableHead>Mode</TableHead><TableHead>Satuan</TableHead><TableHead className="text-right">Tarif</TableHead><TableHead className="text-right">Min Upah</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
           <TableBody>
             {rates?.map((r, index) => {
-              const anyR = r as typeof r & { pricing_mode?: PricingMode; min_amount?: number | string };
+              const anyR = r as typeof r & { pricing_mode?: PricingMode; min_amount?: number | string; area_scope?: AreaScope };
               const mode = (anyR.pricing_mode ?? "per_unit") as PricingMode;
+              const scope = (anyR.area_scope ?? "project") as AreaScope;
               const minA = Number(anyR.min_amount ?? 0);
               return (
                 <TableRow key={r.id}>
@@ -152,13 +170,13 @@ function RatesPage() {
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell><Badge variant="outline">{mode === "area" ? "area (P×L)" : "per satuan"}</Badge></TableCell>
+                  <TableCell><Badge variant="outline">{mode === "area" ? (scope === "order" ? "area · per order" : "area · per project") : "per satuan"}</Badge></TableCell>
                   <TableCell>{r.unit}</TableCell>
                   <TableCell className="text-right font-mono">{fmtIDR(Number(r.rate_per_unit))}</TableCell>
                   <TableCell className="text-right font-mono">{minA > 0 ? fmtIDR(minA) : "—"}</TableCell>
                   <TableCell><Badge variant={r.active ? "default" : "secondary"}>{r.active ? "aktif" : "nonaktif"}</Badge></TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setEditId(r.id); setForm({ name: r.name, unit: r.unit, rate_per_unit: Number(r.rate_per_unit), min_amount: minA, pricing_mode: mode, sort_order: Number(r.sort_order ?? 0), note: r.note ?? "" }); setOpen(true); }}>Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setEditId(r.id); setForm({ name: r.name, unit: r.unit, rate_per_unit: Number(r.rate_per_unit), min_amount: minA, pricing_mode: mode, area_scope: scope, sort_order: Number(r.sort_order ?? 0), note: r.note ?? "" }); setOpen(true); }}>Edit</Button>
                     <Button variant="ghost" size="sm" onClick={() => toggleActive.mutate({ id: r.id, active: !r.active })}>{r.active ? "Nonaktifkan" : "Aktifkan"}</Button>
                   </TableCell>
                 </TableRow>

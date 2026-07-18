@@ -77,6 +77,9 @@ function StatusPage() {
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     let list = (rows ?? []).filter((r) => {
+      // Exclude ready-stock orders from active pipeline
+      if ((r.order_status ?? "") === "ready_stock") return false;
+      if (String(r.order_no ?? "").toUpperCase().startsWith("RS-")) return false;
       if (stepFilter !== "all" && r.current_step !== stepFilter) return false;
       if (!q) return true;
       return [r.project_code, r.project_title, r.order_no, r.customer_name, r.no_resi]
@@ -103,7 +106,11 @@ function StatusPage() {
 
   const stepCounts = useMemo(() => {
     const m: Record<Step, number> = { waiting: 0, cutting: 0, potong: 0, solder: 0, tempel: 0, kabel: 0, packing: 0, shipping: 0 };
-    (rows ?? []).forEach((r) => { m[r.current_step] = (m[r.current_step] ?? 0) + 1; });
+    (rows ?? []).forEach((r) => {
+      if ((r.order_status ?? "") === "ready_stock") return;
+      if (String(r.order_no ?? "").toUpperCase().startsWith("RS-")) return;
+      m[r.current_step] = (m[r.current_step] ?? 0) + 1;
+    });
     return m;
   }, [rows]);
 

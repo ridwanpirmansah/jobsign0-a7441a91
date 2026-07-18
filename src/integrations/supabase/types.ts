@@ -450,6 +450,7 @@ export type Database = {
       job_rates: {
         Row: {
           active: boolean
+          area_scope: string
           created_at: string
           id: string
           min_amount: number
@@ -463,6 +464,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          area_scope?: string
           created_at?: string
           id?: string
           min_amount?: number
@@ -476,6 +478,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          area_scope?: string
           created_at?: string
           id?: string
           min_amount?: number
