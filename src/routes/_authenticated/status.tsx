@@ -106,7 +106,11 @@ function StatusPage() {
 
   const stepCounts = useMemo(() => {
     const m: Record<Step, number> = { waiting: 0, cutting: 0, potong: 0, solder: 0, tempel: 0, kabel: 0, packing: 0, shipping: 0 };
-    (rows ?? []).forEach((r) => { m[r.current_step] = (m[r.current_step] ?? 0) + 1; });
+    (rows ?? []).forEach((r) => {
+      if ((r.order_status ?? "") === "ready_stock") return;
+      if (String(r.order_no ?? "").toUpperCase().startsWith("RS-")) return;
+      m[r.current_step] = (m[r.current_step] ?? 0) + 1;
+    });
     return m;
   }, [rows]);
 
