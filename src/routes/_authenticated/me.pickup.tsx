@@ -178,34 +178,153 @@ function PickupPage() {
         </CardContent>
       </Card>
 
-      {/* Riwayat pickup saya */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2"><PackageCheck className="h-4 w-4"/> Riwayat Pickup Saya</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {mineQ.isLoading ? (
-            <div className="text-sm text-muted-foreground">Memuat…</div>
-          ) : (mineQ.data ?? []).length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-6">Belum ada riwayat pickup.</div>
-          ) : (
-            <div className="space-y-2">
-              {(mineQ.data ?? []).map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between gap-3 border rounded-md px-3 py-2 text-sm">
-                  <div className="min-w-0">
-                    <div className="font-mono text-xs text-muted-foreground">#{r.order_no} · {r.ekspedisi || "—"}</div>
-                    <div className="font-medium truncate">{r.text_neon || "—"}</div>
-                    <div className="font-mono text-xs text-emerald-700 truncate">{r.no_resi}</div>
+      <PickupHistory rows={mineQ.data ?? []} loading={mineQ.isLoading} />
+    </div>
+  );
+}
+
+type MineRow = { id: string; order_no: string; no_resi: string | null; ekspedisi: string | null; username: string | null; kota: string | null; text_neon: string | null; ready_pickup_at: string | null; picked_up_at: string | null };
+
+function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean }) {
+  const [range, setRange] = useState<"today" | "yesterday" | "7d" | "30d" | "all">("7d");
+  const [carrier, setCarrier] = useState<string>("all");
+
+  const now = new Date();
+  const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+  const today0 = startOfDay(now).getTime();
+  const yesterday0 = today0 - 86400000;
+  const d7 = today0 - 6 * 86400000;
+  const d30 = today0 - 29 * 86400000;
+
+  const inRange = (ts: string | null) => {
+    if (!ts) return false;
+    const t = new Date(ts).getTime();
+    switch (range) {
+      case "today": return t >= today0;
+      case "yesterday": return t >= yesterday0 && t < today0;
+      case "7d": return t >= d7;
+      case "30d": return t >= d30;
+      case "all": return true;
+    }
+  };
+
+  const filtered = useMemo(() => {
+    return rows.filter((r) => inRange(r.picked_up_at) && (carrier === "all" || (r.ekspedisi || "Lainnya") === carrier));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, range, carrier]);
+
+  const carriersAll = useMemo(() => {
+    const set = new Set<string>();
+    rows.filter((r) => inRange(r.picked_up_at)).forEach((r) => set.add(r.ekspedisi || "Lainnya"));
+    return Array.from(set).sort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, range]);
+
+  const perCarrier = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach((r) => { const k = r.ekspedisi || "Lainnya"; m.set(k, (m.get(k) ?? 0) + 1); });
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [filtered]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, MineRow[]>();
+    filtered.forEach((r) => {
+      const d = r.picked_up_at ? startOfDay(new Date(r.picked_up_at)).getTime() : 0;
+      let label = "—";
+      if (d === today0) label = "Hari ini";
+      else if (d === yesterday0) label = "Kemarin";
+      else if (d) label = new Date(d).toLocaleDateString("id-ID", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+      const arr = map.get(label) ?? [];
+      arr.push(r); map.set(label, arr);
+    });
+    return Array.from(map.entries());
+  }, [filtered]);
+
+  const RANGES: { key: typeof range; label: string }[] = [
+    { key: "today", label: "Hari ini" },
+    { key: "yesterday", label: "Kemarin" },
+    { key: "7d", label: "7 hari" },
+    { key: "30d", label: "30 hari" },
+    { key: "all", label: "Semua" },
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <PackageCheck className="h-4 w-4"/> Riwayat Pickup
+            <Badge variant="secondary">{filtered.length} paket</Badge>
+          </CardTitle>
+        </div>
+        <div className="flex flex-wrap gap-1.5 pt-2">
+          {RANGES.map((r) => (
+            <button key={r.key} onClick={() => setRange(r.key)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium border transition ${range === r.key ? "bg-cyan-600 text-white border-cyan-600" : "bg-white text-slate-600 border-slate-200 hover:border-cyan-300"}`}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+        {carriersAll.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <button onClick={() => setCarrier("all")}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${carrier === "all" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"}`}>
+              Semua ekspedisi
+            </button>
+            {carriersAll.map((c) => (
+              <button key={c} onClick={() => setCarrier(c)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${carrier === c ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {loading ? (
+          <div className="text-sm text-muted-foreground">Memuat…</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-sm text-muted-foreground text-center py-6">Belum ada riwayat pickup untuk rentang ini.</div>
+        ) : (
+          <>
+            {perCarrier.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {perCarrier.map(([name, count]) => (
+                  <div key={name} className="rounded-xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-white p-2.5">
+                    <div className="text-[10px] uppercase tracking-wide text-cyan-700 font-semibold truncate">{name}</div>
+                    <div className="text-lg font-bold text-cyan-900">{count} <span className="text-xs font-normal text-slate-500">paket</span></div>
                   </div>
-                  <div className="text-xs text-muted-foreground text-right shrink-0">
-                    {r.picked_up_at ? new Date(r.picked_up_at).toLocaleString("id-ID") : "—"}
-                  </div>
+                ))}
+              </div>
+            )}
+            {grouped.map(([label, list]) => (
+              <div key={label}>
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  {label} <span className="text-muted-foreground normal-case tracking-normal">· {list.length} paket</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="space-y-1.5">
+                  {list.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between gap-3 border rounded-lg px-3 py-2 text-sm bg-white hover:border-cyan-300 transition">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs text-muted-foreground">#{r.order_no}</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{r.ekspedisi || "—"}</Badge>
+                        </div>
+                        <div className="font-medium truncate">{r.text_neon || "—"}</div>
+                        <div className="font-mono text-xs text-emerald-700 truncate">{r.no_resi}</div>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground text-right shrink-0">
+                        {r.picked_up_at ? new Date(r.picked_up_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "—"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </CardContent>
+    </Card>
     </div>
   );
 }
