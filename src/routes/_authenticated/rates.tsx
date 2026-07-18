@@ -170,7 +170,7 @@ function RatesPage() {
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell><Badge variant="outline">{mode === "area" ? "area (P×L)" : "per satuan"}</Badge></TableCell>
+                  <TableCell><Badge variant="outline">{mode === "area" ? (scope === "order" ? "area · per order" : "area · per project") : "per satuan"}</Badge></TableCell>
                   <TableCell>{r.unit}</TableCell>
                   <TableCell className="text-right font-mono">{fmtIDR(Number(r.rate_per_unit))}</TableCell>
                   <TableCell className="text-right font-mono">{minA > 0 ? fmtIDR(minA) : "—"}</TableCell>
