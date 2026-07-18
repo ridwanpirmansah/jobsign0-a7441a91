@@ -120,9 +120,24 @@ function RatesPage() {
                 </div>
               </div>
               {form.pricing_mode === "area" && (
-                <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded p-2">
-                  Mode area: qty otomatis dari ukuran akrilik order (P × L). Karyawan cukup klaim sekali; jenis garapan ini tidak terikat jumlah titik.
-                </p>
+                <>
+                  <div>
+                    <Label>Cakupan Perhitungan Area</Label>
+                    <Select value={form.area_scope} onValueChange={(v) => setForm({ ...form, area_scope: v as AreaScope })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="project">Per Project (satu produk)</SelectItem>
+                        <SelectItem value="order">Per Order (jumlah semua produk)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Pilih <b>Per Order</b> untuk jenis seperti <i>Packing</i> — qty otomatis dari total (P × L) seluruh produk dalam satu order, dan hanya 1 karyawan yang boleh mengklaim per order.
+                    </p>
+                  </div>
+                  <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded p-2">
+                    Mode area: qty otomatis dari ukuran akrilik order (P × L). Karyawan cukup klaim sekali; jenis garapan ini tidak terikat jumlah titik.
+                  </p>
+                </>
               )}
               <div><Label>Urutan Tampil</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></div>
               <div><Label>Catatan</Label><Input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></div>
