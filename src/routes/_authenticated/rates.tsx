@@ -161,7 +161,7 @@ function RatesPage() {
                   <TableCell className="text-right font-mono">{minA > 0 ? fmtIDR(minA) : "—"}</TableCell>
                   <TableCell><Badge variant={r.active ? "default" : "secondary"}>{r.active ? "aktif" : "nonaktif"}</Badge></TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setEditId(r.id); setForm({ name: r.name, unit: r.unit, rate_per_unit: Number(r.rate_per_unit), min_amount: minA, pricing_mode: mode, sort_order: Number(r.sort_order ?? 0), note: r.note ?? "" }); setOpen(true); }}>Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setEditId(r.id); setForm({ name: r.name, unit: r.unit, rate_per_unit: Number(r.rate_per_unit), min_amount: minA, pricing_mode: mode, area_scope: scope, sort_order: Number(r.sort_order ?? 0), note: r.note ?? "" }); setOpen(true); }}>Edit</Button>
                     <Button variant="ghost" size="sm" onClick={() => toggleActive.mutate({ id: r.id, active: !r.active })}>{r.active ? "Nonaktifkan" : "Aktifkan"}</Button>
                   </TableCell>
                 </TableRow>
