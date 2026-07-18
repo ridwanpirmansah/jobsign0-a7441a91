@@ -19,8 +19,9 @@ export const Route = createFileRoute("/_authenticated/rates")({ component: Rates
 function fmtIDR(n: number) { return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0); }
 
 type PricingMode = "per_unit" | "area";
-type FormState = { name: string; unit: string; rate_per_unit: number; min_amount: number; pricing_mode: PricingMode; sort_order: number; note: string };
-const emptyForm: FormState = { name: "", unit: "titik", rate_per_unit: 0, min_amount: 0, pricing_mode: "per_unit", sort_order: 0, note: "" };
+type AreaScope = "project" | "order";
+type FormState = { name: string; unit: string; rate_per_unit: number; min_amount: number; pricing_mode: PricingMode; area_scope: AreaScope; sort_order: number; note: string };
+const emptyForm: FormState = { name: "", unit: "titik", rate_per_unit: 0, min_amount: 0, pricing_mode: "per_unit", area_scope: "project", sort_order: 0, note: "" };
 
 function RatesPage() {
   const { data: me } = useCurrentUser();
