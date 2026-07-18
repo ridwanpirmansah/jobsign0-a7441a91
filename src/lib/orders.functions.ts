@@ -323,7 +323,7 @@ export const listMyPickups = createServerFn({ method: "GET" })
       .select("id, order_no, no_resi, ekspedisi, username, kota, text_neon, ready_pickup_at, picked_up_at")
       .eq("picked_up_by", context.userId)
       .order("picked_up_at", { ascending: false })
-      .limit(200);
+      .limit(500);
     if (error) throw new Error(error.message);
     return data ?? [];
   });
