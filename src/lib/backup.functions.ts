@@ -39,11 +39,13 @@ export const listBackupTables = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await requireOwner(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as any;
     const result: { name: string; label: string; count: number }[] = [];
     for (const t of BACKUP_TABLES) {
-      const { count } = await supabaseAdmin.from(t.name).select("*", { count: "exact", head: true });
+      const { count } = await db.from(t.name).select("*", { count: "exact", head: true });
       result.push({ name: t.name, label: t.label, count: count ?? 0 });
     }
+
     return result;
   });
 
