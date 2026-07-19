@@ -87,27 +87,27 @@ export const restoreTable = createServerFn({ method: "POST" })
     await requireOwner(context);
     const cfg = BACKUP_TABLES.find((t) => t.name === data.table)!;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as any;
 
     if (data.mode === "replace") {
-      const { error: delErr } = await supabaseAdmin.from(data.table).delete().not("id", "is", null);
-      // Fallback: some tables use composite key without id. Ignore delete error and continue.
+      const { error: delErr } = await db.from(data.table).delete().not("id", "is", null);
       if (delErr && !/column .* does not exist/i.test(delErr.message)) {
-        // ignore
+        // ignore — composite key tables
       }
     }
 
     if (data.rows.length === 0) return { table: data.table, inserted: 0 };
 
-    // Clean rows: normalize empty strings on nullable fields is up to caller; here we just pass through.
     const chunkSize = 500;
     let inserted = 0;
     for (let i = 0; i < data.rows.length; i += chunkSize) {
       const chunk = data.rows.slice(i, i + chunkSize);
-      const { error } = await supabaseAdmin
+      const { error } = await db
         .from(data.table)
         .upsert(chunk, { onConflict: cfg.onConflict, ignoreDuplicates: false });
       if (error) throw new Error(`${data.table}: ${error.message}`);
       inserted += chunk.length;
     }
+
     return { table: data.table, inserted };
   });
