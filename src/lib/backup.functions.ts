@@ -55,14 +55,16 @@ export const backupTable = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireOwner(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as any;
     const rows: any[] = [];
     const pageSize = 1000;
     let from = 0;
     while (true) {
-      const { data: chunk, error } = await supabaseAdmin
+      const { data: chunk, error } = await db
         .from(data.table)
         .select("*")
         .range(from, from + pageSize - 1);
+
       if (error) throw new Error(error.message);
       if (!chunk || chunk.length === 0) break;
       rows.push(...chunk);
