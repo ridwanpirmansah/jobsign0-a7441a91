@@ -54,6 +54,8 @@ const ownerItems: NavItem[] = [
   { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
   { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
   { title: "Laporan", url: "/reports", icon: BarChart3 },
+  { title: "Backup & Restore", url: "/owner/backup", icon: DatabaseBackup },
+
 ];
 
 
