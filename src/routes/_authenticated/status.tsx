@@ -48,14 +48,17 @@ const STEP_INDEX: Record<Step, number> = STEPS.reduce((acc, s, i) => ({ ...acc, 
 
 function deadlineMeta(deadline: string | null) {
   if (!deadline) return null;
-  const days = differenceInCalendarDays(new Date(deadline), new Date());
+  const target = new Date(deadline);
+  const days = differenceInCalendarDays(target, new Date());
+  const hours = differenceInHours(target, new Date());
+  const urgent48 = hours <= 48;
   let tone = "bg-slate-100 text-slate-600 border-slate-200";
   let label = `${days} hari lagi`;
   if (days < 0) { tone = "bg-red-100 text-red-700 border-red-200"; label = `Lewat ${Math.abs(days)}h`; }
   else if (days === 0) { tone = "bg-red-100 text-red-700 border-red-200"; label = "Hari ini"; }
-  else if (days <= 2) { tone = "bg-orange-100 text-orange-700 border-orange-200"; label = `${days} hari lagi`; }
+  else if (urgent48) { tone = "bg-red-100 text-red-700 border-red-200"; label = `≤ 48 jam`; }
   else if (days <= 5) { tone = "bg-amber-100 text-amber-700 border-amber-200"; }
-  return { days, tone, label };
+  return { days, hours, urgent48, tone, label };
 }
 
 function StatusPage() {
