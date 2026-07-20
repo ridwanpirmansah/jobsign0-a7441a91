@@ -365,8 +365,22 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
               {data.order?.text_neon && <div className="text-xs text-slate-600 mt-1">Text: {data.order.text_neon}</div>}
               {dl && (
                 <div className={`mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${dl.tone}`}>
-                  {dl.days <= 0 && <AlertTriangle className="h-3 w-3" />}
+                  {(dl.urgent48 || dl.days <= 0) && <AlertTriangle className="h-3 w-3" />}
                   Deadline: {format(new Date(data.project.deadline!), "dd MMM yyyy", { locale: idLocale })} · {dl.label}
+                </div>
+              )}
+              {(data.order?.packing_kayu || data.order?.use_outdoor) && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {data.order?.packing_kayu && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                      <TreePine className="h-3 w-3" /> Packing Kayu
+                    </span>
+                  )}
+                  {data.order?.use_outdoor && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800">
+                      <Sun className="h-3 w-3" /> Outdoor
+                    </span>
+                  )}
                 </div>
               )}
             </section>
