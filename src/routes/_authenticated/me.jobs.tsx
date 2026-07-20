@@ -293,7 +293,7 @@ function MyJobs() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>Project (opsional)</Label>
+              <Label>Project</Label>
               <Select value={projectId} onValueChange={setProjectId}>
                 <SelectTrigger><SelectValue placeholder="Pilih project" /></SelectTrigger>
                 <SelectContent>
@@ -315,7 +315,7 @@ function MyJobs() {
               )}
             </div>
             <div>
-              <Label>Catatan (opsional, berlaku untuk semua input di bawah)</Label>
+              <Label>Beri Catatan Untuk Project ini</Label>
               <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
             </div>
           </div>
