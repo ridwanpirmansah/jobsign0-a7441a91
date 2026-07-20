@@ -355,6 +355,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       payment: String(o.payment ?? ""), dp: "", split: String(o.split ?? ""),
       notes: o.notes ?? "",
       no_resi: "", ekspedisi: o.ekspedisi ?? "",
+      deadline: o.deadline ?? "",
+      packing_kayu: !!o.packing_kayu,
     });
     setItems([emptyItem(1, priceMap)]);
     setExpandedItemKey(null);
