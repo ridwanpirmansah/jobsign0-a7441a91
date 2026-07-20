@@ -122,19 +122,33 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
   }, []);
 
   const startReader = async (constraints: MediaStreamConstraints) => {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = videoRef.current;
+    if (!video) {
+      stream.getTracks().forEach((t) => t.stop());
+      throw new Error("Elemen video belum siap");
+    }
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
+    video.muted = true;
+    video.srcObject = stream;
+    try {
+      await video.play();
+    } catch {
+      // Autoplay might be blocked briefly; retry once after a tick.
+      await new Promise((r) => setTimeout(r, 100));
+      try { await video.play(); } catch { /* iOS will play on user gesture */ }
+    }
+
     const reader = new BrowserMultiFormatOneDReader(makeHints(), {
       delayBetweenScanAttempts: 35,
       delayBetweenScanSuccess: Math.max(300, Math.min(cooldownMs, 900)),
       tryPlayVideoTimeout: 8000,
     });
     readerRef.current = reader;
-    controlsRef.current = await reader.decodeFromConstraints(
-      constraints,
-      videoRef.current ?? undefined,
-      (result) => {
-        if (result) emitScan(result.getText());
-      },
-    );
+    controlsRef.current = await reader.decodeFromVideoElement(video, (result) => {
+      if (result) emitScan(result.getText());
+    });
     setRunning(true);
     await tuneCamera();
     startNativeDetector();
@@ -152,7 +166,6 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
           width: { ideal: 1920 },
           height: { ideal: 1080 },
           frameRate: { ideal: 30, min: 15 },
-          aspectRatio: { ideal: 16 / 9 },
         } as any,
         audio: false,
       });
@@ -162,8 +175,12 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
       try {
         await startReader({ video: { facingMode: "environment" }, audio: false });
       } catch (fallbackError: any) {
-        activeRef.current = false;
-        setError(fallbackError?.message ?? primaryError?.message ?? "Kamera tidak bisa diakses");
+        try {
+          await startReader({ video: true, audio: false });
+        } catch (finalError: any) {
+          activeRef.current = false;
+          setError(finalError?.message ?? fallbackError?.message ?? primaryError?.message ?? "Kamera tidak bisa diakses");
+        }
       }
     }
   };

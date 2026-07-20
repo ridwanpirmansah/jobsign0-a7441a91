@@ -668,6 +668,7 @@ export type Database = {
           co_date: string | null
           created_at: string
           created_by: string | null
+          deadline: string | null
           dp: number
           ekspedisi: string | null
           hpp: number
@@ -684,6 +685,7 @@ export type Database = {
           notes: string | null
           order_no: string
           outdoor_cost: number | null
+          packing_kayu: boolean
           paket: string | null
           payment: number
           picked_up_at: string | null
@@ -714,6 +716,7 @@ export type Database = {
           co_date?: string | null
           created_at?: string
           created_by?: string | null
+          deadline?: string | null
           dp?: number
           ekspedisi?: string | null
           hpp?: number
@@ -730,6 +733,7 @@ export type Database = {
           notes?: string | null
           order_no: string
           outdoor_cost?: number | null
+          packing_kayu?: boolean
           paket?: string | null
           payment?: number
           picked_up_at?: string | null
@@ -760,6 +764,7 @@ export type Database = {
           co_date?: string | null
           created_at?: string
           created_by?: string | null
+          deadline?: string | null
           dp?: number
           ekspedisi?: string | null
           hpp?: number
@@ -776,6 +781,7 @@ export type Database = {
           notes?: string | null
           order_no?: string
           outdoor_cost?: number | null
+          packing_kayu?: boolean
           paket?: string | null
           payment?: number
           picked_up_at?: string | null
@@ -1230,6 +1236,7 @@ export type Database = {
           order_id: string
           order_no: string
           order_status: string
+          packing_kayu: boolean
           picked_up_at: string
           potong_qty: number
           project_code: string
@@ -1239,6 +1246,7 @@ export type Database = {
           solder_qty: number
           tempel_qty: number
           total_points: number
+          use_outdoor: boolean
         }[]
       }
       get_attendance_secret: { Args: never; Returns: string }

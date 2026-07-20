@@ -74,6 +74,8 @@ type HeaderForm = {
   notes: string;
   no_resi: string;
   ekspedisi: string;
+  deadline: string;
+  packing_kayu: boolean;
   ready_pickup_at?: string | null;
   picked_up_at?: string | null;
 };
@@ -123,6 +125,7 @@ function emptyHeader(nextOrderNo = "", status: OrderStatus = "active"): HeaderFo
     username: "", kota: "",
     payment: "", dp: "", split: "", notes: "",
     no_resi: "", ekspedisi: "",
+    deadline: "", packing_kayu: false,
   };
 }
 
@@ -333,6 +336,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       payment: String(o.payment ?? ""), dp: String(o.dp ?? ""), split: String(o.split ?? ""),
       notes: o.notes ?? "",
       no_resi: o.no_resi ?? "", ekspedisi: o.ekspedisi ?? "",
+      deadline: o.deadline ?? "",
+      packing_kayu: !!o.packing_kayu,
       ready_pickup_at: o.ready_pickup_at ?? null,
       picked_up_at: o.picked_up_at ?? null,
     });
@@ -350,6 +355,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       payment: String(o.payment ?? ""), dp: "", split: String(o.split ?? ""),
       notes: o.notes ?? "",
       no_resi: "", ekspedisi: o.ekspedisi ?? "",
+      deadline: o.deadline ?? "",
+      packing_kayu: !!o.packing_kayu,
     });
     setItems([emptyItem(1, priceMap)]);
     setExpandedItemKey(null);
@@ -431,6 +438,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           notes: header.notes || null,
           no_resi: header.no_resi.trim() || null,
           ekspedisi: header.ekspedisi || null,
+          deadline: header.deadline || null,
+          packing_kayu: !!header.packing_kayu,
         },
       });
       const orderId = res.id!;
@@ -669,6 +678,17 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   )}
                 </div>
               )}
+              <div><Label>Deadline</Label><Input type="date" value={header.deadline} onChange={(e) => setHeader((f) => ({ ...f, deadline: e.target.value }))}/></div>
+              <div className="sm:col-span-2 md:col-span-2 flex items-end">
+                <label className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 cursor-pointer text-sm w-full">
+                  <Checkbox
+                    checked={header.packing_kayu}
+                    onCheckedChange={(v) => setHeader((f) => ({ ...f, packing_kayu: v === true }))}
+                  />
+                  <span className="font-medium text-amber-900">📦 Packing Kayu</span>
+                  <span className="text-xs text-amber-700">— tampilkan label di Status Orderan</span>
+                </label>
+              </div>
               <div className="sm:col-span-2 md:col-span-3"><Label>Catatan Order</Label><Textarea rows={2} value={header.notes} onChange={(e) => setHeader((f) => ({ ...f, notes: e.target.value }))}/></div>
             </div>
 

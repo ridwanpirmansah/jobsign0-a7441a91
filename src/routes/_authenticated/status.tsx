@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResiScanner } from "@/components/ResiScanner";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine } from "lucide-react";
-import { format, differenceInCalendarDays } from "date-fns";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun } from "lucide-react";
+import { format, differenceInCalendarDays, differenceInHours } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 import { beepSuccess, beepError } from "@/lib/scan-feedback";
@@ -27,6 +27,7 @@ type Row = {
   order_id: string | null; order_no: string | null; order_status: string | null;
   co_date: string | null; ekspedisi: string | null; no_resi: string | null;
   ready_pickup_at: string | null; picked_up_at: string | null;
+  packing_kayu?: boolean; use_outdoor?: boolean;
   has_cut: boolean; has_potong: boolean; has_solder: boolean; has_kabel: boolean; has_tempel: boolean;
   cut_qty: number; potong_qty: number; solder_qty: number; kabel_qty: number; tempel_qty: number;
   current_step: Step;
@@ -47,14 +48,17 @@ const STEP_INDEX: Record<Step, number> = STEPS.reduce((acc, s, i) => ({ ...acc, 
 
 function deadlineMeta(deadline: string | null) {
   if (!deadline) return null;
-  const days = differenceInCalendarDays(new Date(deadline), new Date());
+  const target = new Date(deadline);
+  const days = differenceInCalendarDays(target, new Date());
+  const hours = differenceInHours(target, new Date());
+  const urgent48 = hours <= 48;
   let tone = "bg-slate-100 text-slate-600 border-slate-200";
   let label = `${days} hari lagi`;
   if (days < 0) { tone = "bg-red-100 text-red-700 border-red-200"; label = `Lewat ${Math.abs(days)}h`; }
   else if (days === 0) { tone = "bg-red-100 text-red-700 border-red-200"; label = "Hari ini"; }
-  else if (days <= 2) { tone = "bg-orange-100 text-orange-700 border-orange-200"; label = `${days} hari lagi`; }
+  else if (urgent48) { tone = "bg-red-100 text-red-700 border-red-200"; label = `≤ 48 jam`; }
   else if (days <= 5) { tone = "bg-amber-100 text-amber-700 border-amber-200"; }
-  return { days, tone, label };
+  return { days, hours, urgent48, tone, label };
 }
 
 function StatusPage() {
@@ -86,6 +90,12 @@ function StatusPage() {
         .some((v) => String(v ?? "").toLowerCase().includes(q));
     });
     const cmp = (a: Row, b: Row): number => {
+      // Always: urgent (<=48h) or overdue projects float to the top
+      const ua = deadlineMeta(a.deadline);
+      const ub = deadlineMeta(b.deadline);
+      const aU = ua && (ua.urgent48 || ua.days <= 0) ? 0 : 1;
+      const bU = ub && (ub.urgent48 || ub.days <= 0) ? 0 : 1;
+      if (aU !== bU) return aU - bU;
       switch (sortBy) {
         case "co_date_asc":
           return (a.co_date ?? "").localeCompare(b.co_date ?? "");
@@ -250,7 +260,7 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
   const stepMeta = STEPS[cur];
   const Icon = stepMeta.icon;
   const dl = deadlineMeta(row.deadline);
-  const urgent = dl && dl.days <= 0;
+  const urgent = !!dl && (dl.urgent48 || dl.days <= 0);
   return (
     <button
       type="button"
@@ -269,6 +279,21 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
           <Icon className="h-3 w-3" /> {stepMeta.short}
         </Badge>
       </div>
+
+      {(row.packing_kayu || row.use_outdoor) && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {row.packing_kayu && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+              <TreePine className="h-3 w-3" /> Packing Kayu
+            </span>
+          )}
+          {row.use_outdoor && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-sky-300 bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800">
+              <Sun className="h-3 w-3" /> Outdoor
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Pipeline progress */}
       <div className="mt-3 flex items-center gap-1">
@@ -316,7 +341,7 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
       return data as unknown as {
         project: { id: string; code: string; title: string; status: string; total_points: number; contract_value: number; deadline: string | null; description: string | null };
         customer: { name: string | null; phone: string | null };
-        order: { id: string; order_no: string; status: string; co_date: string | null; text_neon: string | null; kota: string | null; username: string | null; ekspedisi: string | null; no_resi: string | null; ready_pickup_at: string | null; picked_up_at: string | null; akrilik_p: number | null; akrilik_l: number | null; led_meter: number | null; titik: number | null; kabel_meter: number | null; kabel_socket_meter: number | null; notes: string | null } | null;
+        order: { id: string; order_no: string; status: string; co_date: string | null; text_neon: string | null; kota: string | null; username: string | null; ekspedisi: string | null; no_resi: string | null; ready_pickup_at: string | null; picked_up_at: string | null; akrilik_p: number | null; akrilik_l: number | null; led_meter: number | null; titik: number | null; kabel_meter: number | null; kabel_socket_meter: number | null; notes: string | null; deadline: string | null; packing_kayu?: boolean; use_outdoor?: boolean } | null;
         claims: Array<{ rate_name: string; unit: string; qty: number; status: string; is_repair: boolean; employee_name: string; log_date: string }>;
       };
     },
@@ -340,8 +365,22 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
               {data.order?.text_neon && <div className="text-xs text-slate-600 mt-1">Text: {data.order.text_neon}</div>}
               {dl && (
                 <div className={`mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${dl.tone}`}>
-                  {dl.days <= 0 && <AlertTriangle className="h-3 w-3" />}
+                  {(dl.urgent48 || dl.days <= 0) && <AlertTriangle className="h-3 w-3" />}
                   Deadline: {format(new Date(data.project.deadline!), "dd MMM yyyy", { locale: idLocale })} · {dl.label}
+                </div>
+              )}
+              {(data.order?.packing_kayu || data.order?.use_outdoor) && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {data.order?.packing_kayu && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                      <TreePine className="h-3 w-3" /> Packing Kayu
+                    </span>
+                  )}
+                  {data.order?.use_outdoor && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800">
+                      <Sun className="h-3 w-3" /> Outdoor
+                    </span>
+                  )}
                 </div>
               )}
             </section>
