@@ -678,6 +678,17 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   )}
                 </div>
               )}
+              <div><Label>Deadline</Label><Input type="date" value={header.deadline} onChange={(e) => setHeader((f) => ({ ...f, deadline: e.target.value }))}/></div>
+              <div className="sm:col-span-2 md:col-span-2 flex items-end">
+                <label className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 cursor-pointer text-sm w-full">
+                  <Checkbox
+                    checked={header.packing_kayu}
+                    onCheckedChange={(v) => setHeader((f) => ({ ...f, packing_kayu: v === true }))}
+                  />
+                  <span className="font-medium text-amber-900">📦 Packing Kayu</span>
+                  <span className="text-xs text-amber-700">— tampilkan label di Status Orderan</span>
+                </label>
+              </div>
               <div className="sm:col-span-2 md:col-span-3"><Label>Catatan Order</Label><Textarea rows={2} value={header.notes} onChange={(e) => setHeader((f) => ({ ...f, notes: e.target.value }))}/></div>
             </div>
 
