@@ -438,6 +438,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           notes: header.notes || null,
           no_resi: header.no_resi.trim() || null,
           ekspedisi: header.ekspedisi || null,
+          deadline: header.deadline || null,
+          packing_kayu: !!header.packing_kayu,
         },
       });
       const orderId = res.id!;
