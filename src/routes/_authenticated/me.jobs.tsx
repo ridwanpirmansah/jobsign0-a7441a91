@@ -293,7 +293,7 @@ function MyJobs() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>Project (opsional)</Label>
+              <Label>Project</Label>
               <Select value={projectId} onValueChange={setProjectId}>
                 <SelectTrigger><SelectValue placeholder="Pilih project" /></SelectTrigger>
                 <SelectContent>
