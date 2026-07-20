@@ -686,7 +686,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     onCheckedChange={(v) => setHeader((f) => ({ ...f, packing_kayu: v === true }))}
                   />
                   <span className="font-medium text-amber-900">📦 Packing Kayu</span>
-                  <span className="text-xs text-amber-700">— tampilkan label di Status Orderan</span>
+                  
                 </label>
               </div>
               <div className="sm:col-span-2 md:col-span-3"><Label>Catatan Order</Label><Textarea rows={2} value={header.notes} onChange={(e) => setHeader((f) => ({ ...f, notes: e.target.value }))}/></div>
