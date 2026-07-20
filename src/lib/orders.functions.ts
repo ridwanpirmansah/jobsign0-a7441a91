@@ -58,6 +58,8 @@ const orderSchema = z.object({
   notes: z.string().optional().nullable(),
   no_resi: z.string().optional().nullable(),
   ekspedisi: z.string().optional().nullable(),
+  deadline: z.string().optional().nullable(),
+  packing_kayu: z.boolean().optional(),
 });
 
 export const upsertOrder = createServerFn({ method: "POST" })
