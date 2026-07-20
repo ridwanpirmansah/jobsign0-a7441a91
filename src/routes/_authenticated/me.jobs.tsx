@@ -315,7 +315,7 @@ function MyJobs() {
               )}
             </div>
             <div>
-              <Label>Catatan (opsional, berlaku untuk semua input di bawah)</Label>
+              <Label>Beri Catatan Untuk Project ini</Label>
               <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
             </div>
           </div>
