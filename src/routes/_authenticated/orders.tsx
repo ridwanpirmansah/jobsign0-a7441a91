@@ -336,6 +336,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       payment: String(o.payment ?? ""), dp: String(o.dp ?? ""), split: String(o.split ?? ""),
       notes: o.notes ?? "",
       no_resi: o.no_resi ?? "", ekspedisi: o.ekspedisi ?? "",
+      deadline: o.deadline ?? "",
+      packing_kayu: !!o.packing_kayu,
       ready_pickup_at: o.ready_pickup_at ?? null,
       picked_up_at: o.picked_up_at ?? null,
     });
