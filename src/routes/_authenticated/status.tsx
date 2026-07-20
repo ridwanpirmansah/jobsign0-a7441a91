@@ -341,7 +341,7 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
       return data as unknown as {
         project: { id: string; code: string; title: string; status: string; total_points: number; contract_value: number; deadline: string | null; description: string | null };
         customer: { name: string | null; phone: string | null };
-        order: { id: string; order_no: string; status: string; co_date: string | null; text_neon: string | null; kota: string | null; username: string | null; ekspedisi: string | null; no_resi: string | null; ready_pickup_at: string | null; picked_up_at: string | null; akrilik_p: number | null; akrilik_l: number | null; led_meter: number | null; titik: number | null; kabel_meter: number | null; kabel_socket_meter: number | null; notes: string | null } | null;
+        order: { id: string; order_no: string; status: string; co_date: string | null; text_neon: string | null; kota: string | null; username: string | null; ekspedisi: string | null; no_resi: string | null; ready_pickup_at: string | null; picked_up_at: string | null; akrilik_p: number | null; akrilik_l: number | null; led_meter: number | null; titik: number | null; kabel_meter: number | null; kabel_socket_meter: number | null; notes: string | null; deadline: string | null; packing_kayu?: boolean; use_outdoor?: boolean } | null;
         claims: Array<{ rate_name: string; unit: string; qty: number; status: string; is_repair: boolean; employee_name: string; log_date: string }>;
       };
     },
