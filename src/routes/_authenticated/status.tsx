@@ -90,6 +90,12 @@ function StatusPage() {
         .some((v) => String(v ?? "").toLowerCase().includes(q));
     });
     const cmp = (a: Row, b: Row): number => {
+      // Always: urgent (<=48h) or overdue projects float to the top
+      const ua = deadlineMeta(a.deadline);
+      const ub = deadlineMeta(b.deadline);
+      const aU = ua && (ua.urgent48 || ua.days <= 0) ? 0 : 1;
+      const bU = ub && (ub.urgent48 || ub.days <= 0) ? 0 : 1;
+      if (aU !== bU) return aU - bU;
       switch (sortBy) {
         case "co_date_asc":
           return (a.co_date ?? "").localeCompare(b.co_date ?? "");
