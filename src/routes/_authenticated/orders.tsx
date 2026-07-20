@@ -74,6 +74,8 @@ type HeaderForm = {
   notes: string;
   no_resi: string;
   ekspedisi: string;
+  deadline: string;
+  packing_kayu: boolean;
   ready_pickup_at?: string | null;
   picked_up_at?: string | null;
 };
