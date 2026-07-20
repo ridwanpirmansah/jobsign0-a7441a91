@@ -260,7 +260,7 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
   const stepMeta = STEPS[cur];
   const Icon = stepMeta.icon;
   const dl = deadlineMeta(row.deadline);
-  const urgent = dl && dl.days <= 0;
+  const urgent = !!dl && (dl.urgent48 || dl.days <= 0);
   return (
     <button
       type="button"
@@ -279,6 +279,21 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
           <Icon className="h-3 w-3" /> {stepMeta.short}
         </Badge>
       </div>
+
+      {(row.packing_kayu || row.use_outdoor) && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {row.packing_kayu && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+              <TreePine className="h-3 w-3" /> Packing Kayu
+            </span>
+          )}
+          {row.use_outdoor && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-sky-300 bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800">
+              <Sun className="h-3 w-3" /> Outdoor
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Pipeline progress */}
       <div className="mt-3 flex items-center gap-1">
