@@ -125,6 +125,7 @@ function emptyHeader(nextOrderNo = "", status: OrderStatus = "active"): HeaderFo
     username: "", kota: "",
     payment: "", dp: "", split: "", notes: "",
     no_resi: "", ekspedisi: "",
+    deadline: "", packing_kayu: false,
   };
 }
 
