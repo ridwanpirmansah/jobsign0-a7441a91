@@ -27,6 +27,7 @@ type Row = {
   order_id: string | null; order_no: string | null; order_status: string | null;
   co_date: string | null; ekspedisi: string | null; no_resi: string | null;
   ready_pickup_at: string | null; picked_up_at: string | null;
+  packing_kayu?: boolean; use_outdoor?: boolean;
   has_cut: boolean; has_potong: boolean; has_solder: boolean; has_kabel: boolean; has_tempel: boolean;
   cut_qty: number; potong_qty: number; solder_qty: number; kabel_qty: number; tempel_qty: number;
   current_step: Step;
