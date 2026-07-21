@@ -135,13 +135,13 @@ function StatusPage() {
     return m;
   }, [rows]);
 
-  const handleScan = (raw: string) => {
+  const handleScan = async (raw: string) => {
     const text = raw.trim();
     if (!text) return;
     const match = (rows ?? []).find((r) => {
       const resi = String(r.no_resi ?? "").trim();
       const orderNo = String(r.order_no ?? "").trim();
-      return resi && text === resi
+      return (resi && text === resi)
         || (resi && text.toLowerCase() === resi.toLowerCase())
         || (orderNo && text.toLowerCase() === orderNo.toLowerCase());
     });
@@ -150,10 +150,25 @@ function StatusPage() {
       toast.success(`Ditemukan #${match.order_no ?? match.project_code}`);
       setSelectedId(match.project_id);
       setScanOpen(false);
-    } else {
-      beepError();
-      toast.error(`Resi/order "${text}" tidak ditemukan pada orderan aktif`);
+      return;
     }
+    // Fall back: search across ALL orders (any status)
+    try {
+      const { data, error } = await supabase.rpc("lookup_order_by_resi" as never, { _query: text } as never);
+      if (error) throw error;
+      if (data) {
+        beepSuccess();
+        const found = data as unknown as ScanLookup;
+        toast.success(`Ditemukan #${found.order_no}`);
+        setScanResult(found);
+        setScanOpen(false);
+        return;
+      }
+    } catch (e: any) {
+      console.error(e);
+    }
+    beepError();
+    toast.error(`Resi/order "${text}" tidak ditemukan`);
   };
 
   return (
