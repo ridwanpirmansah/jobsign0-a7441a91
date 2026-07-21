@@ -90,11 +90,13 @@ function StatusPage() {
         .some((v) => String(v ?? "").toLowerCase().includes(q));
     });
     const cmp = (a: Row, b: Row): number => {
-      // Always: urgent (<=48h) or overdue projects float to the top
+      // Urgent (<=48h or overdue) floats to top — BUT skip if already shipped/picked up
       const ua = deadlineMeta(a.deadline);
       const ub = deadlineMeta(b.deadline);
-      const aU = ua && (ua.urgent48 || ua.days <= 0) ? 0 : 1;
-      const bU = ub && (ub.urgent48 || ub.days <= 0) ? 0 : 1;
+      const aShipped = !!a.picked_up_at || a.current_step === "shipping";
+      const bShipped = !!b.picked_up_at || b.current_step === "shipping";
+      const aU = !aShipped && ua && (ua.urgent48 || ua.days <= 0) ? 0 : 1;
+      const bU = !bShipped && ub && (ub.urgent48 || ub.days <= 0) ? 0 : 1;
       if (aU !== bU) return aU - bU;
       switch (sortBy) {
         case "co_date_asc":
