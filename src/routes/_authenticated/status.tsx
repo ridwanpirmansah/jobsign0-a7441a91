@@ -262,7 +262,8 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
   const stepMeta = STEPS[cur];
   const Icon = stepMeta.icon;
   const dl = deadlineMeta(row.deadline);
-  const urgent = !!dl && (dl.urgent48 || dl.days <= 0);
+  const shipped = !!row.picked_up_at || row.current_step === "shipping";
+  const urgent = !shipped && !!dl && (dl.urgent48 || dl.days <= 0);
   return (
     <button
       type="button"
