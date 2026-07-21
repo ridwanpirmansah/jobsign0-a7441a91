@@ -51,7 +51,7 @@ const ownerItems: NavItem[] = [
   { title: "Kelola User", url: "/users", icon: UserCog },
   { title: "Setelan Akses Fitur", url: "/owner/permissions", icon: Shield },
   { title: "Payroll", url: "/payroll", icon: Wallet },
-  { title: "Analitik Owner", url: "/owner/analytics", icon: Sparkles },
+  { title: "Analitik & Performa", url: "/owner/analytics", icon: Sparkles },
   { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
   { title: "Laporan", url: "/reports", icon: BarChart3 },
   { title: "Backup & Restore", url: "/owner/backup", icon: DatabaseBackup },
