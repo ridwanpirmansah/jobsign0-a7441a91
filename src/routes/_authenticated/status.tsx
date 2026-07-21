@@ -61,10 +61,19 @@ function deadlineMeta(deadline: string | null) {
   return { days, hours, urgent48, tone, label };
 }
 
+type ScanLookup = {
+  order_id: string; order_no: string; status: string; no_resi: string | null;
+  ekspedisi: string | null; text_neon: string | null; username: string | null;
+  kota: string | null; co_date: string | null;
+  ready_pickup_at: string | null; picked_up_at: string | null;
+  project_id: string | null;
+};
+
 function StatusPage() {
   const [filter, setFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanLookup | null>(null);
   const [sortBy, setSortBy] = useState<"co_date_desc" | "co_date_asc" | "deadline_asc" | "deadline_desc" | "progress_asc" | "progress_desc">("co_date_desc");
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
 
