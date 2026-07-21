@@ -61,10 +61,19 @@ function deadlineMeta(deadline: string | null) {
   return { days, hours, urgent48, tone, label };
 }
 
+type ScanLookup = {
+  order_id: string; order_no: string; status: string; no_resi: string | null;
+  ekspedisi: string | null; text_neon: string | null; username: string | null;
+  kota: string | null; co_date: string | null;
+  ready_pickup_at: string | null; picked_up_at: string | null;
+  project_id: string | null;
+};
+
 function StatusPage() {
   const [filter, setFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanLookup | null>(null);
   const [sortBy, setSortBy] = useState<"co_date_desc" | "co_date_asc" | "deadline_asc" | "deadline_desc" | "progress_asc" | "progress_desc">("co_date_desc");
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
 
@@ -90,11 +99,13 @@ function StatusPage() {
         .some((v) => String(v ?? "").toLowerCase().includes(q));
     });
     const cmp = (a: Row, b: Row): number => {
-      // Always: urgent (<=48h) or overdue projects float to the top
+      // Urgent (<=48h or overdue) floats to top — BUT skip if already shipped/picked up
       const ua = deadlineMeta(a.deadline);
       const ub = deadlineMeta(b.deadline);
-      const aU = ua && (ua.urgent48 || ua.days <= 0) ? 0 : 1;
-      const bU = ub && (ub.urgent48 || ub.days <= 0) ? 0 : 1;
+      const aShipped = !!a.picked_up_at || a.current_step === "shipping";
+      const bShipped = !!b.picked_up_at || b.current_step === "shipping";
+      const aU = !aShipped && ua && (ua.urgent48 || ua.days <= 0) ? 0 : 1;
+      const bU = !bShipped && ub && (ub.urgent48 || ub.days <= 0) ? 0 : 1;
       if (aU !== bU) return aU - bU;
       switch (sortBy) {
         case "co_date_asc":
@@ -124,13 +135,13 @@ function StatusPage() {
     return m;
   }, [rows]);
 
-  const handleScan = (raw: string) => {
+  const handleScan = async (raw: string) => {
     const text = raw.trim();
     if (!text) return;
     const match = (rows ?? []).find((r) => {
       const resi = String(r.no_resi ?? "").trim();
       const orderNo = String(r.order_no ?? "").trim();
-      return resi && text === resi
+      return (resi && text === resi)
         || (resi && text.toLowerCase() === resi.toLowerCase())
         || (orderNo && text.toLowerCase() === orderNo.toLowerCase());
     });
@@ -139,10 +150,25 @@ function StatusPage() {
       toast.success(`Ditemukan #${match.order_no ?? match.project_code}`);
       setSelectedId(match.project_id);
       setScanOpen(false);
-    } else {
-      beepError();
-      toast.error(`Resi/order "${text}" tidak ditemukan pada orderan aktif`);
+      return;
     }
+    // Fall back: search across ALL orders (any status)
+    try {
+      const { data, error } = await supabase.rpc("lookup_order_by_resi" as never, { _query: text } as never);
+      if (error) throw error;
+      if (data) {
+        beepSuccess();
+        const found = data as unknown as ScanLookup;
+        toast.success(`Ditemukan #${found.order_no}`);
+        setScanResult(found);
+        setScanOpen(false);
+        return;
+      }
+    } catch (e: any) {
+      console.error(e);
+    }
+    beepError();
+    toast.error(`Resi/order "${text}" tidak ditemukan`);
   };
 
   return (
@@ -251,7 +277,88 @@ function StatusPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ScanResultDialog
+        result={scanResult}
+        onClose={() => setScanResult(null)}
+        onOpenDetail={(pid) => { setScanResult(null); setSelectedId(pid); }}
+      />
     </div>
+  );
+}
+
+const STATUS_META: Record<string, { label: string; tone: string }> = {
+  active:       { label: "Aktif",           tone: "bg-blue-100 text-blue-800 border-blue-200" },
+  draft:        { label: "Draft",           tone: "bg-slate-100 text-slate-700 border-slate-200" },
+  ready_stock:  { label: "Ready Stock",     tone: "bg-purple-100 text-purple-800 border-purple-200" },
+  return:       { label: "Retur",           tone: "bg-red-100 text-red-800 border-red-200" },
+};
+
+function orderShipStatus(o: { picked_up_at: string | null; ready_pickup_at: string | null; status: string }) {
+  if (o.picked_up_at) return { label: "Dikirim", tone: "bg-green-100 text-green-800 border-green-200" };
+  if (o.ready_pickup_at) return { label: "Siap Pickup", tone: "bg-teal-100 text-teal-800 border-teal-200" };
+  return STATUS_META[o.status] ?? { label: o.status, tone: "bg-slate-100 text-slate-700 border-slate-200" };
+}
+
+function ScanResultDialog({ result, onClose, onOpenDetail }: {
+  result: ScanLookup | null;
+  onClose: () => void;
+  onOpenDetail: (projectId: string) => void;
+}) {
+  const open = !!result;
+  const ship = result ? orderShipStatus(result) : null;
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ScanLine className="h-4 w-4" /> Hasil Scan
+          </DialogTitle>
+        </DialogHeader>
+        {result && (
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-mono text-xs text-slate-500">{result.order_no}</div>
+              {ship && (
+                <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${ship.tone}`}>
+                  {ship.label}
+                </span>
+              )}
+            </div>
+            {result.text_neon && (
+              <div className="font-semibold text-slate-900">{result.text_neon}</div>
+            )}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <Info label="Customer" value={result.username ?? "-"} />
+              <Info label="Kota" value={result.kota ?? "-"} />
+              <Info label="Ekspedisi" value={result.ekspedisi ?? "-"} />
+              <Info label="No. Resi" value={result.no_resi ?? "-"} />
+              <Info label="Tgl CO" value={result.co_date ? format(new Date(result.co_date), "dd MMM yyyy", { locale: idLocale }) : "-"} />
+              <Info label="Status Order" value={STATUS_META[result.status]?.label ?? result.status} />
+            </div>
+            {(result.ready_pickup_at || result.picked_up_at) && (
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs space-y-1">
+                {result.ready_pickup_at && (
+                  <div>📦 Siap pickup: <span className="font-medium">{format(new Date(result.ready_pickup_at), "dd MMM yyyy HH:mm", { locale: idLocale })}</span></div>
+                )}
+                {result.picked_up_at && (
+                  <div>🚚 Diambil kurir: <span className="font-medium">{format(new Date(result.picked_up_at), "dd MMM yyyy HH:mm", { locale: idLocale })}</span></div>
+                )}
+              </div>
+            )}
+            {result.project_id && (
+              <button
+                type="button"
+                onClick={() => onOpenDetail(result.project_id!)}
+                className="w-full rounded-lg bg-slate-900 text-white py-2 text-xs font-medium hover:bg-slate-800"
+              >
+                Buka Detail Project
+              </button>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -260,7 +367,8 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
   const stepMeta = STEPS[cur];
   const Icon = stepMeta.icon;
   const dl = deadlineMeta(row.deadline);
-  const urgent = !!dl && (dl.urgent48 || dl.days <= 0);
+  const shipped = !!row.picked_up_at || row.current_step === "shipping";
+  const urgent = !shipped && !!dl && (dl.urgent48 || dl.days <= 0);
   return (
     <button
       type="button"
