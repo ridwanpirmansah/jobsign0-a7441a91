@@ -572,7 +572,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               ? "Produk ready stock — tidak masuk laporan penjualan, tapi tetap muncul di Project untuk dikerjakan."
               : isDraft
               ? "Simpan rancangan order di sini sebelum dikonfirmasi menjadi order aktif."
-              : "Satu order bisa berisi banyak produk (custom + ready-stock). HPP & profit dihitung otomatis dari total item."}
+              : "Semua orderan ditampilkan disini"}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
