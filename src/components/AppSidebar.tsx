@@ -1,9 +1,11 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Package, Wrench, Receipt, Utensils, Truck, Activity, Shield, DatabaseBackup,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Wrench, Receipt, Utensils, Truck, Activity, Shield, DatabaseBackup,
+  Settings, ChevronDown,
 } from "lucide-react";
 
 import {
@@ -11,6 +13,7 @@ import {
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -32,7 +35,6 @@ const meItems: NavItem[] = [
 ];
 const adminItems: NavItem[] = [
   { title: "Order", url: "/orders", icon: ShoppingBag, feature: "orders" },
-  { title: "Ready Stock", url: "/ready-stock", icon: Package, feature: "ready-stock" },
   { title: "Project", url: "/projects", icon: FolderKanban, feature: "projects" },
   { title: "Karyawan", url: "/employees", icon: Users, feature: "employees" },
   { title: "Tarif Borongan", url: "/rates", icon: DollarSign, feature: "rates" },
@@ -45,17 +47,19 @@ const adminItems: NavItem[] = [
 const ownerItems: NavItem[] = [
   { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
   { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },
+  { title: "Payroll", url: "/payroll", icon: Wallet },
+  { title: "Analitik & Performa", url: "/owner/analytics", icon: Sparkles },
+  { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
+  { title: "Laporan", url: "/reports", icon: BarChart3 },
+];
+
+const settingsItems: NavItem[] = [
   { title: "Master Harga", url: "/owner/prices", icon: Tags },
   { title: "Master Ekspedisi", url: "/owner/carriers", icon: Truck },
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
   { title: "Kelola User", url: "/users", icon: UserCog },
   { title: "Setelan Akses Fitur", url: "/owner/permissions", icon: Shield },
-  { title: "Payroll", url: "/payroll", icon: Wallet },
-  { title: "Analitik & Performa", url: "/owner/analytics", icon: Sparkles },
-  { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
-  { title: "Laporan", url: "/reports", icon: BarChart3 },
   { title: "Backup & Restore", url: "/owner/backup", icon: DatabaseBackup },
-
 ];
 
 
@@ -88,6 +92,22 @@ export function AppSidebar() {
   const visibleMe = filterItems(meItems);
   const visibleAdmin = filterItems(adminItems);
 
+  const settingsActive = settingsItems.some((i) => isActive(i.url));
+  const [settingsOpen, setSettingsOpen] = useState(settingsActive);
+
+  const renderItems = (items: NavItem[]) =>
+    items.map((item) => (
+      <SidebarMenuItem key={item.url}>
+        <SidebarMenuButton asChild isActive={isActive(item.url)}
+          className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
+          <Link to={item.url} onClick={handleNav}>
+            <item.icon className="h-4 w-4" />
+            <span>{item.title}</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    ));
+
   return (
     <Sidebar collapsible="icon" className="border-r border-slate-800 bg-slate-950 text-slate-200">
       <SidebarHeader className="border-b border-slate-800 bg-slate-950">
@@ -110,17 +130,31 @@ export function AppSidebar() {
             <SidebarGroupLabel className="text-amber-400/80">Owner</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {ownerItems.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}
-                      className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
-                      <Link to={item.url} onClick={handleNav}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
+                {renderItems(ownerItems)}
+
+                <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        isActive={settingsActive}
+                        className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Pengaturan</span>
+                        <ChevronDown
+                          className={`ml-auto h-4 w-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+                        />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
                   </SidebarMenuItem>
-                ))}
+                  <CollapsibleContent>
+                    <div className="ml-3 border-l border-slate-800 pl-2">
+                      <SidebarMenu>
+                        {renderItems(settingsItems)}
+                      </SidebarMenu>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -130,19 +164,7 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel className="text-slate-500">Operasional</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {visibleAdmin.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}
-                      className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
-                      <Link to={item.url} onClick={handleNav}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
+              <SidebarMenu>{renderItems(visibleAdmin)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
@@ -151,19 +173,7 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel className="text-slate-500">Karyawan</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {visibleMe.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}
-                      className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white">
-                      <Link to={item.url} onClick={handleNav}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
+              <SidebarMenu>{renderItems(visibleMe)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
