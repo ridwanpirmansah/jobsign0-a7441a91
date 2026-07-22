@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { markReadyPickupByResi } from "@/lib/orders.functions";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ResiScanner } from "@/components/ResiScanner";
 import { PackageCheck, ScanLine, Truck } from "lucide-react";
 import { toast } from "sonner";
-import { beepSuccess, beepError } from "@/lib/scan-feedback";
+import { beepSuccess, beepError, primeSpeech } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/me/ship")({
   component: ShipPage,
@@ -22,6 +22,7 @@ function ShipPage() {
   const mark = useServerFn(markReadyPickupByResi);
   const [manual, setManual] = useState("");
   const [history, setHistory] = useState<{ order_no: string; no_resi: string; ekspedisi: string | null; ts: number }[]>([]);
+  useEffect(() => { primeSpeech(); }, []);
 
   const mut = useMutation({
     mutationFn: (no_resi: string) => mark({ data: { no_resi } }),

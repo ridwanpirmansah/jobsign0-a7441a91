@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listPickupReady, listMyPickups, courierPickup } from "@/lib/orders.functions";
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ResiScanner } from "@/components/ResiScanner";
 import { Truck, PackageCheck, Search, ScanLine } from "lucide-react";
 import { toast } from "sonner";
-import { beepSuccess, beepError } from "@/lib/scan-feedback";
+import { beepSuccess, beepError, primeSpeech } from "@/lib/scan-feedback";
 
 export const Route = createFileRoute("/_authenticated/me/pickup")({
   component: PickupPage,
@@ -30,6 +30,7 @@ function PickupPage() {
   const [resiInput, setResiInput] = useState("");
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState("");
+  useEffect(() => { primeSpeech(); }, []);
 
   const readyQ = useQuery({ queryKey: ["pickup-ready"], queryFn: () => fetchReady() });
   const mineQ = useQuery({ queryKey: ["pickup-mine"], queryFn: () => fetchMine() });

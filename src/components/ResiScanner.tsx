@@ -132,16 +132,28 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
     video.setAttribute("webkit-playsinline", "true");
     video.muted = true;
     video.srcObject = stream;
+
+    // Wait for metadata so videoWidth/Height are known before play (iOS quirk).
+    if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
+      await new Promise<void>((resolve) => {
+        const onLoaded = () => { video.removeEventListener("loadedmetadata", onLoaded); resolve(); };
+        video.addEventListener("loadedmetadata", onLoaded);
+        setTimeout(resolve, 2000);
+      });
+    }
+
     try {
       await video.play();
     } catch {
-      // Autoplay might be blocked briefly; retry once after a tick.
       await new Promise((r) => setTimeout(r, 100));
       try { await video.play(); } catch { /* iOS will play on user gesture */ }
     }
 
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator as any).maxTouchPoints > 1);
+
     const reader = new BrowserMultiFormatOneDReader(makeHints(), {
-      delayBetweenScanAttempts: 35,
+      delayBetweenScanAttempts: isIOS ? 50 : 35,
       delayBetweenScanSuccess: Math.max(300, Math.min(cooldownMs, 900)),
       tryPlayVideoTimeout: 8000,
     });
@@ -159,16 +171,32 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
     setError(null);
     stop();
     activeRef.current = true;
+
+    // iOS Safari trips on 1920x1080 ideal + high frameRate and often returns
+    // a 0x0 stream. Detect iOS and use gentler constraints.
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator as any).maxTouchPoints > 1);
+
+    const iosConstraints: MediaStreamConstraints = {
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      } as any,
+      audio: false,
+    };
+    const androidConstraints: MediaStreamConstraints = {
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 30, min: 15 },
+      } as any,
+      audio: false,
+    };
+
     try {
-      await startReader({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30, min: 15 },
-        } as any,
-        audio: false,
-      });
+      await startReader(isIOS ? iosConstraints : androidConstraints);
     } catch (primaryError: any) {
       stop();
       activeRef.current = true;
