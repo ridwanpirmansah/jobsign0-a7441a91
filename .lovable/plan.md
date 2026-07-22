@@ -1,40 +1,53 @@
-## Restore Data Order Historis
 
-Import 333 baris orderan dari `RESTORE_DATA_BELANJA-2.xlsx` ke tabel `orders`.
+## 1. Cache & preload suara scan (hilangkan delay)
 
-### Yang akan diimpor per baris
-- **Source** — SHOPEE/DIRECT/TIKTOK (di-lowercase → `shopee` / `direct` / `tiktok`)
-- **co_date** ← kolom `tanggal`
-- **username** ← kolom `Username`
-- **kota** ← kolom `Kota`
-- **text_neon** ← kolom `Text Neon`
-- **status** — `Retur`/`retur` → `return`, sisanya (`aktif`) → `active`
-- **akrilik_p** ← `Panjang`, **akrilik_l** ← `Lebar`
-- **led_meter** ← `Panjang Led`
-- **titik** ← `Titik`
-- **payment** ← `Payment`, **split** ← `Split`
-- **order_no** ← kolom nomor asli (1–352)
+Masalah: `speakId()` di `src/lib/scan-feedback.ts` memanggil `SpeechSynthesisUtterance` baru setiap kali scan → di HP suara sering telat karena voice list & TTS engine baru "warm up" saat pertama dipanggil. AudioContext juga sering `suspended` sampai gesture pertama.
 
-Kolom lain (adaptor, modul, socket_dc, kabel_meter, dst.) dibiarkan default agar trigger `calc_order_costs` menghitung HPP otomatis dari `material_prices`. Field turunan (`hpp`, `profit`, `led_cost`, dst.) akan otomatis dihitung ulang.
+Perbaikan di `src/lib/scan-feedback.ts`:
+- Cache daftar voices Indonesia sekali (listen `voiceschanged`), simpan referensi `SpeechSynthesisVoice` di module scope agar tidak dilookup ulang tiap scan.
+- Cache instance `SpeechSynthesisUtterance` per frasa yang dipakai ("Check In Berhasil, Selamat Bekerja", "Check Out Berhasil, Selamat Istirahat", frasa error) — reuse instance yang sama tiap panggilan.
+- Warm-up: saat halaman scan mount, panggil `primeSpeech()` yang sekarang juga:
+  - resume `AudioContext`,
+  - `speechSynthesis.speak` utterance kosong volume 0 (memicu engine load di iOS/Android),
+  - decode & cache beep sukses/gagal jadi `AudioBuffer` sekali, lalu putar via `AudioBufferSourceNode` (lebih cepat & konsisten daripada bikin oscillator baru tiap kali).
+- Tambah service worker ringan (via `vite-plugin-pwa` `generateSW` yang sudah dipakai project ini bila ada; kalau belum, gunakan manifest-only + runtime cache di memori saja) untuk cache aset statis. Cache suara **bukan** file mp3 (semua synthesized), jadi yang dibutuhkan cuma warm-up di atas — tidak perlu SW baru untuk itu.
 
-### Penomoran order
-- Angka nol tidak diubah: nomor 1–352 dipakai apa adanya.
-- **Tidak ada bentrok dengan data existing** — nomor aktif di DB saat ini mulai dari 354.
-- **1 duplikat terdeteksi**: nomor `308` muncul 2× (silapoenyare 24-Apr & zahra_net 2-Mei). Baris kedua (tanggal lebih baru) diberi suffix → `308A`. Aturan yang sama otomatis dipakai jika ada duplikat lain (B, C, dst.).
+Halaman yang perlu panggil `primeSpeech()` di mount (sudah sebagian): `me.scan.tsx`, `me.ship.tsx`, `me.pickup.tsx`, dan tombol Scan Resi di `status.tsx`. Pastikan dipanggil sekali di `useEffect` awal.
 
-### Menghindari trigger `assign_order_no` menimpa nomor
-Trigger `assign_order_no` di-BYPASS dengan cara insert lewat `ALTER TABLE ... DISABLE TRIGGER assign_order_no_trg` di dalam satu transaksi, insert 333 baris, lalu enable kembali. Trigger `calc_order_costs` (untuk hitung HPP) tetap aktif.
+## 2. Perbaiki scanner iPhone (tanpa merusak Android)
 
-### Langkah eksekusi
-1. Baca ulang Excel → normalisasi tipe (angka, tanggal ISO, string trim).
-2. Deteksi duplikat `no`, urutkan by tanggal, tambahkan suffix huruf pada baris ke-2+.
-3. Bangun payload JSON 333 rows dengan `created_by = NULL` (data historis, bukan milik user tertentu).
-4. Panggil `supabase--insert` sekali (satu SQL transaksi):
-   - `ALTER TABLE orders DISABLE TRIGGER trg_assign_order_no;`
-   - `INSERT INTO orders (source, status, order_no, co_date, username, kota, text_neon, akrilik_p, akrilik_l, led_meter, titik, payment, split) VALUES (...) x333;`
-   - `ALTER TABLE orders ENABLE TRIGGER trg_assign_order_no;`
-5. Verifikasi jumlah baris masuk dan spot-check 3 baris (pertama, terakhir, duplikat 308/308A).
+File: `src/components/ResiScanner.tsx`. Gejala saat ini di iPhone: kamera hidup tapi tidak decode / preview lambat.
 
-### Catatan
-- Semua orderan diberi status `active` (schema tidak punya status `completed`; `active` adalah status "berjalan/selesai normal" yang tetap muncul di laporan omzet/profit).
-- Data historis ini tidak ikut sistem project/job_logs (tidak ada items) — hanya muncul di daftar order & laporan finansial.
+Rencana:
+- Deteksi Safari iOS dan pakai constraint yang ramah iOS:
+  - Hindari `width/height ideal 1920x1080` di iOS (Safari sering fallback ke stream kosong) — pakai 1280x720 di iOS, biarkan 1920x1080 di Android.
+  - Set `facingMode: { exact: "environment" }` hanya bila tersedia; fallback ke `ideal` (iOS kadang throw `OverconstrainedError` dengan `exact`).
+- Pastikan `video.play()` dipanggil di dalam gesture handler tombol "Mulai Scan" (sudah, tapi verifikasi urutan: getUserMedia → set srcObject → await loadedmetadata → play, semuanya di dalam handler klik, tanpa `await` panjang sebelum `play`).
+- iOS Safari tidak punya `BarcodeDetector`, jadi ZXing harus jalan mulus. Turunkan `delayBetweenScanAttempts` iOS ke 50ms dan pastikan hint `TRY_HARDER` + format 1D lengkap (sudah).
+- Tambah retry: jika `videoWidth === 0` setelah play, coba `track.applyConstraints` lagi & re-attach.
+- Tetap gunakan `BarcodeDetector` native di Android (sudah), tanpa perubahan perilaku.
+
+Verifikasi setelah build: buka `/me/ship` di iPhone Safari (via Playwright hanya cek tidak regresi di desktop; iPhone dites manual oleh user).
+
+## 3. Rapikan menu sidebar Owner + sembunyikan Ready Stock
+
+File: `src/components/AppSidebar.tsx`.
+
+- Buat grup "Pengaturan" collapsible di dalam sidebar (pakai `Collapsible` dari shadcn + `SidebarGroup`) berisi:
+  1. Master Harga (`/owner/prices`)
+  2. Master Ekspedisi (`/owner/carriers`)
+  3. Sync Project (`/owner/sync`)
+  4. Kelola User (`/users`)
+  5. Setelan Akses Fitur (`/owner/permissions`)
+  6. Backup & Restore (`/owner/backup`)
+- Sisa item Owner (QR Absensi, Riwayat Absensi, Payroll, Analitik & Performa, Catatan Pengeluaran, Laporan) tetap tampil langsung di grup "Owner".
+- Auto-expand grup "Pengaturan" bila route aktif ada di dalamnya.
+- Hapus item **Ready Stock** dari `adminItems` di sidebar. Halaman `/ready-stock` tetap ada dan hanya diakses via tab di halaman Order (sudah ada `WorkflowTabs`).
+
+## Ringkasan file yang berubah
+- `src/lib/scan-feedback.ts` — cache voice & utterance, AudioBuffer beep, warm-up lebih agresif.
+- `src/components/ResiScanner.tsx` — constraint iOS-aware, fallback lebih rapi.
+- `src/components/AppSidebar.tsx` — grup "Pengaturan" collapsible, hapus Ready Stock.
+- (opsional) panggil `primeSpeech()` di halaman scan yang belum memanggilnya.
+
+Tidak ada perubahan database.
