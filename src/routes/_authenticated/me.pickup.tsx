@@ -105,7 +105,7 @@ function PickupPage() {
           <div>
             <Label>No Resi</Label>
             <Input
-              autoFocus placeholder="Ketik atau scan nomor resi"
+              placeholder="Ketik atau scan nomor resi"
               value={resiInput}
               onChange={(e) => setResiInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && resiInput.trim()) pickupMut.mutate(resiInput.trim()); }}
