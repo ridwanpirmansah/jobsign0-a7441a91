@@ -316,23 +316,119 @@ function MyJobs() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label>Project</Label>
-              <Select value={projectId} onValueChange={setProjectId}>
-                <SelectTrigger><SelectValue placeholder="Pilih project" /></SelectTrigger>
-                <SelectContent>
-                  {projects?.map((p) => {
-                    const rem = Number(p.remaining_points);
-                    return (
-                      <SelectItem key={p.id} value={p.id} disabled={rem <= 0}>
-                        {p.code} — {p.title} · Sisa total {rem}/{p.total_points} titik{rem <= 0 ? " (penuh)" : ""}
-                      </SelectItem>
-                    );
-                  })}
-                  {!projects?.length && <div className="px-2 py-3 text-sm text-slate-500">Belum ada project tersedia</div>}
-                </SelectContent>
-              </Select>
+              <Popover open={projectOpen} onOpenChange={(o) => { setProjectOpen(o); if (!o) setProjectSearch(""); }}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between h-auto min-h-11 py-2 px-3 bg-gradient-to-r from-sky-50 via-white to-violet-50 border-sky-200 hover:from-sky-100 hover:to-violet-100"
+                  >
+                    {selectedProject ? (
+                      <div className="flex items-start gap-2 min-w-0 text-left">
+                        <FolderOpen className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-semibold text-sky-700">{selectedProject.code}</div>
+                          <div className="text-sm text-slate-900 leading-tight whitespace-normal break-words">
+                            {selectedProject.title}
+                          </div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Sisa <span className="font-semibold text-emerald-600">{selectedProject.remaining_points}</span>/{selectedProject.total_points} titik
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="flex items-center gap-2 text-slate-500">
+                        <FolderOpen className="h-4 w-4" /> Pilih project
+                      </span>
+                    )}
+                    <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-0 w-[calc(100vw-2rem)] sm:w-[440px] max-w-[540px]"
+                  align="start"
+                  sideOffset={6}
+                >
+                  <div className="p-2 border-b bg-gradient-to-r from-sky-50 to-violet-50 sticky top-0 z-10">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        autoFocus
+                        value={projectSearch}
+                        onChange={(e) => setProjectSearch(e.target.value)}
+                        placeholder="Cari kode atau nama project..."
+                        className="pl-8 pr-8 h-10 bg-white"
+                      />
+                      {projectSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setProjectSearch("")}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          aria-label="Bersihkan pencarian"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-1.5 text-[11px] text-slate-500 px-1">
+                      {filteredProjects.length} project ditemukan
+                    </div>
+                  </div>
+                  <div className="max-h-[60vh] overflow-y-auto p-2 space-y-1.5">
+                    {filteredProjects.map((p, idx) => {
+                      const rem = Number(p.remaining_points);
+                      const full = rem <= 0;
+                      const active = p.id === projectId;
+                      const c = projectPalette[idx % projectPalette.length];
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          disabled={full}
+                          onClick={() => { setProjectId(p.id); setProjectOpen(false); setProjectSearch(""); }}
+                          className={`w-full text-left rounded-lg border p-2.5 transition ${
+                            full
+                              ? "opacity-50 cursor-not-allowed bg-slate-50 border-slate-200"
+                              : active
+                                ? `${c.bg} ring-2 ${c.ring} border-transparent`
+                                : `${c.bg} border-transparent hover:ring-2 hover:${c.ring}`
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <div className={`h-8 w-8 rounded-md ${c.dot} text-white grid place-items-center shrink-0 shadow-sm`}>
+                              <Package className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${c.chip}`}>
+                                  {p.code}
+                                </span>
+                                {full && <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">PENUH</span>}
+                                {active && <Check className="h-3.5 w-3.5 text-emerald-600" />}
+                              </div>
+                              <div className="text-sm font-semibold text-slate-900 leading-snug mt-1 whitespace-normal break-words">
+                                {p.title}
+                              </div>
+                              <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
+                                <span className={`inline-block h-1.5 w-1.5 rounded-full ${full ? "bg-rose-500" : "bg-emerald-500"}`} />
+                                Sisa <span className="font-semibold text-slate-900">{rem}</span> / {p.total_points} titik
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {!filteredProjects.length && (
+                      <div className="px-3 py-8 text-center text-sm text-slate-500">
+                        {projects?.length ? "Project tidak ditemukan" : "Belum ada project tersedia"}
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
               {selectedProject && (
                 <p className="text-xs mt-1 text-slate-500">
-                  Total sisa garapan: <span className="font-semibold text-slate-900">{selectedProject.remaining_points}</span> dari <span className="font-semibold text-slate-900">{selectedProject.total_points}</span> titik gabungan semua jenis
+                  Total sisa garapan: <span className="font-semibold text-slate-900">{selectedProject.remaining_points}</span> dari <span className="font-semibold text-slate-900">{selectedProject.total_points}</span> titik gabungan
                 </p>
               )}
             </div>
