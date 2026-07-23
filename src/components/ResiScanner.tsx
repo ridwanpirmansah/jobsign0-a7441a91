@@ -140,7 +140,7 @@ export function ResiScanner({ onScan, active = true, className, cooldownMs = 250
     if (!reader || !video) return;
     if (!iosCanvasRef.current) iosCanvasRef.current = document.createElement("canvas");
     const canvas = iosCanvasRef.current;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true } as any);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D | null;
     if (!ctx) return;
 
     iosLoopTimerRef.current = window.setInterval(() => {
