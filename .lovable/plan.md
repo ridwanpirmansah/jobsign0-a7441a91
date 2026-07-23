@@ -1,53 +1,34 @@
 
-## 1. Cache & preload suara scan (hilangkan delay)
+## Kenapa scan di iPhone masih gagal (analisis jujur)
 
-Masalah: `speakId()` di `src/lib/scan-feedback.ts` memanggil `SpeechSynthesisUtterance` baru setiap kali scan → di HP suara sering telat karena voice list & TTS engine baru "warm up" saat pertama dipanggil. AudioContext juga sering `suspended` sampai gesture pertama.
+Preview kameramu muncul, tapi barcode tidak pernah decode. Itu berarti izin kamera OK, stream jalan — masalahnya ada di **pipeline decode ZXing di iOS PWA**. Dari kode `src/components/ResiScanner.tsx` sekarang, ada 3 penyebab yang cocok dengan gejala kamu:
 
-Perbaikan di `src/lib/scan-feedback.ts`:
-- Cache daftar voices Indonesia sekali (listen `voiceschanged`), simpan referensi `SpeechSynthesisVoice` di module scope agar tidak dilookup ulang tiap scan.
-- Cache instance `SpeechSynthesisUtterance` per frasa yang dipakai ("Check In Berhasil, Selamat Bekerja", "Check Out Berhasil, Selamat Istirahat", frasa error) — reuse instance yang sama tiap panggilan.
-- Warm-up: saat halaman scan mount, panggil `primeSpeech()` yang sekarang juga:
-  - resume `AudioContext`,
-  - `speechSynthesis.speak` utterance kosong volume 0 (memicu engine load di iOS/Android),
-  - decode & cache beep sukses/gagal jadi `AudioBuffer` sekali, lalu putar via `AudioBufferSourceNode` (lebih cepat & konsisten daripada bikin oscillator baru tiap kali).
-- Tambah service worker ringan (via `vite-plugin-pwa` `generateSW` yang sudah dipakai project ini bila ada; kalau belum, gunakan manifest-only + runtime cache di memori saja) untuk cache aset statis. Cache suara **bukan** file mp3 (semua synthesized), jadi yang dibutuhkan cuma warm-up di atas — tidak perlu SW baru untuk itu.
+1. **Reader-nya cuma 1D.** Sekarang saya pakai `BrowserMultiFormatOneDReader`. Kalau ada satu saja resi yang barcode-nya bukan 1D murni (misal QR / DataMatrix / PDF417 dari beberapa ekspedisi atau resi FE hasil generate kita sendiri yang di-render `JsBarcode` code128 tapi kadang terpotong), decoder ini diam saja. Di Android tertolong `BarcodeDetector` native — makanya kamu tidak sadar. iOS tidak punya `BarcodeDetector`, jadi 100% bergantung ZXing.
+2. **iOS PWA `videoWidth` sering masih 0 saat `decodeFromVideoElement` dipanggil.** Kita cuma nunggu `loadedmetadata`, padahal di standalone PWA iOS frame pertama baru datang di event `playing`/`loadeddata`. ZXing lalu meng-capture canvas 0×0 → tidak pernah ada kandidat untuk didecode. Ini persis "preview jalan, barcode tak terdeteksi".
+3. **`applyConstraints` zoom 1.15× dipanggil setelah reader start.** Di iOS ini kadang me-reset track sebentar; ZXing sudah mulai loop dengan referensi frame lama. Bukan penyebab utama, tapi memperparah.
 
-Halaman yang perlu panggil `primeSpeech()` di mount (sudah sebagian): `me.scan.tsx`, `me.ship.tsx`, `me.pickup.tsx`, dan tombol Scan Resi di `status.tsx`. Pastikan dipanggil sekali di `useEffect` awal.
+Yang bikin ini terasa "sia-sia": saya beberapa kali menebak fix untuk iOS tanpa bisa mengetes langsung di iPhone dari sandbox (sandbox cuma punya Chromium headless). Plan ini fokus fix akar masalah di atas, bukan tebak-tebakan lagi.
 
-## 2. Perbaiki scanner iPhone (tanpa merusak Android)
+## Yang akan diubah
 
-File: `src/components/ResiScanner.tsx`. Gejala saat ini di iPhone: kamera hidup tapi tidak decode / preview lambat.
+**File: `src/components/ResiScanner.tsx`** (satu file, no DB, no perubahan Android path)
 
-Rencana:
-- Deteksi Safari iOS dan pakai constraint yang ramah iOS:
-  - Hindari `width/height ideal 1920x1080` di iOS (Safari sering fallback ke stream kosong) — pakai 1280x720 di iOS, biarkan 1920x1080 di Android.
-  - Set `facingMode: { exact: "environment" }` hanya bila tersedia; fallback ke `ideal` (iOS kadang throw `OverconstrainedError` dengan `exact`).
-- Pastikan `video.play()` dipanggil di dalam gesture handler tombol "Mulai Scan" (sudah, tapi verifikasi urutan: getUserMedia → set srcObject → await loadedmetadata → play, semuanya di dalam handler klik, tanpa `await` panjang sebelum `play`).
-- iOS Safari tidak punya `BarcodeDetector`, jadi ZXing harus jalan mulus. Turunkan `delayBetweenScanAttempts` iOS ke 50ms dan pastikan hint `TRY_HARDER` + format 1D lengkap (sudah).
-- Tambah retry: jika `videoWidth === 0` setelah play, coba `track.applyConstraints` lagi & re-attach.
-- Tetap gunakan `BarcodeDetector` native di Android (sudah), tanpa perubahan perilaku.
+1. **Ganti reader jadi multi-format** — pakai `BrowserMultiFormatReader` dari `@zxing/browser` supaya QR / DataMatrix / PDF417 juga kebaca, dengan hints `POSSIBLE_FORMATS` = semua 1D yang sekarang + `QR_CODE`, `DATA_MATRIX`, `PDF_417`, `AZTEC`. Android tetap dapat manfaat, dan `BarcodeDetector` native Android juga ditambah format `qr_code`, `data_matrix`, `pdf417`, `aztec`.
+2. **Tunggu frame benar-benar siap sebelum decode.** Setelah `video.play()`, tunggu event `playing` **dan** poll `videoWidth > 0` (timeout 3 dtk). Baru panggil `decodeFromVideoElement`. Kalau `videoWidth` masih 0 setelah timeout, lepas stream lalu retry sekali dengan constraint lebih rendah (`640×480`, tanpa zoom).
+3. **Buang `applyConstraints` zoom di iOS.** Detect iOS → skip `tuneCamera` untuk zoom; tetap coba `focusMode: continuous` saja (aman di iOS). Di Android tetap seperti sekarang (zoom 1.15× + focus + exposure).
+4. **Loop decode manual sebagai jaring pengaman iOS.** Selain `decodeFromVideoElement`, jalankan `setInterval` 120ms yang capture frame video ke `OffscreenCanvas`/`canvas` lalu panggil `reader.decodeFromCanvas`. Ini bypass ketergantungan ZXing pada `requestAnimationFrame` yang di iOS PWA standalone kadang di-throttle saat layar redup. Hanya aktif di iOS.
+5. **Log diagnostik ringan di iOS** (`console.info` untuk `videoWidth`, `readyState`, `decode attempt count`) supaya kalau masih gagal, next turn saya bisa baca dari console logs kamu tanpa harus nebak lagi.
 
-Verifikasi setelah build: buka `/me/ship` di iPhone Safari (via Playwright hanya cek tidak regresi di desktop; iPhone dites manual oleh user).
+**Yang TIDAK berubah:**
+- Android path (`BarcodeDetector` native + ZXing fallback + constraint 1920×1080 + zoom 1.15×) → tetap sama persis, cuma nambah format list.
+- API `ResiScanner` (`onScan`, `active`, `cooldownMs`) → tidak berubah, semua halaman pemanggil (`me.ship`, `me.pickup`, `status`) tidak perlu diedit.
+- `src/lib/scan-feedback.ts` dan file lain → tidak disentuh.
 
-## 3. Rapikan menu sidebar Owner + sembunyikan Ready Stock
+## Cara verifikasi
 
-File: `src/components/AppSidebar.tsx`.
+- Sandbox: build + jalankan test regresi Playwright di Chromium desktop untuk memastikan tidak ada regresi (kamera fake / stream dummy).
+- iPhone: **kamu perlu tes langsung** dan kirim balik apa yang tampil di layar. Kalau masih gagal, saya minta buka `Settings → Safari → Advanced → Web Inspector` dan colok ke Mac (atau cukup screenshot pesan yang muncul di bawah kamera) — dengan `console.info` di poin 5, saya bisa lihat apakah `videoWidth` sudah > 0 dan berapa kali attempt decode terjadi. Baru dari situ saya bisa lanjut ke fix berikutnya kalau perlu, bukan nebak.
 
-- Buat grup "Pengaturan" collapsible di dalam sidebar (pakai `Collapsible` dari shadcn + `SidebarGroup`) berisi:
-  1. Master Harga (`/owner/prices`)
-  2. Master Ekspedisi (`/owner/carriers`)
-  3. Sync Project (`/owner/sync`)
-  4. Kelola User (`/users`)
-  5. Setelan Akses Fitur (`/owner/permissions`)
-  6. Backup & Restore (`/owner/backup`)
-- Sisa item Owner (QR Absensi, Riwayat Absensi, Payroll, Analitik & Performa, Catatan Pengeluaran, Laporan) tetap tampil langsung di grup "Owner".
-- Auto-expand grup "Pengaturan" bila route aktif ada di dalamnya.
-- Hapus item **Ready Stock** dari `adminItems` di sidebar. Halaman `/ready-stock` tetap ada dan hanya diakses via tab di halaman Order (sudah ada `WorkflowTabs`).
+## Catatan jujur soal kredit
 
-## Ringkasan file yang berubah
-- `src/lib/scan-feedback.ts` — cache voice & utterance, AudioBuffer beep, warm-up lebih agresif.
-- `src/components/ResiScanner.tsx` — constraint iOS-aware, fallback lebih rapi.
-- `src/components/AppSidebar.tsx` — grup "Pengaturan" collapsible, hapus Ready Stock.
-- (opsional) panggil `primeSpeech()` di halaman scan yang belum memanggilnya.
-
-Tidak ada perubahan database.
+Kamu benar bahwa iterasi iPhone selama ini terlalu banyak nebak. Saya tidak bisa menjalankan Safari iOS asli di sandbox — itu keterbatasan nyata. Plan ini menyerang 3 penyebab teknis paling mungkin sekaligus (bukan satu-satu seperti sebelumnya), plus menambah log supaya iterasi berikutnya berdasar data, bukan tebakan.
