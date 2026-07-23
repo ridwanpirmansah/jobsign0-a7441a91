@@ -316,47 +316,48 @@ function MyJobs() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label>Project</Label>
-              <Popover open={projectOpen} onOpenChange={(o) => { setProjectOpen(o); if (!o) setProjectSearch(""); }}>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-between h-auto min-h-11 py-2 px-3 bg-gradient-to-r from-sky-50 via-white to-violet-50 border-sky-200 hover:from-sky-100 hover:to-violet-100"
-                  >
-                    {selectedProject ? (
-                      <div className="flex items-start gap-2 min-w-0 text-left">
-                        <FolderOpen className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-semibold text-sky-700">{selectedProject.code}</div>
-                          <div className="text-sm text-slate-900 leading-tight whitespace-normal break-words">
-                            {selectedProject.title}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">
-                            Sisa <span className="font-semibold text-emerald-600">{selectedProject.remaining_points}</span>/{selectedProject.total_points} titik
-                          </div>
+              <Dialog open={projectOpen} onOpenChange={(o) => { setProjectOpen(o); if (!o) setProjectSearch(""); }}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setProjectOpen(true)}
+                  className="w-full justify-between h-auto min-h-11 py-2 px-3 bg-gradient-to-r from-sky-50 via-white to-violet-50 border-sky-200 hover:from-sky-100 hover:to-violet-100"
+                >
+                  {selectedProject ? (
+                    <div className="flex items-start gap-2 min-w-0 text-left">
+                      <FolderOpen className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-semibold text-sky-700">{selectedProject.code}</div>
+                        <div className="text-sm text-slate-900 leading-tight whitespace-normal break-words">
+                          {selectedProject.title}
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          Sisa <span className="font-semibold text-emerald-600">{selectedProject.remaining_points}</span>/{selectedProject.total_points} titik
                         </div>
                       </div>
-                    ) : (
-                      <span className="flex items-center gap-2 text-slate-500">
-                        <FolderOpen className="h-4 w-4" /> Pilih project
-                      </span>
-                    )}
-                    <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 ml-2" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="p-0 w-[calc(100vw-2rem)] sm:w-[440px] max-w-[540px]"
-                  align="start"
-                  sideOffset={6}
+                    </div>
+                  ) : (
+                    <span className="flex items-center gap-2 text-slate-500">
+                      <FolderOpen className="h-4 w-4" /> Pilih project
+                    </span>
+                  )}
+                  <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 ml-2" />
+                </Button>
+                <DialogContent
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                  className="p-0 gap-0 w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
                 >
-                  <div className="p-2 border-b bg-gradient-to-r from-sky-50 to-violet-50 sticky top-0 z-10">
+                  <DialogHeader className="p-3 pb-2 border-b bg-gradient-to-r from-sky-50 to-violet-50 space-y-2">
+                    <DialogTitle className="text-base flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 text-sky-600" /> Pilih Project
+                    </DialogTitle>
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
-                        autoFocus
                         value={projectSearch}
                         onChange={(e) => setProjectSearch(e.target.value)}
                         placeholder="Cari kode atau nama project..."
+                        inputMode="search"
                         className="pl-8 pr-8 h-10 bg-white"
                       />
                       {projectSearch && (
@@ -370,11 +371,11 @@ function MyJobs() {
                         </button>
                       )}
                     </div>
-                    <div className="mt-1.5 text-[11px] text-slate-500 px-1">
+                    <div className="text-[11px] text-slate-500 px-1">
                       {filteredProjects.length} project ditemukan
                     </div>
-                  </div>
-                  <div className="max-h-[60vh] overflow-y-auto p-2 space-y-1.5">
+                  </DialogHeader>
+                  <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
                     {filteredProjects.map((p, idx) => {
                       const rem = Number(p.remaining_points);
                       const full = rem <= 0;
@@ -424,8 +425,8 @@ function MyJobs() {
                       </div>
                     )}
                   </div>
-                </PopoverContent>
-              </Popover>
+                </DialogContent>
+              </Dialog>
               {selectedProject && (
                 <p className="text-xs mt-1 text-slate-500">
                   Total sisa garapan: <span className="font-semibold text-slate-900">{selectedProject.remaining_points}</span> dari <span className="font-semibold text-slate-900">{selectedProject.total_points}</span> titik gabungan
