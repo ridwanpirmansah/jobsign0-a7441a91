@@ -115,6 +115,25 @@ function MyJobs() {
 
   const selectedProject = projects?.find((p) => p.id === projectId);
 
+  const filteredProjects = useMemo(() => {
+    const list = projects ?? [];
+    const q = projectSearch.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((p) =>
+      `${p.code} ${p.title}`.toLowerCase().includes(q)
+    );
+  }, [projects, projectSearch]);
+
+  // Colorful accents so the list matches the vibe of the attendance history page
+  const projectPalette = [
+    { ring: "ring-sky-200", bg: "bg-sky-50", chip: "bg-sky-100 text-sky-700 border-sky-200", dot: "bg-sky-500" },
+    { ring: "ring-violet-200", bg: "bg-violet-50", chip: "bg-violet-100 text-violet-700 border-violet-200", dot: "bg-violet-500" },
+    { ring: "ring-emerald-200", bg: "bg-emerald-50", chip: "bg-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+    { ring: "ring-amber-200", bg: "bg-amber-50", chip: "bg-amber-100 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+    { ring: "ring-rose-200", bg: "bg-rose-50", chip: "bg-rose-100 text-rose-700 border-rose-200", dot: "bg-rose-500" },
+    { ring: "ring-teal-200", bg: "bg-teal-50", chip: "bg-teal-100 text-teal-700 border-teal-200", dot: "bg-teal-500" },
+  ];
+
 
   // Build a unified list of rate rows for display
   type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null; pricing_mode: "per_unit" | "area"; min_amount: number };
