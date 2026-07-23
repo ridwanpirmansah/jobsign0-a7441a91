@@ -63,7 +63,7 @@ function ShipPage() {
           <div>
             <Label>No Resi</Label>
             <Input
-              autoFocus placeholder="Ketik atau tempel nomor resi"
+              placeholder="Ketik atau tempel nomor resi"
               value={manual}
               onChange={(e) => setManual(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && manual.trim()) mut.mutate(manual.trim()); }}
