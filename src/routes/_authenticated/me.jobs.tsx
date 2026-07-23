@@ -30,6 +30,8 @@ function MyJobs() {
   const qc = useQueryClient();
 
   const [projectId, setProjectId] = useState<string>("");
+  const [projectOpen, setProjectOpen] = useState(false);
+  const [projectSearch, setProjectSearch] = useState("");
   const [note, setNote] = useState("");
   const [qtyMap, setQtyMap] = useState<Record<string, string>>({});
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
