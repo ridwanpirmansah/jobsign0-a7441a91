@@ -145,6 +145,17 @@ function ScanPage() {
   useEffect(() => () => { stop(); }, []);
 
   useEffect(() => {
+    if (scanOpen && !running) {
+      // wait for container to mount inside the Dialog
+      const t = setTimeout(() => { start(); }, 100);
+      return () => clearTimeout(t);
+    }
+    if (!scanOpen && running) {
+      stop();
+    }
+  }, [scanOpen]);
+
+  useEffect(() => {
     if (!settings?.enforce_location) return;
     if (!("geolocation" in navigator)) {
       setPosErr("Perangkat tidak mendukung geolokasi");
@@ -243,19 +254,31 @@ function ScanPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base flex items-center gap-2"><Camera className="h-4 w-4" /> Kamera</CardTitle>
-          {running && <Badge variant="secondary">Memindai…</Badge>}
         </CardHeader>
         <CardContent className="space-y-3">
-          <div id={containerId} className="w-full rounded-lg overflow-hidden bg-slate-900 aspect-square" />
-          {!running ? (
-            <Button onClick={start} disabled={!me?.employee?.id} className="w-full">
-              <Camera className="h-4 w-4 mr-2" /> Mulai Scan
-            </Button>
-          ) : (
-            <Button onClick={stop} variant="secondary" className="w-full">Berhenti</Button>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Klik tombol di bawah untuk membuka pemindai kamera.
+          </p>
+          <Button onClick={() => setScanOpen(true)} disabled={!me?.employee?.id} className="w-full">
+            <Camera className="h-4 w-4 mr-2" /> Mulai Scan
+          </Button>
         </CardContent>
       </Card>
+
+      <Dialog open={scanOpen} onOpenChange={setScanOpen}>
+        <DialogContent className="max-w-md p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-4 w-4" /> Scan QR Absensi
+              {running && <Badge variant="secondary" className="ml-2">Memindai…</Badge>}
+            </DialogTitle>
+          </DialogHeader>
+          <div id={containerId} className="w-full rounded-lg overflow-hidden bg-slate-900 aspect-square" />
+          <Button onClick={() => setScanOpen(false)} variant="secondary" className="w-full">
+            <X className="h-4 w-4 mr-2" /> Tutup
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       {last && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
