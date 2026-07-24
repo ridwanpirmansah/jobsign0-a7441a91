@@ -7,7 +7,8 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Camera, CheckCircle2, XCircle, ArrowLeft, MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Camera, CheckCircle2, XCircle, ArrowLeft, MapPin, X } from "lucide-react";
 import { toast } from "sonner";
 import { speakId, beepError, primeSpeech } from "@/lib/scan-feedback";
 import WorkshopRadiusMap, { haversineMeters } from "@/components/WorkshopRadiusMap";
@@ -38,6 +39,7 @@ function ScanPage() {
   const containerId = "att-qr-reader";
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [running, setRunning] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [last, setLast] = useState<LastResult | null>(null);
   const processingRef = useRef(false);
   const lastTokenRef = useRef<string>("");
