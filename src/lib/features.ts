@@ -9,6 +9,7 @@ export type FeatureKey =
   | "me/attendance"
   | "me/earnings"
   | "cashbon"
+  | "shopping-notes"
   | "me/ship"
   | "me/pickup"
   | "orders"
@@ -38,6 +39,7 @@ export const FEATURES: FeatureDef[] = [
   { key: "me/attendance", label: "Absensi Saya",        path: "/me/attendance", defaultRoles: ["admin","owner","karyawan"],         group: "Karyawan" },
   { key: "me/earnings",   label: "Pendapatan Saya",     path: "/me/earnings",   defaultRoles: ["admin","owner","karyawan"],         group: "Karyawan" },
   { key: "cashbon",       label: "Cashbon",             path: "/cashbon",       defaultRoles: ["admin","owner","karyawan"],         group: "Karyawan" },
+  { key: "shopping-notes",label: "Catatan Belanja",     path: "/shopping-notes",defaultRoles: ["admin","owner","karyawan","kurir"], group: "Karyawan" },
   { key: "me/ship",       label: "Scan Siap Kirim",     path: "/me/ship",       defaultRoles: ["admin","owner","karyawan","kurir"], group: "Pengiriman" },
   { key: "me/pickup",     label: "Pickup Paket",        path: "/me/pickup",     defaultRoles: ["admin","owner","kurir"],            group: "Pengiriman" },
   { key: "orders",        label: "Order",               path: "/orders",        defaultRoles: ["admin","owner"],                    group: "Operasional" },
