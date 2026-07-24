@@ -45,7 +45,7 @@ function AuthLayout() {
       <div className="min-h-screen flex w-full bg-slate-50">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center gap-3 border-b bg-white px-4 sticky top-0 z-10">
+          <header className="h-14 flex items-center gap-3 border-b bg-white px-4 sticky top-0 z-30">
             <SidebarTrigger />
             <div className="text-sm font-medium text-slate-700">Neon Workflow System</div>
           </header>

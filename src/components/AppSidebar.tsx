@@ -5,7 +5,7 @@ import {
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
   ShoppingBag, Tags, Sparkles, BadgeDollarSign, Wrench, Receipt, Utensils, Truck, Activity, Shield, DatabaseBackup,
-  Settings, ChevronDown,
+  Settings, ChevronDown, ShoppingCart,
 } from "lucide-react";
 
 import {
@@ -31,6 +31,7 @@ const meItems: NavItem[] = [
   { title: "Absensi Saya", url: "/me/attendance", icon: CalendarCheck, feature: "me/attendance" },
   { title: "Pendapatan Saya", url: "/me/earnings", icon: Wallet, feature: "me/earnings" },
   { title: "Cashbon", url: "/cashbon", icon: BadgeDollarSign, feature: "cashbon" },
+  { title: "Catatan Belanja", url: "/shopping-notes", icon: ShoppingCart, feature: "shopping-notes" },
   { title: "Scan Siap Kirim", url: "/me/ship", icon: ScanLine, feature: "me/ship" },
 ];
 const adminItems: NavItem[] = [

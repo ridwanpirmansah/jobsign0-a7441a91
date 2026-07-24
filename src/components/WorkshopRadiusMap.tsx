@@ -100,7 +100,7 @@ export default function WorkshopRadiusMap({
   if (userLat != null && userLng != null) points.push([userLat, userLng]);
 
   return (
-    <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+    <div className="relative isolate rounded-xl overflow-hidden border border-slate-200 shadow-sm" style={{ zIndex: 0 }}>
       <MapContainer
         center={[workshopLat, workshopLng]}
         zoom={17}

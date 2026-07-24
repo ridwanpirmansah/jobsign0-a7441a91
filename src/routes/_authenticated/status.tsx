@@ -265,7 +265,7 @@ function StatusPage() {
           <ResiScanner onScan={handleScan} active={scanOpen} />
           <div>
             <Input
-              autoFocus placeholder="Atau ketik nomor resi / order lalu Enter"
+              placeholder="Atau ketik nomor resi / order lalu Enter"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const v = (e.target as HTMLInputElement).value;
