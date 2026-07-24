@@ -1072,6 +1072,48 @@ export type Database = {
         }
         Relationships: []
       }
+      shopping_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_name: string
+          note: string | null
+          purchased_at: string | null
+          purchased_by: string | null
+          qty: string | null
+          status: string
+          updated_at: string
+          urgency: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_name: string
+          note?: string | null
+          purchased_at?: string | null
+          purchased_by?: string | null
+          qty?: string | null
+          status?: string
+          updated_at?: string
+          urgency?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_name?: string
+          note?: string | null
+          purchased_at?: string | null
+          purchased_by?: string | null
+          qty?: string | null
+          status?: string
+          updated_at?: string
+          urgency?: string
+        }
+        Relationships: []
+      }
       sync_settings: {
         Row: {
           created_at: string
