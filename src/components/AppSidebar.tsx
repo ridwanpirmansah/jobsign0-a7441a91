@@ -49,7 +49,7 @@ const adminItems: NavItem[] = [
 const ownerItems: NavItem[] = [
   { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
   { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },
-  { title: "Riwayat Pickup", url: "/owner/pickup-history", icon: Truck },
+  
   { title: "Payroll", url: "/payroll", icon: Wallet },
   { title: "Analitik & Performa", url: "/owner/analytics", icon: Sparkles },
   { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
