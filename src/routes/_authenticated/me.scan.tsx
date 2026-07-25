@@ -95,6 +95,7 @@ function ScanPage() {
         : res.action === "check_out_final" ? "Check Out berhasil, sampai jumpa besok"
         : "Absensi berhasil";
       speakId(speech);
+      setScanOpen(false);
       setLast({ ok: true, message: `${label} berhasil dicatat`, action: res.action });
       qc.invalidateQueries({ queryKey: ["att-today"] });
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
