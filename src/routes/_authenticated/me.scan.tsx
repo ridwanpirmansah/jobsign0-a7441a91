@@ -103,6 +103,7 @@ function ScanPage() {
     },
     onError: (e: Error) => {
       beepError();
+      setScanOpen(false);
       setLast({ ok: false, message: e.message });
     },
     onSettled: () => {
