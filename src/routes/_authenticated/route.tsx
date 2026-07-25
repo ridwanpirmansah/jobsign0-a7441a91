@@ -26,9 +26,17 @@ function AuthLayout() {
   useEffect(() => {
     if (!me) return;
     if (me.role === "owner") return; // owner has full access
-    // Owner-only areas
-    if (path.startsWith("/owner") || path === "/users" || path === "/payroll" || path === "/reports") {
+    // Owner-only areas (allow admin for pickup-history)
+    const ownerOnly =
+      (path.startsWith("/owner") && path !== "/owner/pickup-history") ||
+      path === "/users" || path === "/payroll" || path === "/reports";
+    if (ownerOnly) {
       toast.error("Halaman ini khusus owner");
+      navigate({ to: fallbackPathFor(me.role, me.overrides), replace: true });
+      return;
+    }
+    if (path === "/owner/pickup-history" && me.role !== "admin") {
+      toast.error("Halaman ini khusus admin/owner");
       navigate({ to: fallbackPathFor(me.role, me.overrides), replace: true });
       return;
     }

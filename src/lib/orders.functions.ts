@@ -330,3 +330,28 @@ export const listMyPickups = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const listAllPickups = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireStaff(context);
+    const { data, error } = await context.supabase
+      .from("orders")
+      .select("id, order_no, no_resi, ekspedisi, username, kota, text_neon, ready_pickup_at, picked_up_at, picked_up_by")
+      .not("picked_up_at", "is", null)
+      .order("picked_up_at", { ascending: false })
+      .limit(1000);
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    const ids = Array.from(new Set(rows.map((r: any) => r.picked_up_by).filter(Boolean)));
+    let nameMap = new Map<string, string>();
+    if (ids.length) {
+      const { data: profs } = await context.supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", ids);
+      (profs ?? []).forEach((p: any) => nameMap.set(p.id, p.full_name || ""));
+    }
+    return rows.map((r: any) => ({ ...r, courier_name: r.picked_up_by ? (nameMap.get(r.picked_up_by) || "—") : "—" }));
+  });
+
+

@@ -95,6 +95,7 @@ function ScanPage() {
         : res.action === "check_out_final" ? "Check Out berhasil, sampai jumpa besok"
         : "Absensi berhasil";
       speakId(speech);
+      setScanOpen(false);
       setLast({ ok: true, message: `${label} berhasil dicatat`, action: res.action });
       qc.invalidateQueries({ queryKey: ["att-today"] });
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
@@ -102,6 +103,7 @@ function ScanPage() {
     },
     onError: (e: Error) => {
       beepError();
+      setScanOpen(false);
       setLast({ ok: false, message: e.message });
     },
     onSettled: () => {
@@ -281,7 +283,7 @@ function ScanPage() {
       </Dialog>
 
       {last && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
           <Card className={last.ok ? "border-emerald-300 bg-emerald-50 shadow-xl w-full max-w-sm" : "border-rose-300 bg-rose-50 shadow-xl w-full max-w-sm"}>
             <CardContent className="p-6 flex flex-col items-center text-center gap-4">
               {last.ok ? (

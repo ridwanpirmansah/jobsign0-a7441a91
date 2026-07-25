@@ -31,6 +31,7 @@ import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
 import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
+import { Route as AuthenticatedOwnerPickupHistoryRouteImport } from './routes/_authenticated/owner.pickup-history'
 import { Route as AuthenticatedOwnerPermissionsRouteImport } from './routes/_authenticated/owner.permissions'
 import { Route as AuthenticatedOwnerExpensesRouteImport } from './routes/_authenticated/owner.expenses'
 import { Route as AuthenticatedOwnerCarriersRouteImport } from './routes/_authenticated/owner.carriers'
@@ -160,6 +161,12 @@ const AuthenticatedOwnerPricesRoute =
     path: '/owner/prices',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOwnerPickupHistoryRoute =
+  AuthenticatedOwnerPickupHistoryRouteImport.update({
+    id: '/owner/pickup-history',
+    path: '/owner/pickup-history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOwnerPermissionsRoute =
   AuthenticatedOwnerPermissionsRouteImport.update({
     id: '/owner/permissions',
@@ -277,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/owner/carriers': typeof AuthenticatedOwnerCarriersRoute
   '/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
+  '/owner/pickup-history': typeof AuthenticatedOwnerPickupHistoryRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -315,6 +323,7 @@ export interface FileRoutesByTo {
   '/owner/carriers': typeof AuthenticatedOwnerCarriersRoute
   '/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
+  '/owner/pickup-history': typeof AuthenticatedOwnerPickupHistoryRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -355,6 +364,7 @@ export interface FileRoutesById {
   '/_authenticated/owner/carriers': typeof AuthenticatedOwnerCarriersRoute
   '/_authenticated/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/_authenticated/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
+  '/_authenticated/owner/pickup-history': typeof AuthenticatedOwnerPickupHistoryRoute
   '/_authenticated/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/_authenticated/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
     | '/owner/carriers'
     | '/owner/expenses'
     | '/owner/permissions'
+    | '/owner/pickup-history'
     | '/owner/prices'
     | '/owner/sync'
     | '/projects/$id'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/owner/carriers'
     | '/owner/expenses'
     | '/owner/permissions'
+    | '/owner/pickup-history'
     | '/owner/prices'
     | '/owner/sync'
     | '/projects/$id'
@@ -472,6 +484,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner/carriers'
     | '/_authenticated/owner/expenses'
     | '/_authenticated/owner/permissions'
+    | '/_authenticated/owner/pickup-history'
     | '/_authenticated/owner/prices'
     | '/_authenticated/owner/sync'
     | '/_authenticated/projects/$id'
@@ -642,6 +655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnerPricesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/owner/pickup-history': {
+      id: '/_authenticated/owner/pickup-history'
+      path: '/owner/pickup-history'
+      fullPath: '/owner/pickup-history'
+      preLoaderRoute: typeof AuthenticatedOwnerPickupHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/owner/permissions': {
       id: '/_authenticated/owner/permissions'
       path: '/owner/permissions'
@@ -780,6 +800,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerCarriersRoute: typeof AuthenticatedOwnerCarriersRoute
   AuthenticatedOwnerExpensesRoute: typeof AuthenticatedOwnerExpensesRoute
   AuthenticatedOwnerPermissionsRoute: typeof AuthenticatedOwnerPermissionsRoute
+  AuthenticatedOwnerPickupHistoryRoute: typeof AuthenticatedOwnerPickupHistoryRoute
   AuthenticatedOwnerPricesRoute: typeof AuthenticatedOwnerPricesRoute
   AuthenticatedOwnerSyncRoute: typeof AuthenticatedOwnerSyncRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
@@ -817,6 +838,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerCarriersRoute: AuthenticatedOwnerCarriersRoute,
   AuthenticatedOwnerExpensesRoute: AuthenticatedOwnerExpensesRoute,
   AuthenticatedOwnerPermissionsRoute: AuthenticatedOwnerPermissionsRoute,
+  AuthenticatedOwnerPickupHistoryRoute: AuthenticatedOwnerPickupHistoryRoute,
   AuthenticatedOwnerPricesRoute: AuthenticatedOwnerPricesRoute,
   AuthenticatedOwnerSyncRoute: AuthenticatedOwnerSyncRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
