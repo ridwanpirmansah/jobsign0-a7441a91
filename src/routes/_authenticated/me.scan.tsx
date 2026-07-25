@@ -283,7 +283,7 @@ function ScanPage() {
       </Dialog>
 
       {last && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
           <Card className={last.ok ? "border-emerald-300 bg-emerald-50 shadow-xl w-full max-w-sm" : "border-rose-300 bg-rose-50 shadow-xl w-full max-w-sm"}>
             <CardContent className="p-6 flex flex-col items-center text-center gap-4">
               {last.ok ? (
