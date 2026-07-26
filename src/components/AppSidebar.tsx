@@ -43,7 +43,7 @@ const adminItems: NavItem[] = [
   { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils, feature: "consumption" },
   { title: "Customer", url: "/customers", icon: Building2, feature: "customers" },
   { title: "Pickup Paket", url: "/me/pickup", icon: Truck, feature: "me/pickup" },
-  { title: "Riwayat Pickup", url: "/owner/pickup-history", icon: PackageCheck },
+  
 ];
 
 const ownerItems: NavItem[] = [
