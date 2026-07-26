@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Wrench, Receipt, Utensils, Truck, Activity, Shield, DatabaseBackup, PackageCheck,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Wrench, Receipt, Utensils, Truck, Activity, Shield, DatabaseBackup,
   Settings, ChevronDown, ShoppingCart,
 } from "lucide-react";
 
