@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listPickupReady, listMyPickups, courierPickup } from "@/lib/orders.functions";
+import { listPickupReady, listMyPickups, listAllPickups, courierPickup } from "@/lib/orders.functions";
 import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ResiScanner } from "@/components/ResiScanner";
-import { Truck, PackageCheck, Search, ScanLine } from "lucide-react";
+import { Truck, PackageCheck, Search, ScanLine, History, Users } from "lucide-react";
 import { toast } from "sonner";
 import { beepSuccess, beepError, primeSpeech } from "@/lib/scan-feedback";
 
@@ -25,15 +26,20 @@ function PickupPage() {
   const qc = useQueryClient();
   const fetchReady = useServerFn(listPickupReady);
   const fetchMine = useServerFn(listMyPickups);
+  const fetchAll = useServerFn(listAllPickups);
   const doPickup = useServerFn(courierPickup);
 
   const [resiInput, setResiInput] = useState("");
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState("");
+  const [tab, setTab] = useState("pickup");
   useEffect(() => { primeSpeech(); }, []);
+
+  const staff = isStaff(me?.role);
 
   const readyQ = useQuery({ queryKey: ["pickup-ready"], queryFn: () => fetchReady() });
   const mineQ = useQuery({ queryKey: ["pickup-mine"], queryFn: () => fetchMine() });
+  const allQ = useQuery({ queryKey: ["pickup-all"], queryFn: () => fetchAll(), enabled: staff && tab === "all" });
 
   const pickupMut = useMutation({
     mutationFn: (no_resi: string) => doPickup({ data: { no_resi, note: note.trim() || null } }),
@@ -43,6 +49,7 @@ function PickupPage() {
       setResiInput(""); setNote("");
       qc.invalidateQueries({ queryKey: ["pickup-ready"] });
       qc.invalidateQueries({ queryKey: ["pickup-mine"] });
+      qc.invalidateQueries({ queryKey: ["pickup-all"] });
     },
     onError: (e: Error) => { beepError(); toast.error(e.message); },
   });
@@ -71,7 +78,7 @@ function PickupPage() {
 
   if (meLoading) return <p className="p-4 text-sm text-slate-500">Memuat…</p>;
   if (!me) return <p className="p-4 text-sm text-slate-500">Silakan login.</p>;
-  const allowed = me.role === "kurir" || isStaff(me.role);
+  const allowed = me.role === "kurir" || staff;
   if (!allowed) {
     return (
       <Card className="max-w-md mx-auto mt-8">
@@ -84,111 +91,129 @@ function PickupPage() {
   return (
     <div className="edge-to-edge p-0 sm:p-4 space-y-3 sm:space-y-5 max-w-5xl">
       <div className="flex items-center gap-2 px-3 sm:px-0 pt-3 sm:pt-0">
-
         <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 grid place-items-center text-white shadow">
           <Truck className="h-5 w-5"/>
         </div>
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">Pickup Paket</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Ambil paket yang sudah ditandai siap kirim oleh admin, lalu scan resi setelah drop ke ekspedisi.</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Ambil paket yang siap kirim & pantau riwayat pickup.</p>
         </div>
       </div>
 
-      {/* Scan / input resi */}
-      <Card className="border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-blue-50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2"><ScanLine className="h-4 w-4"/> Konfirmasi Pickup</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <ResiScanner onScan={(t) => { if (!pickupMut.isPending) pickupMut.mutate(t); }} />
-          <div className="text-center text-xs text-muted-foreground">— atau ketik manual —</div>
-          <div>
-            <Label>No Resi</Label>
-            <Input
-              placeholder="Ketik atau scan nomor resi"
-              value={resiInput}
-              onChange={(e) => setResiInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && resiInput.trim()) pickupMut.mutate(resiInput.trim()); }}
-              className="text-base font-mono"
-            />
-          </div>
-          <div>
-            <Label>Catatan (opsional)</Label>
-            <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Misal: diambil di gudang B" />
-          </div>
-          <Button
-            className="w-full bg-cyan-600 hover:bg-cyan-700"
-            disabled={!resiInput.trim() || pickupMut.isPending}
-            onClick={() => pickupMut.mutate(resiInput.trim())}
-          >
-            <PackageCheck className="h-4 w-4 mr-2"/> Konfirmasi Pickup
-          </Button>
-        </CardContent>
-      </Card>
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
+        <div className="px-3 sm:px-0">
+          <TabsList className={`grid w-full ${staff ? "grid-cols-3" : "grid-cols-2"}`}>
+            <TabsTrigger value="pickup" className="gap-1.5"><ScanLine className="h-3.5 w-3.5"/> Pickup</TabsTrigger>
+            <TabsTrigger value="mine" className="gap-1.5"><History className="h-3.5 w-3.5"/> Riwayat Saya</TabsTrigger>
+            {staff && <TabsTrigger value="all" className="gap-1.5"><Users className="h-3.5 w-3.5"/> Semua Kurir</TabsTrigger>}
+          </TabsList>
+        </div>
 
-      {/* Daftar siap pickup */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Truck className="h-4 w-4"/> Siap Pickup
-              <Badge variant="secondary">{filtered.length}</Badge>
-            </CardTitle>
-            <div className="relative">
-              <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"/>
-              <Input placeholder="Cari resi/order/ekspedisi..." value={filter} onChange={(e) => setFilter(e.target.value)} className="pl-7 h-8 w-56" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {readyQ.isLoading ? (
-            <div className="text-sm text-muted-foreground">Memuat…</div>
-          ) : grouped.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">Tidak ada paket siap pickup.</div>
-          ) : grouped.map(([exp, rows]) => (
-            <div key={exp}>
-              <div className="text-xs font-semibold text-cyan-700 uppercase tracking-wide mb-2 flex items-center gap-2">
-                <Badge className="bg-cyan-600 text-white">{exp}</Badge>
-                <span className="text-muted-foreground normal-case tracking-normal">{rows.length} paket</span>
+        <TabsContent value="pickup" className="space-y-3 sm:space-y-5 mt-3">
+          <Card className="border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-blue-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2"><ScanLine className="h-4 w-4"/> Konfirmasi Pickup</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <ResiScanner onScan={(t) => { if (!pickupMut.isPending) pickupMut.mutate(t); }} />
+              <div className="text-center text-xs text-muted-foreground">— atau ketik manual —</div>
+              <div>
+                <Label>No Resi</Label>
+                <Input
+                  placeholder="Ketik atau scan nomor resi"
+                  value={resiInput}
+                  onChange={(e) => setResiInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && resiInput.trim()) pickupMut.mutate(resiInput.trim()); }}
+                  className="text-base font-mono"
+                />
               </div>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {rows.map((r: any) => (
-                  <div key={r.id} className="border rounded-lg p-3 bg-white hover:border-cyan-400 transition">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="font-mono text-xs text-muted-foreground">#{r.order_no}</div>
-                        <div className="font-semibold truncate">{r.text_neon || "—"}</div>
-                        <div className="text-xs text-muted-foreground truncate">{r.username || "—"} · {r.kota || "—"}</div>
-                      </div>
-                      <Badge variant="outline" className="shrink-0">{r.ekspedisi || "—"}</Badge>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <div className="font-mono text-sm text-cyan-700 truncate">{r.no_resi || "—"}</div>
-                      <Button size="sm" variant="outline" className="border-cyan-400 text-cyan-700 hover:bg-cyan-50" onClick={() => setResiInput(r.no_resi || "")}>
-                        Pilih
-                      </Button>
-                    </div>
-                    {r.ready_pickup_at && (
-                      <div className="text-[10px] text-muted-foreground mt-1">Siap sejak {new Date(r.ready_pickup_at).toLocaleString("id-ID")}</div>
-                    )}
+              <div>
+                <Label>Catatan (opsional)</Label>
+                <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Misal: diambil di gudang B" />
+              </div>
+              <Button
+                className="w-full bg-cyan-600 hover:bg-cyan-700"
+                disabled={!resiInput.trim() || pickupMut.isPending}
+                onClick={() => pickupMut.mutate(resiInput.trim())}
+              >
+                <PackageCheck className="h-4 w-4 mr-2"/> Konfirmasi Pickup
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Truck className="h-4 w-4"/> Siap Pickup
+                  <Badge variant="secondary">{filtered.length}</Badge>
+                </CardTitle>
+                <div className="relative">
+                  <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"/>
+                  <Input placeholder="Cari resi/order/ekspedisi..." value={filter} onChange={(e) => setFilter(e.target.value)} className="pl-7 h-8 w-56" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {readyQ.isLoading ? (
+                <div className="text-sm text-muted-foreground">Memuat…</div>
+              ) : grouped.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">Tidak ada paket siap pickup.</div>
+              ) : grouped.map(([exp, rows]) => (
+                <div key={exp}>
+                  <div className="text-xs font-semibold text-cyan-700 uppercase tracking-wide mb-2 flex items-center gap-2">
+                    <Badge className="bg-cyan-600 text-white">{exp}</Badge>
+                    <span className="text-muted-foreground normal-case tracking-normal">{rows.length} paket</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {rows.map((r: any) => (
+                      <div key={r.id} className="border rounded-lg p-3 bg-white hover:border-cyan-400 transition">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-mono text-xs text-muted-foreground">#{r.order_no}</div>
+                            <div className="font-semibold truncate">{r.text_neon || "—"}</div>
+                            <div className="text-xs text-muted-foreground truncate">{r.username || "—"} · {r.kota || "—"}</div>
+                          </div>
+                          <Badge variant="outline" className="shrink-0">{r.ekspedisi || "—"}</Badge>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <div className="font-mono text-sm text-cyan-700 truncate">{r.no_resi || "—"}</div>
+                          <Button size="sm" variant="outline" className="border-cyan-400 text-cyan-700 hover:bg-cyan-50" onClick={() => setResiInput(r.no_resi || "")}>
+                            Pilih
+                          </Button>
+                        </div>
+                        {r.ready_pickup_at && (
+                          <div className="text-[10px] text-muted-foreground mt-1">Siap sejak {new Date(r.ready_pickup_at).toLocaleString("id-ID")}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <PickupHistory rows={mineQ.data ?? []} loading={mineQ.isLoading} />
+        <TabsContent value="mine" className="mt-3">
+          <PickupHistory rows={(mineQ.data ?? []) as MineRow[]} loading={mineQ.isLoading} showCourier={false} />
+        </TabsContent>
+
+        {staff && (
+          <TabsContent value="all" className="mt-3">
+            <PickupHistory rows={(allQ.data ?? []) as MineRow[]} loading={allQ.isLoading} showCourier />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
 
-type MineRow = { id: string; order_no: string; no_resi: string | null; ekspedisi: string | null; username: string | null; kota: string | null; text_neon: string | null; ready_pickup_at: string | null; picked_up_at: string | null };
+type MineRow = { id: string; order_no: string; no_resi: string | null; ekspedisi: string | null; username: string | null; kota: string | null; text_neon: string | null; ready_pickup_at: string | null; picked_up_at: string | null; courier_name?: string };
 
-function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean }) {
+function PickupHistory({ rows, loading, showCourier }: { rows: MineRow[]; loading: boolean; showCourier: boolean }) {
   const [range, setRange] = useState<"today" | "yesterday" | "7d" | "30d" | "all">("7d");
   const [carrier, setCarrier] = useState<string>("all");
+  const [courierF, setCourierF] = useState<string>("all");
 
   const now = new Date();
   const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
@@ -210,13 +235,24 @@ function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean })
   };
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => inRange(r.picked_up_at) && (carrier === "all" || (r.ekspedisi || "Lainnya") === carrier));
+    return rows.filter((r) =>
+      inRange(r.picked_up_at) &&
+      (carrier === "all" || (r.ekspedisi || "Lainnya") === carrier) &&
+      (!showCourier || courierF === "all" || (r.courier_name || "—") === courierF)
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, range, carrier]);
+  }, [rows, range, carrier, courierF, showCourier]);
 
   const carriersAll = useMemo(() => {
     const set = new Set<string>();
     rows.filter((r) => inRange(r.picked_up_at)).forEach((r) => set.add(r.ekspedisi || "Lainnya"));
+    return Array.from(set).sort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, range]);
+
+  const couriersAll = useMemo(() => {
+    const set = new Set<string>();
+    rows.filter((r) => inRange(r.picked_up_at)).forEach((r) => set.add(r.courier_name || "—"));
     return Array.from(set).sort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, range]);
@@ -226,6 +262,13 @@ function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean })
     filtered.forEach((r) => { const k = r.ekspedisi || "Lainnya"; m.set(k, (m.get(k) ?? 0) + 1); });
     return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
   }, [filtered]);
+
+  const perCourier = useMemo(() => {
+    if (!showCourier) return [];
+    const m = new Map<string, number>();
+    filtered.forEach((r) => { const k = r.courier_name || "—"; m.set(k, (m.get(k) ?? 0) + 1); });
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [filtered, showCourier]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, MineRow[]>();
@@ -254,7 +297,7 @@ function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean })
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <PackageCheck className="h-4 w-4"/> Riwayat Pickup
+            <PackageCheck className="h-4 w-4"/> {showCourier ? "Riwayat Semua Kurir" : "Riwayat Pickup"}
             <Badge variant="secondary">{filtered.length} paket</Badge>
           </CardTitle>
         </div>
@@ -280,6 +323,20 @@ function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean })
             ))}
           </div>
         )}
+        {showCourier && couriersAll.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <button onClick={() => setCourierF("all")}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${courierF === "all" ? "bg-emerald-700 text-white border-emerald-700" : "bg-white text-slate-600 border-slate-200 hover:border-emerald-400"}`}>
+              Semua kurir
+            </button>
+            {couriersAll.map((c) => (
+              <button key={c} onClick={() => setCourierF(c)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${courierF === c ? "bg-emerald-700 text-white border-emerald-700" : "bg-white text-slate-600 border-slate-200 hover:border-emerald-400"}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
@@ -288,6 +345,16 @@ function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean })
           <div className="text-sm text-muted-foreground text-center py-6">Belum ada riwayat pickup untuk rentang ini.</div>
         ) : (
           <>
+            {showCourier && perCourier.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {perCourier.map(([name, count]) => (
+                  <div key={name} className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-2.5">
+                    <div className="text-[10px] uppercase tracking-wide text-emerald-700 font-semibold truncate">{name}</div>
+                    <div className="text-lg font-bold text-emerald-900">{count} <span className="text-xs font-normal text-slate-500">paket</span></div>
+                  </div>
+                ))}
+              </div>
+            )}
             {perCarrier.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {perCarrier.map(([name, count]) => (
@@ -310,6 +377,9 @@ function PickupHistory({ rows, loading }: { rows: MineRow[]; loading: boolean })
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-xs text-muted-foreground">#{r.order_no}</span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">{r.ekspedisi || "—"}</Badge>
+                          {showCourier && r.courier_name && (
+                            <Badge className="bg-emerald-600 text-white text-[10px] px-1.5 py-0">{r.courier_name}</Badge>
+                          )}
                         </div>
                         <div className="font-medium truncate">{r.text_neon || "—"}</div>
                         <div className="font-mono text-xs text-emerald-700 truncate">{r.no_resi}</div>
