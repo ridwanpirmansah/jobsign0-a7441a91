@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
   FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
   BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Wrench, Receipt, Utensils, Truck, Activity, Shield, DatabaseBackup, PackageCheck,
+  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Wrench, Receipt, Utensils, Truck, Activity, Shield, DatabaseBackup,
   Settings, ChevronDown, ShoppingCart,
 } from "lucide-react";
 
@@ -43,7 +43,7 @@ const adminItems: NavItem[] = [
   { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils, feature: "consumption" },
   { title: "Customer", url: "/customers", icon: Building2, feature: "customers" },
   { title: "Pickup Paket", url: "/me/pickup", icon: Truck, feature: "me/pickup" },
-  { title: "Riwayat Pickup", url: "/owner/pickup-history", icon: PackageCheck },
+  
 ];
 
 const ownerItems: NavItem[] = [
