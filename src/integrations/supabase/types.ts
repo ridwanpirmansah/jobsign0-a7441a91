@@ -1072,6 +1072,104 @@ export type Database = {
         }
         Relationships: []
       }
+      shopee_order_map: {
+        Row: {
+          created_at: string
+          id: string
+          imported_at: string | null
+          order_id: string | null
+          order_sn: string
+          raw: Json | null
+          shopee_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          imported_at?: string | null
+          order_id?: string | null
+          order_sn: string
+          raw?: Json | null
+          shopee_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          imported_at?: string | null
+          order_id?: string | null
+          order_sn?: string
+          raw?: Json | null
+          shopee_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopee_order_map_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopee_settings: {
+        Row: {
+          access_token: string | null
+          connected_at: string | null
+          created_at: string
+          enabled: boolean
+          id: number
+          last_sync_at: string | null
+          last_sync_inserted: number | null
+          last_sync_message: string | null
+          last_sync_skipped: number | null
+          last_sync_status: string | null
+          last_sync_updated: number | null
+          lookback_days: number
+          refresh_token: string | null
+          shop_id: string | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          connected_at?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: number
+          last_sync_at?: string | null
+          last_sync_inserted?: number | null
+          last_sync_message?: string | null
+          last_sync_skipped?: number | null
+          last_sync_status?: string | null
+          last_sync_updated?: number | null
+          lookback_days?: number
+          refresh_token?: string | null
+          shop_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          connected_at?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: number
+          last_sync_at?: string | null
+          last_sync_inserted?: number | null
+          last_sync_message?: string | null
+          last_sync_skipped?: number | null
+          last_sync_status?: string | null
+          last_sync_updated?: number | null
+          lookback_days?: number
+          refresh_token?: string | null
+          shop_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shopping_notes: {
         Row: {
           created_at: string
