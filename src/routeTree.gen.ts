@@ -45,6 +45,7 @@ import { Route as AuthenticatedMePickupRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
 import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
 import { Route as AuthenticatedMeAttendanceRouteImport } from './routes/_authenticated/me.attendance'
+import { Route as ApiPublicShopeeCallbackRouteImport } from './routes/api/public/shopee/callback'
 import { Route as ApiPublicHooksSyncProjectsRouteImport } from './routes/api/public/hooks/sync-projects'
 
 const AuthRoute = AuthRouteImport.update({
@@ -238,6 +239,11 @@ const AuthenticatedMeAttendanceRoute =
     path: '/me/attendance',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicShopeeCallbackRoute = ApiPublicShopeeCallbackRouteImport.update({
+  id: '/api/public/shopee/callback',
+  path: '/api/public/shopee/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSyncProjectsRoute =
   ApiPublicHooksSyncProjectsRouteImport.update({
     id: '/api/public/hooks/sync-projects',
@@ -282,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -360,6 +368,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects/'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/shopee/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/shopee/callback'
   id:
     | '__root__'
     | '/'
@@ -477,6 +488,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/shopee/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -484,6 +496,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicHooksSyncProjectsRoute: typeof ApiPublicHooksSyncProjectsRoute
+  ApiPublicShopeeCallbackRoute: typeof ApiPublicShopeeCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -740,6 +753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeAttendanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/shopee/callback': {
+      id: '/api/public/shopee/callback'
+      path: '/api/public/shopee/callback'
+      fullPath: '/api/public/shopee/callback'
+      preLoaderRoute: typeof ApiPublicShopeeCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-projects': {
       id: '/api/public/hooks/sync-projects'
       path: '/api/public/hooks/sync-projects'
@@ -831,6 +851,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicHooksSyncProjectsRoute: ApiPublicHooksSyncProjectsRoute,
+  ApiPublicShopeeCallbackRoute: ApiPublicShopeeCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
