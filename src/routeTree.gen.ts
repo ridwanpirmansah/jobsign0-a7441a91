@@ -30,6 +30,7 @@ import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
+import { Route as AuthenticatedOwnerShopeeRouteImport } from './routes/_authenticated/owner.shopee'
 import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
 import { Route as AuthenticatedOwnerPermissionsRouteImport } from './routes/_authenticated/owner.permissions'
 import { Route as AuthenticatedOwnerExpensesRouteImport } from './routes/_authenticated/owner.expenses'
@@ -156,6 +157,12 @@ const AuthenticatedOwnerSyncRoute = AuthenticatedOwnerSyncRouteImport.update({
   path: '/owner/sync',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOwnerShopeeRoute =
+  AuthenticatedOwnerShopeeRouteImport.update({
+    id: '/owner/shopee',
+    path: '/owner/shopee',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOwnerPricesRoute =
   AuthenticatedOwnerPricesRouteImport.update({
     id: '/owner/prices',
@@ -291,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -331,6 +339,7 @@ export interface FileRoutesByTo {
   '/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
@@ -373,6 +382,7 @@ export interface FileRoutesById {
   '/_authenticated/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/_authenticated/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/_authenticated/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/_authenticated/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/_authenticated/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -415,6 +425,7 @@ export interface FileRouteTypes {
     | '/owner/expenses'
     | '/owner/permissions'
     | '/owner/prices'
+    | '/owner/shopee'
     | '/owner/sync'
     | '/projects/$id'
     | '/projects/'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/owner/expenses'
     | '/owner/permissions'
     | '/owner/prices'
+    | '/owner/shopee'
     | '/owner/sync'
     | '/projects/$id'
     | '/projects'
@@ -496,6 +508,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner/expenses'
     | '/_authenticated/owner/permissions'
     | '/_authenticated/owner/prices'
+    | '/_authenticated/owner/shopee'
     | '/_authenticated/owner/sync'
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/'
@@ -662,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnerSyncRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/owner/shopee': {
+      id: '/_authenticated/owner/shopee'
+      path: '/owner/shopee'
+      fullPath: '/owner/shopee'
+      preLoaderRoute: typeof AuthenticatedOwnerShopeeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/owner/prices': {
       id: '/_authenticated/owner/prices'
       path: '/owner/prices'
@@ -822,6 +842,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerExpensesRoute: typeof AuthenticatedOwnerExpensesRoute
   AuthenticatedOwnerPermissionsRoute: typeof AuthenticatedOwnerPermissionsRoute
   AuthenticatedOwnerPricesRoute: typeof AuthenticatedOwnerPricesRoute
+  AuthenticatedOwnerShopeeRoute: typeof AuthenticatedOwnerShopeeRoute
   AuthenticatedOwnerSyncRoute: typeof AuthenticatedOwnerSyncRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
@@ -859,6 +880,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerExpensesRoute: AuthenticatedOwnerExpensesRoute,
   AuthenticatedOwnerPermissionsRoute: AuthenticatedOwnerPermissionsRoute,
   AuthenticatedOwnerPricesRoute: AuthenticatedOwnerPricesRoute,
+  AuthenticatedOwnerShopeeRoute: AuthenticatedOwnerShopeeRoute,
   AuthenticatedOwnerSyncRoute: AuthenticatedOwnerSyncRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,

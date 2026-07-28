@@ -60,6 +60,7 @@ const settingsItems: NavItem[] = [
   { title: "Master Harga", url: "/owner/prices", icon: Tags },
   { title: "Master Ekspedisi", url: "/owner/carriers", icon: Truck },
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
+  { title: "Integrasi Shopee", url: "/owner/shopee", icon: ShoppingBag },
   { title: "Kelola User", url: "/users", icon: UserCog },
   { title: "Setelan Akses Fitur", url: "/owner/permissions", icon: Shield },
   { title: "Backup & Restore", url: "/owner/backup", icon: DatabaseBackup },
