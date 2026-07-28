@@ -46,6 +46,7 @@ import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
 import { Route as AuthenticatedMeAttendanceRouteImport } from './routes/_authenticated/me.attendance'
 import { Route as ApiPublicShopeeCallbackRouteImport } from './routes/api/public/shopee/callback'
+import { Route as ApiPublicHooksSyncShopeeRouteImport } from './routes/api/public/hooks/sync-shopee'
 import { Route as ApiPublicHooksSyncProjectsRouteImport } from './routes/api/public/hooks/sync-projects'
 
 const AuthRoute = AuthRouteImport.update({
@@ -244,6 +245,12 @@ const ApiPublicShopeeCallbackRoute = ApiPublicShopeeCallbackRouteImport.update({
   path: '/api/public/shopee/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSyncShopeeRoute =
+  ApiPublicHooksSyncShopeeRouteImport.update({
+    id: '/api/public/hooks/sync-shopee',
+    path: '/api/public/hooks/sync-shopee',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSyncProjectsRoute =
   ApiPublicHooksSyncProjectsRouteImport.update({
     id: '/api/public/hooks/sync-projects',
@@ -288,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
   '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -327,6 +335,7 @@ export interface FileRoutesByTo {
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
   '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRoutesById {
@@ -368,6 +377,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
   '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRouteTypes {
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects/'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/hooks/sync-shopee'
     | '/api/public/shopee/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -448,6 +459,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/hooks/sync-shopee'
     | '/api/public/shopee/callback'
   id:
     | '__root__'
@@ -488,6 +500,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/hooks/sync-shopee'
     | '/api/public/shopee/callback'
   fileRoutesById: FileRoutesById
 }
@@ -496,6 +509,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicHooksSyncProjectsRoute: typeof ApiPublicHooksSyncProjectsRoute
+  ApiPublicHooksSyncShopeeRoute: typeof ApiPublicHooksSyncShopeeRoute
   ApiPublicShopeeCallbackRoute: typeof ApiPublicShopeeCallbackRoute
 }
 
@@ -760,6 +774,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicShopeeCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sync-shopee': {
+      id: '/api/public/hooks/sync-shopee'
+      path: '/api/public/hooks/sync-shopee'
+      fullPath: '/api/public/hooks/sync-shopee'
+      preLoaderRoute: typeof ApiPublicHooksSyncShopeeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-projects': {
       id: '/api/public/hooks/sync-projects'
       path: '/api/public/hooks/sync-projects'
@@ -851,6 +872,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicHooksSyncProjectsRoute: ApiPublicHooksSyncProjectsRoute,
+  ApiPublicHooksSyncShopeeRoute: ApiPublicHooksSyncShopeeRoute,
   ApiPublicShopeeCallbackRoute: ApiPublicShopeeCallbackRoute,
 }
 export const routeTree = rootRouteImport
