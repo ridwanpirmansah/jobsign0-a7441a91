@@ -327,7 +327,7 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
     if (p.no_resi) patch.no_resi = p.no_resi;
     if (p.ekspedisi) patch.ekspedisi = p.ekspedisi;
     if (Object.keys(patch).length > 0) {
-      const { error } = await supabaseAdmin.from("orders").update(patch).eq("id", existing.order_id);
+      const { error } = await supabaseAdmin.from("orders").update(patch as any).eq("id", existing.order_id);
       if (error) {
         result.errors.push(`${p.order_sn}: ${error.message}`);
         result.skipped++;
