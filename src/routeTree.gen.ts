@@ -30,6 +30,7 @@ import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
+import { Route as AuthenticatedOwnerShopeeRouteImport } from './routes/_authenticated/owner.shopee'
 import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
 import { Route as AuthenticatedOwnerPermissionsRouteImport } from './routes/_authenticated/owner.permissions'
 import { Route as AuthenticatedOwnerExpensesRouteImport } from './routes/_authenticated/owner.expenses'
@@ -45,6 +46,8 @@ import { Route as AuthenticatedMePickupRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
 import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
 import { Route as AuthenticatedMeAttendanceRouteImport } from './routes/_authenticated/me.attendance'
+import { Route as ApiPublicShopeeCallbackRouteImport } from './routes/api/public/shopee/callback'
+import { Route as ApiPublicHooksSyncShopeeRouteImport } from './routes/api/public/hooks/sync-shopee'
 import { Route as ApiPublicHooksSyncProjectsRouteImport } from './routes/api/public/hooks/sync-projects'
 
 const AuthRoute = AuthRouteImport.update({
@@ -154,6 +157,12 @@ const AuthenticatedOwnerSyncRoute = AuthenticatedOwnerSyncRouteImport.update({
   path: '/owner/sync',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOwnerShopeeRoute =
+  AuthenticatedOwnerShopeeRouteImport.update({
+    id: '/owner/shopee',
+    path: '/owner/shopee',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOwnerPricesRoute =
   AuthenticatedOwnerPricesRouteImport.update({
     id: '/owner/prices',
@@ -238,6 +247,17 @@ const AuthenticatedMeAttendanceRoute =
     path: '/me/attendance',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicShopeeCallbackRoute = ApiPublicShopeeCallbackRouteImport.update({
+  id: '/api/public/shopee/callback',
+  path: '/api/public/shopee/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksSyncShopeeRoute =
+  ApiPublicHooksSyncShopeeRouteImport.update({
+    id: '/api/public/hooks/sync-shopee',
+    path: '/api/public/hooks/sync-shopee',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSyncProjectsRoute =
   ApiPublicHooksSyncProjectsRouteImport.update({
     id: '/api/public/hooks/sync-projects',
@@ -278,10 +298,13 @@ export interface FileRoutesByFullPath {
   '/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
+  '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -316,10 +339,13 @@ export interface FileRoutesByTo {
   '/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
+  '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -356,10 +382,13 @@ export interface FileRoutesById {
   '/_authenticated/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
   '/_authenticated/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/_authenticated/owner/prices': typeof AuthenticatedOwnerPricesRoute
+  '/_authenticated/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/_authenticated/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
+  '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
+  '/api/public/shopee/callback': typeof ApiPublicShopeeCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -396,10 +425,13 @@ export interface FileRouteTypes {
     | '/owner/expenses'
     | '/owner/permissions'
     | '/owner/prices'
+    | '/owner/shopee'
     | '/owner/sync'
     | '/projects/$id'
     | '/projects/'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/hooks/sync-shopee'
+    | '/api/public/shopee/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -434,10 +466,13 @@ export interface FileRouteTypes {
     | '/owner/expenses'
     | '/owner/permissions'
     | '/owner/prices'
+    | '/owner/shopee'
     | '/owner/sync'
     | '/projects/$id'
     | '/projects'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/hooks/sync-shopee'
+    | '/api/public/shopee/callback'
   id:
     | '__root__'
     | '/'
@@ -473,10 +508,13 @@ export interface FileRouteTypes {
     | '/_authenticated/owner/expenses'
     | '/_authenticated/owner/permissions'
     | '/_authenticated/owner/prices'
+    | '/_authenticated/owner/shopee'
     | '/_authenticated/owner/sync'
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/'
     | '/api/public/hooks/sync-projects'
+    | '/api/public/hooks/sync-shopee'
+    | '/api/public/shopee/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -484,6 +522,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicHooksSyncProjectsRoute: typeof ApiPublicHooksSyncProjectsRoute
+  ApiPublicHooksSyncShopeeRoute: typeof ApiPublicHooksSyncShopeeRoute
+  ApiPublicShopeeCallbackRoute: typeof ApiPublicShopeeCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -635,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnerSyncRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/owner/shopee': {
+      id: '/_authenticated/owner/shopee'
+      path: '/owner/shopee'
+      fullPath: '/owner/shopee'
+      preLoaderRoute: typeof AuthenticatedOwnerShopeeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/owner/prices': {
       id: '/_authenticated/owner/prices'
       path: '/owner/prices'
@@ -740,6 +787,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeAttendanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/shopee/callback': {
+      id: '/api/public/shopee/callback'
+      path: '/api/public/shopee/callback'
+      fullPath: '/api/public/shopee/callback'
+      preLoaderRoute: typeof ApiPublicShopeeCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sync-shopee': {
+      id: '/api/public/hooks/sync-shopee'
+      path: '/api/public/hooks/sync-shopee'
+      fullPath: '/api/public/hooks/sync-shopee'
+      preLoaderRoute: typeof ApiPublicHooksSyncShopeeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-projects': {
       id: '/api/public/hooks/sync-projects'
       path: '/api/public/hooks/sync-projects'
@@ -781,6 +842,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerExpensesRoute: typeof AuthenticatedOwnerExpensesRoute
   AuthenticatedOwnerPermissionsRoute: typeof AuthenticatedOwnerPermissionsRoute
   AuthenticatedOwnerPricesRoute: typeof AuthenticatedOwnerPricesRoute
+  AuthenticatedOwnerShopeeRoute: typeof AuthenticatedOwnerShopeeRoute
   AuthenticatedOwnerSyncRoute: typeof AuthenticatedOwnerSyncRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
@@ -818,6 +880,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerExpensesRoute: AuthenticatedOwnerExpensesRoute,
   AuthenticatedOwnerPermissionsRoute: AuthenticatedOwnerPermissionsRoute,
   AuthenticatedOwnerPricesRoute: AuthenticatedOwnerPricesRoute,
+  AuthenticatedOwnerShopeeRoute: AuthenticatedOwnerShopeeRoute,
   AuthenticatedOwnerSyncRoute: AuthenticatedOwnerSyncRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
@@ -831,6 +894,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicHooksSyncProjectsRoute: ApiPublicHooksSyncProjectsRoute,
+  ApiPublicHooksSyncShopeeRoute: ApiPublicHooksSyncShopeeRoute,
+  ApiPublicShopeeCallbackRoute: ApiPublicShopeeCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
