@@ -1127,6 +1127,8 @@ export type Database = {
           last_sync_status: string | null
           last_sync_updated: number | null
           lookback_days: number
+          partner_id: string | null
+          partner_key: string | null
           refresh_token: string | null
           shop_id: string | null
           token_expires_at: string | null
@@ -1145,6 +1147,8 @@ export type Database = {
           last_sync_status?: string | null
           last_sync_updated?: number | null
           lookback_days?: number
+          partner_id?: string | null
+          partner_key?: string | null
           refresh_token?: string | null
           shop_id?: string | null
           token_expires_at?: string | null
@@ -1163,6 +1167,8 @@ export type Database = {
           last_sync_status?: string | null
           last_sync_updated?: number | null
           lookback_days?: number
+          partner_id?: string | null
+          partner_key?: string | null
           refresh_token?: string | null
           shop_id?: string | null
           token_expires_at?: string | null
