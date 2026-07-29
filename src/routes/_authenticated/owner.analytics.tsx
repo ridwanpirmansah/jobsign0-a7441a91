@@ -14,7 +14,7 @@ import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line,
   LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, Wallet, Users, Clock, Sparkles, Award, CalendarRange, ChevronDown } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Wallet, Users, Clock, Sparkles, Award, CalendarRange, ChevronDown, Eye, EyeOff } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 export const Route = createFileRoute("/_authenticated/owner/analytics")({
@@ -36,6 +36,9 @@ const PIE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4
 
 function fmtIDR(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
+}
+function maskDigits(text: string) {
+  return text.replace(/\d/g, "X");
 }
 function fmtShortIDR(n: number) {
   if (Math.abs(n) >= 1e9) return `${(n / 1e9).toFixed(1)}M`;
@@ -62,6 +65,9 @@ function AnalyticsPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerOpenMobile, setPickerOpenMobile] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [hideMoney, setHideMoney] = useState(false);
+  const money = (n: number) => (hideMoney ? maskDigits(fmtIDR(n)) : fmtIDR(n));
+  const moneyShort = (n: number) => (hideMoney ? maskDigits(fmtShortIDR(n)) : fmtShortIDR(n));
   const range = useMemo(() => {
     if (period === "custom" && customRange?.from && customRange?.to) {
       const from = startOfDay(customRange.from);
@@ -86,7 +92,7 @@ function AnalyticsPage() {
     enabled: me?.role === "owner",
     queryKey: ["owner-analytics", fromStr, toStr],
     queryFn: async () => {
-      const [orders, logs, attendances, employees, prevOrders, prevLogs] = await Promise.all([
+      const [orders, logs, attendances, employees, prevOrders, prevLogs, projectsCount] = await Promise.all([
         supabase.from("orders")
           .select("co_date,created_at,payment,split,hpp,profit,led_cost,akrilik_cost,solder_cost,tempel_cost,kabel_cost,kabel_socket_cost,adaptor,modul,biaya_lainnya,socket_dc,baut_fischer,outdoor_cost,status")
           .not("status", "in", "(draft,ready_stock)")
@@ -100,6 +106,8 @@ function AnalyticsPage() {
         supabase.from("employees").select("id,full_name,type,active").eq("active", true),
         supabase.from("orders").select("payment,hpp,profit,status").not("status", "in", "(draft,ready_stock)").gte("co_date", prevFromStr).lte("co_date", prevToStr),
         supabase.from("job_logs").select("amount,status").gte("log_date", prevFromStr).lte("log_date", prevToStr),
+        supabase.from("projects").select("id", { count: "exact", head: true })
+          .gte("created_at", `${fromStr}T00:00:00`).lte("created_at", `${toStr}T23:59:59`),
       ]);
       return {
         orders: orders.data ?? [],
@@ -108,6 +116,7 @@ function AnalyticsPage() {
         employees: employees.data ?? [],
         prevOrders: prevOrders.data ?? [],
         prevLogs: prevLogs.data ?? [],
+        projectCount: projectsCount.count ?? 0,
       };
     },
   });
@@ -123,6 +132,7 @@ function AnalyticsPage() {
   const tk = (data?.logs ?? []).filter((l) => l.status !== "rejected").reduce((s, l) => s + Number(l.amount ?? 0), 0);
   const margin = profit - tk; // margin bersih setelah tenaga kerja
   const orderCount = (data?.orders ?? []).length;
+  const projectCount = data?.projectCount ?? 0;
 
   // previous-period KPIs
   const prevOmset = (data?.prevOrders ?? []).reduce((s, o) => s + Number(o.payment ?? 0), 0);
@@ -225,6 +235,12 @@ function AnalyticsPage() {
           Analitik Keuangan & Performa
         </h1>
         <p className="text-sm text-slate-500">Ringkasan omset, margin, biaya tenaga kerja, dan performa karyawan.</p>
+      </div>
+      <div>
+        <Button size="sm" variant="outline" onClick={() => setHideMoney((v) => !v)} className="gap-1.5">
+          {hideMoney ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {hideMoney ? "Tampilkan Nominal" : "Sembunyikan Nominal"}
+        </Button>
       </div>
 
       {/* Period selector — soft gradient card */}
@@ -395,10 +411,10 @@ function AnalyticsPage() {
 
       {/* KPI */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Omset" value={omset} delta={pct(omset, prevOmset)} icon={DollarSign} color="emerald" subtitle={`${orderCount} order`} />
-        <KpiCard title="Profit Kotor" value={profit} delta={pct(profit, prevProfit)} icon={TrendingUp} color="sky" subtitle={`Margin ${omset ? Math.round((profit / omset) * 100) : 0}%`} />
-        <KpiCard title="Biaya Tenaga Kerja" value={tk} delta={pct(tk, prevTk)} icon={Wallet} color="amber" inverse subtitle="Garapan disetujui & pending" />
-        <KpiCard title="Margin Bersih" value={margin} delta={pct(margin, prevProfit - prevTk)} icon={Award} color="violet" subtitle="Profit − Tenaga Kerja" />
+        <KpiCard title="Omset" value={omset} delta={pct(omset, prevOmset)} icon={DollarSign} color="emerald" subtitle={`${orderCount} order · ${projectCount} project`} hide={hideMoney} />
+        <KpiCard title="Profit Kotor" value={profit} delta={pct(profit, prevProfit)} icon={TrendingUp} color="sky" subtitle={`Margin ${omset ? Math.round((profit / omset) * 100) : 0}%`} hide={hideMoney} />
+        <KpiCard title="Biaya Tenaga Kerja" value={tk} delta={pct(tk, prevTk)} icon={Wallet} color="amber" inverse subtitle="Garapan disetujui & pending" hide={hideMoney} />
+        <KpiCard title="Margin Bersih" value={margin} delta={pct(margin, prevProfit - prevTk)} icon={Award} color="violet" subtitle="Profit − Tenaga Kerja" hide={hideMoney} />
       </div>
 
       {/* Main chart: omset / hpp / margin */}
@@ -422,8 +438,8 @@ function AnalyticsPage() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtShortIDR} />
-                <Tooltip formatter={(v: number) => fmtIDR(v)} labelClassName="text-xs" />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={moneyShort} />
+                <Tooltip formatter={(v: number) => money(v)} labelClassName="text-xs" />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Area type="monotone" dataKey="omset" name="Omset" stroke="#10b981" fill="url(#gOmset)" strokeWidth={2} />
                 <Area type="monotone" dataKey="margin" name="Margin Bersih" stroke="#8b5cf6" fill="url(#gMargin)" strokeWidth={2} />
@@ -443,8 +459,8 @@ function AnalyticsPage() {
                 <BarChart data={series} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtShortIDR} />
-                  <Tooltip formatter={(v: number) => fmtIDR(v)} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={moneyShort} />
+                  <Tooltip formatter={(v: number) => money(v)} />
                   <Bar dataKey="tk" name="Biaya TK" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -461,7 +477,7 @@ function AnalyticsPage() {
                   <Pie data={composition} dataKey="value" nameKey="name" outerRadius={90} innerRadius={45} paddingAngle={2}>
                     {composition.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number) => fmtIDR(v)} />
+                  <Tooltip formatter={(v: number) => money(v)} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </PieChart>
               </ResponsiveContainer>
@@ -481,7 +497,7 @@ function AnalyticsPage() {
             <div className="min-w-0">
               <div className="text-xs uppercase tracking-wide text-emerald-700">Top Earner</div>
               <div className="text-lg font-bold text-slate-900 truncate">{topEarner?.name ?? "—"}</div>
-              <div className="text-sm text-slate-600">{topEarner ? fmtIDR(topEarner.total) : "Belum ada data"}</div>
+              <div className="text-sm text-slate-600">{topEarner ? money(topEarner.total) : "Belum ada data"}</div>
             </div>
           </CardContent>
         </Card>
@@ -510,8 +526,8 @@ function AnalyticsPage() {
               <BarChart data={empRows.slice(0, 12)} margin={{ top: 8, right: 12, left: 0, bottom: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" interval={0} height={48} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtShortIDR} />
-                <Tooltip formatter={(v: number) => fmtIDR(v)} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={moneyShort} />
+                <Tooltip formatter={(v: number) => money(v)} />
                 <Bar dataKey="total" name="Total Garapan" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -535,7 +551,7 @@ function AnalyticsPage() {
                   <tr key={i} className="border-b last:border-0 hover:bg-slate-50">
                     <td className="py-2 px-3 font-medium text-slate-800">{e.name}</td>
                     <td className="py-2 px-3"><Badge variant="outline" className="capitalize">{e.type || "—"}</Badge></td>
-                    <td className="py-2 px-3 text-right font-semibold text-emerald-700">{fmtIDR(e.total)}</td>
+                    <td className="py-2 px-3 text-right font-semibold text-emerald-700">{money(e.total)}</td>
                     <td className="py-2 px-3 text-right">{e.jobs}</td>
                     <td className="py-2 px-3 text-right">{e.days} hari</td>
                     <td className="py-2 px-3 text-right font-mono">{fmtMinToTime(e.avgCheckIn)}</td>
@@ -560,9 +576,9 @@ function AnalyticsPage() {
 }
 
 function KpiCard({
-  title, value, delta, icon: Icon, color, subtitle, inverse,
+  title, value, delta, icon: Icon, color, subtitle, inverse, hide,
 }: {
-  title: string; value: number; delta: number; subtitle?: string; inverse?: boolean;
+  title: string; value: number; delta: number; subtitle?: string; inverse?: boolean; hide?: boolean;
   icon: React.ComponentType<{ className?: string }>;
   color: "emerald" | "sky" | "amber" | "violet";
 }) {
@@ -579,7 +595,7 @@ function KpiCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wide text-slate-500">{title}</div>
-            <div className="text-2xl font-bold text-slate-900 mt-1 truncate">{fmtIDR(value)}</div>
+            <div className="text-2xl font-bold text-slate-900 mt-1 truncate">{hide ? maskDigits(fmtIDR(value)) : fmtIDR(value)}</div>
             {subtitle && <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>}
           </div>
           <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${palette.icon}`}>
