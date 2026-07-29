@@ -28,11 +28,22 @@ type JobLogRow = {
   status: string;
   is_repair: boolean | null;
   repair_reason: string | null;
-  employee?: { full_name: string; employee_code: string } | null;
-  project?: { code: string; title: string } | null;
+  employee?: { full_name: string; employee_code: string; type?: string | null } | null;
+  project?: { code: string; title: string; parent_order_id?: string | null } | null;
   rate?: { name: string; unit: string; rate_per_unit: number } | null;
-  order?: { order_no: string; text_neon: string } | null;
+  order?: { order_no: string; text_neon: string; outdoor_cost?: number | null } | null;
+  _outdoor?: boolean;
 };
+
+function TypeBadge({ type }: { type?: string | null }) {
+  if (type === "harian") return <Badge className="bg-sky-500 text-white text-[10px]">Harian</Badge>;
+  if (type === "borongan") return <Badge className="bg-violet-500 text-white text-[10px]">Borongan</Badge>;
+  return null;
+}
+
+function OutdoorBadge() {
+  return <Badge className="bg-cyan-600 text-white text-[10px]"><Sun className="h-3 w-3 mr-0.5" />Outdoor</Badge>;
+}
 
 function ApprovalsPage() {
   const { data: me } = useCurrentUser();
@@ -44,10 +55,26 @@ function ApprovalsPage() {
 
   const { data: logs } = useQuery({
     queryKey: ["pending-logs"],
-    queryFn: async () => (await supabase.from("job_logs")
-      .select("*, employee:employees(full_name,employee_code), project:projects(code,title), rate:job_rates(name,unit,rate_per_unit), order:orders!source_order_id(order_no,text_neon)")
-      .eq("status", "pending").order("created_at", { ascending: false })).data as unknown as JobLogRow[] ?? [],
+    queryFn: async () => {
+      const rows = (await supabase.from("job_logs")
+        .select("*, employee:employees(full_name,employee_code,type), project:projects(code,title,parent_order_id), rate:job_rates(name,unit,rate_per_unit), order:orders!source_order_id(order_no,text_neon,outdoor_cost)")
+        .eq("status", "pending").order("created_at", { ascending: false })).data as unknown as JobLogRow[] ?? [];
+
+      const parentIds = [...new Set(rows.map((r) => r.project?.parent_order_id).filter(Boolean))] as string[];
+      let outdoorMap = new Map<string, boolean>();
+      if (parentIds.length) {
+        const { data: parents } = await supabase.from("orders").select("id,outdoor_cost").in("id", parentIds);
+        outdoorMap = new Map((parents ?? []).map((o) => [o.id, Number(o.outdoor_cost ?? 0) > 0]));
+      }
+      return rows.map((r) => ({
+        ...r,
+        _outdoor: r.is_repair
+          ? Number(r.order?.outdoor_cost ?? 0) > 0
+          : !!(r.project?.parent_order_id && outdoorMap.get(r.project.parent_order_id)),
+      }));
+    },
   });
+
 
   const decide = useMutation({
     mutationFn: async (args: { id: string; status: "approved" | "rejected"; qty?: number; amount?: number }) => {
