@@ -128,7 +128,9 @@ function ApprovalsPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       {l.is_repair && <Badge className="bg-orange-500 text-white text-[10px]"><Wrench className="h-3 w-3 mr-0.5" />Reparasi</Badge>}
+                      {l._outdoor && <OutdoorBadge />}
                       <span className="font-semibold text-slate-900 truncate">{l.employee?.full_name}</span>
+                      <TypeBadge type={l.employee?.type} />
                     </div>
                     <div className="text-xs text-slate-500">{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</div>
                   </div>
@@ -177,11 +179,17 @@ function ApprovalsPage() {
                 {logs?.map((l) => (
                   <TableRow key={l.id} className={l.is_repair ? "bg-orange-50/40" : ""}>
                     <TableCell>{format(new Date(l.log_date), "EEE, dd MMM", { locale: idLocale })}</TableCell>
-                    <TableCell className="font-medium">{l.employee?.full_name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span>{l.employee?.full_name}</span>
+                        <TypeBadge type={l.employee?.type} />
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {l.is_repair
                         ? <Badge className="bg-orange-500 text-white"><Wrench className="h-3 w-3 mr-1" />Reparasi</Badge>
                         : <Badge variant="outline">Garapan</Badge>}
+                      {l._outdoor && <span className="ml-1 inline-flex"><OutdoorBadge /></span>}
                     </TableCell>
                     <TableCell>
                       {l.is_repair && l.order ? (
