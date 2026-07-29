@@ -26,6 +26,7 @@ type JobLogRow = {
   amount: number;
   note: string | null;
   status: string;
+  project_id?: string | null;
   is_repair: boolean | null;
   repair_reason: string | null;
   employee?: { full_name: string; employee_code: string; type?: string | null } | null;
