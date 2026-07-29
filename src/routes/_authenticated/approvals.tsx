@@ -26,6 +26,7 @@ type JobLogRow = {
   amount: number;
   note: string | null;
   status: string;
+  project_id?: string | null;
   is_repair: boolean | null;
   repair_reason: string | null;
   employee?: { full_name: string; employee_code: string; type?: string | null } | null;
@@ -60,7 +61,13 @@ function ApprovalsPage() {
         .select("*, employee:employees(full_name,employee_code,type), project:projects(code,title,parent_order_id), rate:job_rates(name,unit,rate_per_unit), order:orders!source_order_id(order_no,text_neon,outdoor_cost)")
         .eq("status", "pending").order("created_at", { ascending: false })).data as unknown as JobLogRow[] ?? [];
 
+      const projectIds = [...new Set(rows.map((r) => r.project_id ?? null).filter(Boolean))] as string[];
       const parentIds = [...new Set(rows.map((r) => r.project?.parent_order_id).filter(Boolean))] as string[];
+      const outdoorProjects = new Set<string>();
+      if (projectIds.length) {
+        const { data: items } = await supabase.from("order_items").select("project_id,outdoor_cost").in("project_id", projectIds);
+        (items ?? []).forEach((it) => { if (it.project_id && Number(it.outdoor_cost ?? 0) > 0) outdoorProjects.add(it.project_id); });
+      }
       let outdoorMap = new Map<string, boolean>();
       if (parentIds.length) {
         const { data: parents } = await supabase.from("orders").select("id,outdoor_cost").in("id", parentIds);
@@ -70,7 +77,8 @@ function ApprovalsPage() {
         ...r,
         _outdoor: r.is_repair
           ? Number(r.order?.outdoor_cost ?? 0) > 0
-          : !!(r.project?.parent_order_id && outdoorMap.get(r.project.parent_order_id)),
+          : (!!(r.project_id && outdoorProjects.has(r.project_id)) ||
+             !!(r.project?.parent_order_id && outdoorMap.get(r.project.parent_order_id))),
       }));
     },
   });
