@@ -494,7 +494,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         const suggested = suggestAdaptor(num(it.led_meter));
         const variantPrice = priceMap[it.adaptor_type] ?? suggested.defaultPrice;
         const adaptorCost = it.adaptor_manual ? num(it.adaptor) : variantPrice;
-        await saveItem({
+        const saved = await saveItem({
           data: {
             id: it.id,
             order_id: orderId,
@@ -512,7 +512,10 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             outdoor_cost: it.kind === "custom"
               ? (!it.use_outdoor ? 0 : (it.outdoor_cost === "" ? null : num(it.outdoor_cost)))
               : 0,
-            source_ready_stock_order_id: it.kind === "ready_stock_ref" ? it.source_ready_stock_order_id : null,
+            source_ready_stock_order_id:
+              it.kind === "ready_stock_ref" || it._consume_source_id
+                ? (it.source_ready_stock_order_id || null)
+                : null,
             source_draft_order_id: it.kind === "draft_ref" ? it.source_draft_order_id : null,
 
             manual_name: it.kind === "ready_stock_manual" ? it.manual_name : null,
@@ -521,7 +524,12 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             notes: it.notes || null,
           },
         });
+        // Pindahkan project & kosongkan produk pada order sumber (ready stock/retur)
+        if (it._consume_source_id && saved?.id) {
+          await consumeSource({ data: { source_order_id: it._consume_source_id, item_id: saved.id } });
+        }
       }
+
       return { orderId };
     },
     onSuccess: () => {
