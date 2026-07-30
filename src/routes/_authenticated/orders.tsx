@@ -389,6 +389,39 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     }
   };
 
+  // Pilih ready stock / retur → salin datanya menjadi item Custom (bisa diedit)
+  const pickStockSource = async (idx: number, sourceId: string) => {
+    try {
+      const spec: any = await fetchStockSpec({ data: { id: sourceId } });
+      setItems((arr) => arr.map((x, i) => i !== idx ? x : {
+        ...x,
+        kind: "custom" as ItemKind,
+        text_neon: spec.text_neon ?? "",
+        akrilik_p: String(spec.akrilik_p ?? ""),
+        akrilik_l: String(spec.akrilik_l ?? ""),
+        led_meter: String(spec.led_meter ?? ""),
+        titik: String(spec.titik ?? ""),
+        kabel_meter: spec.kabel_meter == null ? "" : String(spec.kabel_meter),
+        kabel_socket_meter: String(spec.kabel_socket_meter ?? 1),
+        adaptor_type: spec.adaptor_type || "adaptor_2a",
+        adaptor: String(spec.adaptor ?? ""),
+        adaptor_manual: false,
+        modul: String(spec.modul ?? 0),
+        socket_dc: String(spec.socket_dc ?? 0),
+        baut_fischer: String(spec.baut_fischer ?? 0),
+        use_outdoor: Number(spec.outdoor_cost ?? 0) > 0,
+        outdoor_cost: spec.outdoor_cost == null ? "" : String(spec.outdoor_cost),
+        notes: spec.notes ?? x.notes,
+        source_ready_stock_order_id: sourceId,
+        _consume_source_id: sourceId,
+        _consume_source_no: spec.order_no ?? "",
+      }));
+      toast.success(`Data produk ${spec.order_no ?? ""} disalin ke form custom`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal mengambil data produk");
+    }
+  };
+
 
   const totalItemsHpp = useMemo(() =>
     items.filter((i) => !i._deleted).reduce((s, i) => {
