@@ -202,10 +202,74 @@ export const listReadyStockAvailable = createServerFn({ method: "GET" })
       usedReturns = new Set((used ?? []).map((u: any) => u.source_ready_stock_order_id));
     }
 
+    // Order sumber yang isinya sudah dipindahkan (tanpa item) tidak muncul lagi
+    const allIds = rows.map((r: any) => r.id);
+    let hasItems = new Set<string>();
+    if (allIds.length) {
+      const { data: its } = await context.supabase
+        .from("order_items")
+        .select("order_id")
+        .in("order_id", allIds);
+      hasItems = new Set((its ?? []).map((i: any) => i.order_id));
+    }
+
     return rows
+      .filter((r: any) => hasItems.has(r.id))
       .filter((r: any) => r.status !== "return" || !usedReturns.has(r.id))
       .map((r: any) => ({ ...r, is_return: r.status === "return" }));
   });
+
+export const getStockSourceSpec = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ord, error } = await context.supabase
+      .from("orders")
+      .select("*")
+      .eq("id", data.id)
+      .single();
+    if (error) throw new Error(error.message);
+    const { data: its } = await context.supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", data.id)
+      .order("position", { ascending: true });
+    const first = (its ?? [])[0] as any;
+    const src = first ?? ord;
+    return {
+      order_no: ord.order_no,
+      text_neon: (src.text_neon || src.manual_name || ord.text_neon || "") as string,
+      akrilik_p: Number(src.akrilik_p ?? 0),
+      akrilik_l: Number(src.akrilik_l ?? 0),
+      led_meter: Number(src.led_meter ?? 0),
+      titik: Number(src.titik ?? 0),
+      kabel_meter: src.kabel_meter == null ? null : Number(src.kabel_meter),
+      kabel_socket_meter: Number(src.kabel_socket_meter ?? 1),
+      adaptor_type: (src.adaptor_type ?? null) as string | null,
+      adaptor: Number(src.adaptor ?? 0),
+      modul: Number(src.modul ?? 0),
+      socket_dc: Number(src.socket_dc ?? 0),
+      baut_fischer: Number(src.baut_fischer ?? 0),
+      outdoor_cost: src.outdoor_cost == null ? null : Number(src.outdoor_cost),
+      notes: (src.notes ?? null) as string | null,
+    };
+  });
+
+export const consumeStockSource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ source_order_id: z.string().uuid(), item_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await requireStaff(context);
+    const { error } = await context.supabase.rpc("consume_stock_source", {
+      _source_order_id: data.source_order_id,
+      _item_id: data.item_id,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 
 export const listDraftAvailable = createServerFn({ method: "GET" })
