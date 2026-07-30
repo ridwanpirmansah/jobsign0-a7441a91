@@ -220,6 +220,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const fetchRs = useServerFn(listReadyStockAvailable);
   const fetchDrafts = useServerFn(listDraftAvailable);
   const markPickup = useServerFn(markReadyPickup);
+  const fetchStockSpec = useServerFn(getStockSourceSpec);
+  const consumeSource = useServerFn(consumeStockSource);
+
 
   const qc = useQueryClient();
 
