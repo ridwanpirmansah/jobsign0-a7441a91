@@ -1015,21 +1015,27 @@ function ItemCard({
 
         {item.kind === "ready_stock_ref" && (
           <div className="space-y-2">
-            <Label>Pilih Ready Stock</Label>
+            <Label>Pilih Ready Stock / Produk Retur</Label>
             <Select value={item.source_ready_stock_order_id} onValueChange={(v) => onChange({ source_ready_stock_order_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Pilih produk ready stock..."/></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Pilih produk ready stock atau retur..."/></SelectTrigger>
               <SelectContent>
-                {rsList.filter((r) => r.id !== excludeRsId).map((r) => (
+                {rsList.filter((r) => r.id !== excludeRsId).map((r: any) => (
                   <SelectItem key={r.id} value={r.id}>
-                    <Package className="h-3 w-3 inline mr-1"/> {r.order_no} — {r.text_neon || "(tanpa nama)"} · HPP Rp {rp(Number(r.hpp))}
+                    <Package className="h-3 w-3 inline mr-1"/>
+                    {r.is_return && <span className="mr-1 text-[10px] font-semibold px-1 py-0.5 rounded bg-rose-100 text-rose-700">RETUR</span>}
+                    {r.order_no} — {r.text_neon || "(tanpa nama)"} · HPP Rp {rp(Number(r.hpp))}
                   </SelectItem>
                 ))}
-                {rsList.length === 0 && <div className="p-2 text-xs text-muted-foreground">Belum ada ready-stock tersedia.</div>}
+                {rsList.length === 0 && <div className="p-2 text-xs text-muted-foreground">Belum ada ready-stock/retur tersedia.</div>}
               </SelectContent>
             </Select>
+            <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">
+              Produk <b>RETUR</b> dipakai ulang beserta data project & garapannya (tidak perlu produksi ulang). Order retur tetap tersimpan dengan status retur, dan produk itu hilang dari daftar setelah dipakai di order baru.
+            </p>
             <div><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
           </div>
         )}
+
 
         {item.kind === "draft_ref" && (
           <div className="space-y-2">
