@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listOrders, listPrices, upsertOrder, deleteOrder,
   listOrderItems, upsertOrderItem, deleteOrderItem, listReadyStockAvailable, listDraftAvailable,
-  markReadyPickup, listCarriers,
+  markReadyPickup, listCarriers, getStockSourceSpec, consumeStockSource,
 } from "@/lib/orders.functions";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,6 +115,9 @@ type ItemForm = {
   manual_name: string;
   manual_price: string;
   manual_hpp: string;
+  // sumber ready stock/retur yang datanya disalin ke item custom ini
+  _consume_source_id?: string;
+  _consume_source_no?: string;
 };
 
 
@@ -217,6 +220,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const fetchRs = useServerFn(listReadyStockAvailable);
   const fetchDrafts = useServerFn(listDraftAvailable);
   const markPickup = useServerFn(markReadyPickup);
+  const fetchStockSpec = useServerFn(getStockSourceSpec);
+  const consumeSource = useServerFn(consumeStockSource);
+
 
   const qc = useQueryClient();
 
@@ -383,6 +389,39 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     }
   };
 
+  // Pilih ready stock / retur → salin datanya menjadi item Custom (bisa diedit)
+  const pickStockSource = async (idx: number, sourceId: string) => {
+    try {
+      const spec: any = await fetchStockSpec({ data: { id: sourceId } });
+      setItems((arr) => arr.map((x, i) => i !== idx ? x : {
+        ...x,
+        kind: "custom" as ItemKind,
+        text_neon: spec.text_neon ?? "",
+        akrilik_p: String(spec.akrilik_p ?? ""),
+        akrilik_l: String(spec.akrilik_l ?? ""),
+        led_meter: String(spec.led_meter ?? ""),
+        titik: String(spec.titik ?? ""),
+        kabel_meter: spec.kabel_meter == null ? "" : String(spec.kabel_meter),
+        kabel_socket_meter: String(spec.kabel_socket_meter ?? 1),
+        adaptor_type: spec.adaptor_type || "adaptor_2a",
+        adaptor: String(spec.adaptor ?? ""),
+        adaptor_manual: false,
+        modul: String(spec.modul ?? 0),
+        socket_dc: String(spec.socket_dc ?? 0),
+        baut_fischer: String(spec.baut_fischer ?? 0),
+        use_outdoor: Number(spec.outdoor_cost ?? 0) > 0,
+        outdoor_cost: spec.outdoor_cost == null ? "" : String(spec.outdoor_cost),
+        notes: spec.notes ?? x.notes,
+        source_ready_stock_order_id: sourceId,
+        _consume_source_id: sourceId,
+        _consume_source_no: spec.order_no ?? "",
+      }));
+      toast.success(`Data produk ${spec.order_no ?? ""} disalin ke form custom`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal mengambil data produk");
+    }
+  };
+
 
   const totalItemsHpp = useMemo(() =>
     items.filter((i) => !i._deleted).reduce((s, i) => {
@@ -455,7 +494,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         const suggested = suggestAdaptor(num(it.led_meter));
         const variantPrice = priceMap[it.adaptor_type] ?? suggested.defaultPrice;
         const adaptorCost = it.adaptor_manual ? num(it.adaptor) : variantPrice;
-        await saveItem({
+        const saved = await saveItem({
           data: {
             id: it.id,
             order_id: orderId,
@@ -473,7 +512,10 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             outdoor_cost: it.kind === "custom"
               ? (!it.use_outdoor ? 0 : (it.outdoor_cost === "" ? null : num(it.outdoor_cost)))
               : 0,
-            source_ready_stock_order_id: it.kind === "ready_stock_ref" ? it.source_ready_stock_order_id : null,
+            source_ready_stock_order_id:
+              it.kind === "ready_stock_ref" || it._consume_source_id
+                ? (it.source_ready_stock_order_id || null)
+                : null,
             source_draft_order_id: it.kind === "draft_ref" ? it.source_draft_order_id : null,
 
             manual_name: it.kind === "ready_stock_manual" ? it.manual_name : null,
@@ -482,7 +524,12 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             notes: it.notes || null,
           },
         });
+        // Pindahkan project & kosongkan produk pada order sumber (ready stock/retur)
+        if (it._consume_source_id && saved?.id) {
+          await consumeSource({ data: { source_order_id: it._consume_source_id, item_id: saved.id } });
+        }
       }
+
       return { orderId };
     },
     onSuccess: () => {
@@ -720,6 +767,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     expanded={expandedItemKey === it._key}
                     onToggleExpand={() => setExpandedItemKey((k) => k === it._key ? null : it._key)}
                     onChange={(patch) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, ...patch } : x))}
+                    onPickStock={(sourceId) => pickStockSource(idx, sourceId)}
                     onDelete={() => setItems((arr) => {
                       const target = arr[idx];
                       if (target.id) return arr.map((x, i) => i === idx ? { ...x, _deleted: true } : x);
@@ -890,7 +938,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
 // -------- ItemCard --------
 function ItemCard({
-  item, index, priceMap, rsList, draftsList, excludeRsId, excludeDraftId, expanded, onToggleExpand, onChange, onDelete,
+  item, index, priceMap, rsList, draftsList, excludeRsId, excludeDraftId, expanded, onToggleExpand, onChange, onDelete, onPickStock,
 }: {
   item: ItemForm;
   index: number;
@@ -903,6 +951,7 @@ function ItemCard({
   onToggleExpand: () => void;
   onChange: (patch: Partial<ItemForm>) => void;
   onDelete: () => void;
+  onPickStock: (sourceId: string) => void;
 }) {
   const ledMeterNum = num(item.led_meter);
   const suggested = suggestAdaptor(ledMeterNum);
@@ -964,6 +1013,11 @@ function ItemCard({
 
         </div>
 
+        {item.kind === "custom" && item._consume_source_id && (
+          <p className="mb-2 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded p-2">
+            Data disalin dari produk <b>{item._consume_source_no || "ready stock/retur"}</b>. Setelah disimpan, isi produk pada order sumber dikosongkan (HPP jadi 0) dan project/garapannya berpindah ke order ini.
+          </p>
+        )}
         {item.kind === "custom" && (
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="sm:col-span-2"><Label>TEXT Neon *</Label><Input value={item.text_neon} onChange={(e) => onChange({ text_neon: e.target.value })}/></div>
@@ -1016,7 +1070,7 @@ function ItemCard({
         {item.kind === "ready_stock_ref" && (
           <div className="space-y-2">
             <Label>Pilih Ready Stock / Produk Retur</Label>
-            <Select value={item.source_ready_stock_order_id} onValueChange={(v) => onChange({ source_ready_stock_order_id: v })}>
+            <Select value={item.source_ready_stock_order_id} onValueChange={(v) => onPickStock(v)}>
               <SelectTrigger><SelectValue placeholder="Pilih produk ready stock atau retur..."/></SelectTrigger>
               <SelectContent>
                 {rsList.filter((r) => r.id !== excludeRsId).map((r: any) => (
@@ -1030,7 +1084,7 @@ function ItemCard({
               </SelectContent>
             </Select>
             <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">
-              Produk <b>RETUR</b> dipakai ulang beserta data project & garapannya (tidak perlu produksi ulang). Order retur tetap tersimpan dengan status retur, dan produk itu hilang dari daftar setelah dipakai di order baru.
+              Setelah produk dipilih, form otomatis berubah menjadi <b>Custom (Neon Sign)</b> berisi data produk tersebut dan bisa diedit. Isi produk pada order sumber (mis. order <b>RETUR</b>) akan dikosongkan dengan HPP 0, sedangkan project & data garapannya berpindah ke order ini.
             </p>
             <div><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
           </div>

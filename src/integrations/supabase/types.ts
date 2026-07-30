@@ -1359,6 +1359,10 @@ export type Database = {
         Args: { _order_id: string }
         Returns: undefined
       }
+      consume_stock_source: {
+        Args: { _item_id: string; _source_order_id: string }
+        Returns: undefined
+      }
       courier_pickup: {
         Args: { _no_resi: string; _note?: string }
         Returns: Json
