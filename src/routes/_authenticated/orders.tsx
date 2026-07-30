@@ -937,7 +937,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
 
 // -------- ItemCard --------
 function ItemCard({
-  item, index, priceMap, rsList, draftsList, excludeRsId, excludeDraftId, expanded, onToggleExpand, onChange, onDelete,
+  item, index, priceMap, rsList, draftsList, excludeRsId, excludeDraftId, expanded, onToggleExpand, onChange, onDelete, onPickStock,
 }: {
   item: ItemForm;
   index: number;
@@ -950,6 +950,7 @@ function ItemCard({
   onToggleExpand: () => void;
   onChange: (patch: Partial<ItemForm>) => void;
   onDelete: () => void;
+  onPickStock: (sourceId: string) => void;
 }) {
   const ledMeterNum = num(item.led_meter);
   const suggested = suggestAdaptor(ledMeterNum);
