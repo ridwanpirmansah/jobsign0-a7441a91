@@ -1084,7 +1084,7 @@ function ItemCard({
               </SelectContent>
             </Select>
             <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">
-              Produk <b>RETUR</b> dipakai ulang beserta data project & garapannya (tidak perlu produksi ulang). Order retur tetap tersimpan dengan status retur, dan produk itu hilang dari daftar setelah dipakai di order baru.
+              Setelah produk dipilih, form otomatis berubah menjadi <b>Custom (Neon Sign)</b> berisi data produk tersebut dan bisa diedit. Isi produk pada order sumber (mis. order <b>RETUR</b>) akan dikosongkan dengan HPP 0, sedangkan project & data garapannya berpindah ke order ini.
             </p>
             <div><Label>Catatan item</Label><Textarea rows={1} value={item.notes} onChange={(e) => onChange({ notes: e.target.value })}/></div>
           </div>
