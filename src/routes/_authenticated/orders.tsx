@@ -1063,7 +1063,7 @@ function ItemCard({
         {item.kind === "ready_stock_ref" && (
           <div className="space-y-2">
             <Label>Pilih Ready Stock / Produk Retur</Label>
-            <Select value={item.source_ready_stock_order_id} onValueChange={(v) => onChange({ source_ready_stock_order_id: v })}>
+            <Select value={item.source_ready_stock_order_id} onValueChange={(v) => onPickStock(v)}>
               <SelectTrigger><SelectValue placeholder="Pilih produk ready stock atau retur..."/></SelectTrigger>
               <SelectContent>
                 {rsList.filter((r) => r.id !== excludeRsId).map((r: any) => (
