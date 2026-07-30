@@ -181,15 +181,32 @@ export const deleteOrderItem = createServerFn({ method: "POST" })
 export const listReadyStockAvailable = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    // Ready stock + produk retur (masih layak dijual ulang) bisa dipakai ulang
     const { data, error } = await context.supabase
       .from("orders")
-      .select("id, order_no, text_neon, hpp, payment, titik")
-      .eq("status", "ready_stock")
+      .select("id, order_no, text_neon, hpp, payment, titik, status, project_id, username, kota")
+      .in("status", ["ready_stock", "return"])
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(300);
     if (error) throw new Error(error.message);
-    return data ?? [];
+    const rows = data ?? [];
+
+    // Retur yang sudah dipakai ulang di order lain tidak boleh muncul lagi
+    const returnIds = rows.filter((r: any) => r.status === "return").map((r: any) => r.id);
+    let usedReturns = new Set<string>();
+    if (returnIds.length) {
+      const { data: used } = await context.supabase
+        .from("order_items")
+        .select("source_ready_stock_order_id")
+        .in("source_ready_stock_order_id", returnIds);
+      usedReturns = new Set((used ?? []).map((u: any) => u.source_ready_stock_order_id));
+    }
+
+    return rows
+      .filter((r: any) => r.status !== "return" || !usedReturns.has(r.id))
+      .map((r: any) => ({ ...r, is_return: r.status === "return" }));
   });
+
 
 export const listDraftAvailable = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
