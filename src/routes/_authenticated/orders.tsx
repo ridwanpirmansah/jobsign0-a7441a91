@@ -115,6 +115,9 @@ type ItemForm = {
   manual_name: string;
   manual_price: string;
   manual_hpp: string;
+  // sumber ready stock/retur yang datanya disalin ke item custom ini
+  _consume_source_id?: string;
+  _consume_source_no?: string;
 };
 
 
