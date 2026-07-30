@@ -925,7 +925,7 @@ function ItemCard({
   const titleText = item.kind === "ready_stock_manual"
     ? (item.manual_name || "Ready Stock manual")
     : item.kind === "ready_stock_ref"
-    ? (rsList.find((r) => r.id === item.source_ready_stock_order_id)?.text_neon || "Pilih ready stock…")
+    ? (rsList.find((r) => r.id === item.source_ready_stock_order_id)?.text_neon || "Pilih ready stock/retur…")
     : item.kind === "draft_ref"
     ? (draftsList.find((r) => r.id === item.source_draft_order_id)?.text_neon || "Pilih draft…")
     : (item.text_neon || "Belum diisi");
@@ -956,7 +956,7 @@ function ItemCard({
             <SelectTrigger className="h-8 w-full sm:w-64"><SelectValue/></SelectTrigger>
             <SelectContent>
               <SelectItem value="custom">Custom (Neon Sign)</SelectItem>
-              <SelectItem value="ready_stock_ref">Ambil dari Ready Stock</SelectItem>
+              <SelectItem value="ready_stock_ref">Ambil dari Ready Stock / Retur</SelectItem>
               <SelectItem value="draft_ref">Ambil dari Draft</SelectItem>
               <SelectItem value="ready_stock_manual">Ready Stock / Manual</SelectItem>
             </SelectContent>
