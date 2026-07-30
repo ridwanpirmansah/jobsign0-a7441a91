@@ -767,6 +767,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     expanded={expandedItemKey === it._key}
                     onToggleExpand={() => setExpandedItemKey((k) => k === it._key ? null : it._key)}
                     onChange={(patch) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, ...patch } : x))}
+                    onPickStock={(sourceId) => pickStockSource(idx, sourceId)}
                     onDelete={() => setItems((arr) => {
                       const target = arr[idx];
                       if (target.id) return arr.map((x, i) => i === idx ? { ...x, _deleted: true } : x);
