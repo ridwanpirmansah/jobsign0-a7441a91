@@ -1013,6 +1013,11 @@ function ItemCard({
 
         </div>
 
+        {item.kind === "custom" && item._consume_source_id && (
+          <p className="mb-2 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded p-2">
+            Data disalin dari produk <b>{item._consume_source_no || "ready stock/retur"}</b>. Setelah disimpan, isi produk pada order sumber dikosongkan (HPP jadi 0) dan project/garapannya berpindah ke order ini.
+          </p>
+        )}
         {item.kind === "custom" && (
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="sm:col-span-2"><Label>TEXT Neon *</Label><Input value={item.text_neon} onChange={(e) => onChange({ text_neon: e.target.value })}/></div>
