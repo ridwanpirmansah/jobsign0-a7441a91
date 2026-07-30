@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listOrders, listPrices, upsertOrder, deleteOrder,
   listOrderItems, upsertOrderItem, deleteOrderItem, listReadyStockAvailable, listDraftAvailable,
-  markReadyPickup, listCarriers,
+  markReadyPickup, listCarriers, getStockSourceSpec, consumeStockSource,
 } from "@/lib/orders.functions";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
