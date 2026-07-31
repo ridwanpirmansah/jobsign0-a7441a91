@@ -345,6 +345,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       no_resi: o.no_resi ?? "", ekspedisi: o.ekspedisi ?? "",
       deadline: o.deadline ?? "",
       packing_kayu: !!o.packing_kayu,
+      text_neon: o.text_neon ?? "",
       ready_pickup_at: o.ready_pickup_at ?? null,
       picked_up_at: o.picked_up_at ?? null,
     });
