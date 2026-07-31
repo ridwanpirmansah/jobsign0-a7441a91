@@ -52,6 +52,21 @@ function ProjectDetail() {
   });
   const approverMap = new Map((approvers ?? []).map((p: any) => [p.id, p.full_name]));
 
+  const { data: orderOptions } = useQuery({
+    queryKey: ["order-options"],
+    queryFn: async () => (await supabase.from("orders")
+      .select("id, order_no, username, kota, status")
+      .order("created_at", { ascending: false }).limit(300)).data ?? [],
+  });
+
+  const setParentOrder = useMutation({
+    mutationFn: async (orderId: string | null) => {
+      const { error } = await supabase.from("projects").update({ parent_order_id: orderId }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Keterkaitan order diperbarui"); qc.invalidateQueries({ queryKey: ["project", id] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const updateStatus = useMutation({
     mutationFn: async (status: string) => {
@@ -108,22 +123,44 @@ function ProjectDetail() {
       </div>
 
 
-      {project.parent_order && (
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Order Terkait</CardTitle></CardHeader>
-          <CardContent className="text-sm grid sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div><div className="text-xs text-slate-500">No. Order</div><div className="font-mono font-semibold">{project.parent_order.order_no}</div></div>
-            <div><div className="text-xs text-slate-500">Sumber</div><div><Badge variant="outline">{project.parent_order.source}</Badge> <Badge variant="secondary" className="ml-1">{project.parent_order.status}</Badge></div></div>
-            <div><div className="text-xs text-slate-500">Tgl CO</div><div>{project.parent_order.co_date ?? "-"}</div></div>
-            <div><div className="text-xs text-slate-500">Customer / Kota</div><div>{project.parent_order.username ?? "-"}{project.parent_order.kota ? ` — ${project.parent_order.kota}` : ""}</div></div>
-            <div><div className="text-xs text-slate-500">Payment Order</div><div className="font-semibold">{fmtIDR(Number(project.parent_order.payment ?? 0) + Number(project.parent_order.split ?? 0))}</div></div>
-            {project.parent_order.notes && <div className="sm:col-span-2 md:col-span-3"><div className="text-xs text-slate-500">Catatan Order</div><div className="text-slate-700">{project.parent_order.notes}</div></div>}
-            <div className="sm:col-span-2 md:col-span-4">
-              <Link to="/orders" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">Buka daftar order →</Link>
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Order Terkait</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          {project.parent_order ? (
+            <div className="text-sm grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div><div className="text-xs text-slate-500">No. Order</div><div className="font-mono font-semibold">{project.parent_order.order_no}</div></div>
+              <div><div className="text-xs text-slate-500">Sumber</div><div><Badge variant="outline">{project.parent_order.source}</Badge> <Badge variant="secondary" className="ml-1">{project.parent_order.status}</Badge></div></div>
+              <div><div className="text-xs text-slate-500">Tgl CO</div><div>{project.parent_order.co_date ?? "-"}</div></div>
+              <div><div className="text-xs text-slate-500">Customer / Kota</div><div>{project.parent_order.username ?? "-"}{project.parent_order.kota ? ` — ${project.parent_order.kota}` : ""}</div></div>
+              <div><div className="text-xs text-slate-500">Payment Order</div><div className="font-semibold">{fmtIDR(Number(project.parent_order.payment ?? 0) + Number(project.parent_order.split ?? 0))}</div></div>
+              {project.parent_order.notes && <div className="sm:col-span-2 md:col-span-3"><div className="text-xs text-slate-500">Catatan Order</div><div className="text-slate-700">{project.parent_order.notes}</div></div>}
+              <div className="sm:col-span-2 md:col-span-4">
+                <Link to="/orders" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">Buka daftar order →</Link>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className="text-sm text-slate-500">Project ini belum terkait ke order manapun (mis. produk ready stock yang siap dijual).</p>
+          )}
+
+          <div className="border-t pt-3 space-y-2">
+            <div className="text-xs text-slate-500">Pindahkan / kaitkan project ini ke order lain</div>
+            <div className="flex flex-wrap gap-2">
+              <Select value={project.parent_order_id ?? "__none"} onValueChange={(v) => setParentOrder.mutate(v === "__none" ? null : v)}>
+                <SelectTrigger className="w-full sm:w-96"><SelectValue placeholder="Pilih order" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— Tanpa order (stok siap jual) —</SelectItem>
+                  {(orderOptions ?? []).map((o: any) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o.order_no} · {o.status} · {o.username ?? "-"}{o.kota ? ` (${o.kota})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-slate-500">Nomor project tidak ikut berubah saat dipindah — order dan project punya penomoran sendiri.</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card><CardContent className="p-4"><div className="text-xs text-slate-500">Total Titik</div><div className="text-2xl font-bold">{project.total_points}</div></CardContent></Card>

@@ -76,6 +76,7 @@ type HeaderForm = {
   ekspedisi: string;
   deadline: string;
   packing_kayu: boolean;
+  text_neon?: string;
   ready_pickup_at?: string | null;
   picked_up_at?: string | null;
 };
@@ -344,6 +345,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       no_resi: o.no_resi ?? "", ekspedisi: o.ekspedisi ?? "",
       deadline: o.deadline ?? "",
       packing_kayu: !!o.packing_kayu,
+      text_neon: o.text_neon ?? "",
       ready_pickup_at: o.ready_pickup_at ?? null,
       picked_up_at: o.picked_up_at ?? null,
     });
@@ -445,7 +447,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     mutationFn: async () => {
       const isDraftLike = header.status === "draft" || header.status === "ready_stock";
       const alive = items.filter((i) => !i._deleted);
-      if (alive.length === 0) throw new Error("Minimal harus ada 1 item produk");
       for (const it of alive) {
         if (it.kind === "custom" && !it.text_neon.trim()) throw new Error(`Item #${it.position}: TEXT wajib diisi`);
         if (it.kind === "ready_stock_ref" && !it.source_ready_stock_order_id) throw new Error(`Item #${it.position}: pilih ready-stock`);
@@ -454,8 +455,13 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       }
       if (!isDraftLike && !header.order_no.trim()) throw new Error("No. Order wajib diisi untuk status Aktif/Retur");
 
-      // For legacy compat, keep required text_neon at header level (use first item's label)
-      const firstLabel = alive[0].kind === "custom" ? alive[0].text_neon : alive[0].manual_name || (alive[0].kind === "draft_ref" ? "Draft" : "Ready Stock");
+      // For legacy compat, keep required text_neon at header level (use first item's label).
+      // Order boleh kosong (mis. produk retur sudah dipindah ke order lain) → pertahankan riwayat lama.
+      const firstLabel = alive.length === 0
+        ? (header.text_neon?.trim() || "(tanpa produk)")
+        : alive[0].kind === "custom"
+          ? alive[0].text_neon
+          : alive[0].manual_name || (alive[0].kind === "draft_ref" ? "Draft" : "Ready Stock");
 
 
       const res = await saveOrder({
@@ -888,10 +894,13 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                           </div>
                         </TableCell>
                         <TableCell className="max-w-xs truncate">
-                          <button type="button" onClick={() => openEdit(o)} className="text-left hover:underline text-primary" title={firstText}>
+                          <button type="button" onClick={() => openEdit(o)} className={`text-left hover:underline ${its.length ? "text-primary" : "text-muted-foreground italic"}`} title={firstText}>
                             {firstText}
                           </button>
                           <span className="text-xs text-muted-foreground">{moreLabel}</span>
+                          {!its.length && (
+                            <div className="text-[10px] text-muted-foreground">riwayat produk (sudah dipindah)</div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">{o.titik}</TableCell>
                         <TableCell className="text-right">{rp(Number(o.hpp))}</TableCell>
