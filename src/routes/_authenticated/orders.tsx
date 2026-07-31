@@ -894,10 +894,13 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                           </div>
                         </TableCell>
                         <TableCell className="max-w-xs truncate">
-                          <button type="button" onClick={() => openEdit(o)} className="text-left hover:underline text-primary" title={firstText}>
+                          <button type="button" onClick={() => openEdit(o)} className={`text-left hover:underline ${its.length ? "text-primary" : "text-muted-foreground italic"}`} title={firstText}>
                             {firstText}
                           </button>
                           <span className="text-xs text-muted-foreground">{moreLabel}</span>
+                          {!its.length && (
+                            <div className="text-[10px] text-muted-foreground">riwayat produk (sudah dipindah)</div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">{o.titik}</TableCell>
                         <TableCell className="text-right">{rp(Number(o.hpp))}</TableCell>
