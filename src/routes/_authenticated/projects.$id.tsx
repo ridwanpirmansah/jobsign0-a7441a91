@@ -52,6 +52,21 @@ function ProjectDetail() {
   });
   const approverMap = new Map((approvers ?? []).map((p: any) => [p.id, p.full_name]));
 
+  const { data: orderOptions } = useQuery({
+    queryKey: ["order-options"],
+    queryFn: async () => (await supabase.from("orders")
+      .select("id, order_no, username, kota, status")
+      .order("created_at", { ascending: false }).limit(300)).data ?? [],
+  });
+
+  const setParentOrder = useMutation({
+    mutationFn: async (orderId: string | null) => {
+      const { error } = await supabase.from("projects").update({ parent_order_id: orderId }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Keterkaitan order diperbarui"); qc.invalidateQueries({ queryKey: ["project", id] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const updateStatus = useMutation({
     mutationFn: async (status: string) => {
