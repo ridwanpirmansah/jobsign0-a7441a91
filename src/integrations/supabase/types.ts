@@ -1453,6 +1453,7 @@ export type Database = {
       lookup_order_by_resi: { Args: { _query: string }; Returns: Json }
       mark_ready_pickup: { Args: { _order_id: string }; Returns: undefined }
       mark_ready_pickup_by_resi: { Args: { _no_resi: string }; Returns: Json }
+      next_project_code: { Args: never; Returns: string }
       refresh_order_from_items: { Args: { _oid: string }; Returns: undefined }
       rotate_attendance_secret: { Args: never; Returns: string }
       set_attendance_note: {
