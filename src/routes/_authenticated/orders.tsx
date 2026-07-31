@@ -453,8 +453,13 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       }
       if (!isDraftLike && !header.order_no.trim()) throw new Error("No. Order wajib diisi untuk status Aktif/Retur");
 
-      // For legacy compat, keep required text_neon at header level (use first item's label)
-      const firstLabel = alive[0].kind === "custom" ? alive[0].text_neon : alive[0].manual_name || (alive[0].kind === "draft_ref" ? "Draft" : "Ready Stock");
+      // For legacy compat, keep required text_neon at header level (use first item's label).
+      // Order boleh kosong (mis. produk retur sudah dipindah ke order lain) → pertahankan riwayat lama.
+      const firstLabel = alive.length === 0
+        ? (header.text_neon?.trim() || "(tanpa produk)")
+        : alive[0].kind === "custom"
+          ? alive[0].text_neon
+          : alive[0].manual_name || (alive[0].kind === "draft_ref" ? "Draft" : "Ready Stock");
 
 
       const res = await saveOrder({
