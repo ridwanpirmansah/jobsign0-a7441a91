@@ -76,6 +76,7 @@ type HeaderForm = {
   ekspedisi: string;
   deadline: string;
   packing_kayu: boolean;
+  text_neon?: string;
   ready_pickup_at?: string | null;
   picked_up_at?: string | null;
 };
