@@ -445,7 +445,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     mutationFn: async () => {
       const isDraftLike = header.status === "draft" || header.status === "ready_stock";
       const alive = items.filter((i) => !i._deleted);
-      if (alive.length === 0) throw new Error("Minimal harus ada 1 item produk");
       for (const it of alive) {
         if (it.kind === "custom" && !it.text_neon.trim()) throw new Error(`Item #${it.position}: TEXT wajib diisi`);
         if (it.kind === "ready_stock_ref" && !it.source_ready_stock_order_id) throw new Error(`Item #${it.position}: pilih ready-stock`);
