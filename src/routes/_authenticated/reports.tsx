@@ -43,9 +43,9 @@ function ReportsPage() {
           .not("status", "in", "(draft,ready_stock)")
           .gte("co_date", from).lte("co_date", to),
         supabase.from("job_logs")
-          .select("amount,status,log_date,employee_id,is_repair,employee:employees(full_name),rate:job_rates(name,unit,pricing_mode)")
+          .select("amount,status,log_date,employee_id,is_repair,employee:employees(full_name,type),rate:job_rates(name,unit,pricing_mode)")
           .gte("log_date", from).lte("log_date", to),
-        supabase.from("payrolls").select("total,base,bonus,deductions,status,period_start,period_end,employee:employees(full_name)")
+        supabase.from("payrolls").select("total,base,bonus,deductions,status,period_start,period_end,employee:employees(full_name,type)")
           .gte("period_start", from).lte("period_end", to),
         supabase.from("expenses").select("amount,category,expense_date,affects_pnl,payment_status,description,vendor")
           .gte("expense_date", from).lte("expense_date", to),
