@@ -43,9 +43,9 @@ function ReportsPage() {
           .not("status", "in", "(draft,ready_stock)")
           .gte("co_date", from).lte("co_date", to),
         supabase.from("job_logs")
-          .select("amount,status,log_date,employee_id,is_repair,employee:employees(full_name),rate:job_rates(name,unit,pricing_mode)")
+          .select("amount,status,log_date,employee_id,is_repair,employee:employees(full_name,type),rate:job_rates(name,unit,pricing_mode)")
           .gte("log_date", from).lte("log_date", to),
-        supabase.from("payrolls").select("total,base,bonus,deductions,status,period_start,period_end,employee:employees(full_name)")
+        supabase.from("payrolls").select("total,base,bonus,deductions,status,period_start,period_end,employee:employees(full_name,type)")
           .gte("period_start", from).lte("period_end", to),
         supabase.from("expenses").select("amount,category,expense_date,affects_pnl,payment_status,description,vendor")
           .gte("expense_date", from).lte("expense_date", to),
@@ -66,9 +66,11 @@ function ReportsPage() {
     const expenses = data?.expenses ?? [];
 
     const omzet = orders.reduce((s, o: any) => s + Number(o.payment ?? 0) + Number(o.split ?? 0), 0);
-    const approvedLogs = logs.filter((l: any) => l.status === "approved");
+    // Upah mengikuti status karyawan: borongan → hanya job_logs, harian → hanya payroll/absensi
+    const approvedLogs = logs.filter((l: any) => l.status === "approved" && l.employee?.type === "borongan");
+    const approvedPayrolls = payrolls.filter((p: any) => (p.status === "approved" || p.status === "paid") && p.employee?.type === "harian");
     const tenagaKerjaBorongan = approvedLogs.reduce((s, l: any) => s + Number(l.amount), 0);
-    const payrollPaid = payrolls.filter((p: any) => p.status === "approved" || p.status === "paid").reduce((s, p: any) => s + Number(p.total), 0);
+    const payrollPaid = approvedPayrolls.reduce((s, p: any) => s + Number(p.total), 0);
     const tenagaKerja = tenagaKerjaBorongan + payrollPaid;
     const belanjaAll = expenses.reduce((s, e: any) => s + Number(e.amount || 0), 0);
     const belanjaPnl = expenses.filter((e: any) => e.affects_pnl !== false).reduce((s, e: any) => s + Number(e.amount || 0), 0);
@@ -87,8 +89,7 @@ function ReportsPage() {
       row.total = row.borongan + row.area + row.payroll;
       map.set(name, row);
     }
-    for (const p of payrolls as any[]) {
-      if (p.status !== "approved" && p.status !== "paid") continue;
+    for (const p of approvedPayrolls as any[]) {
       const name = p.employee?.full_name ?? "—";
       const row = map.get(name) ?? { name, borongan: 0, area: 0, payroll: 0, total: 0 };
       row.payroll += Number(p.total || 0);
