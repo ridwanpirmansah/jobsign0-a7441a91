@@ -66,9 +66,11 @@ function ReportsPage() {
     const expenses = data?.expenses ?? [];
 
     const omzet = orders.reduce((s, o: any) => s + Number(o.payment ?? 0) + Number(o.split ?? 0), 0);
-    const approvedLogs = logs.filter((l: any) => l.status === "approved");
+    // Upah mengikuti status karyawan: borongan → hanya job_logs, harian → hanya payroll/absensi
+    const approvedLogs = logs.filter((l: any) => l.status === "approved" && l.employee?.type === "borongan");
+    const approvedPayrolls = payrolls.filter((p: any) => (p.status === "approved" || p.status === "paid") && p.employee?.type === "harian");
     const tenagaKerjaBorongan = approvedLogs.reduce((s, l: any) => s + Number(l.amount), 0);
-    const payrollPaid = payrolls.filter((p: any) => p.status === "approved" || p.status === "paid").reduce((s, p: any) => s + Number(p.total), 0);
+    const payrollPaid = approvedPayrolls.reduce((s, p: any) => s + Number(p.total), 0);
     const tenagaKerja = tenagaKerjaBorongan + payrollPaid;
     const belanjaAll = expenses.reduce((s, e: any) => s + Number(e.amount || 0), 0);
     const belanjaPnl = expenses.filter((e: any) => e.affects_pnl !== false).reduce((s, e: any) => s + Number(e.amount || 0), 0);
