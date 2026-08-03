@@ -589,14 +589,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     return sorted;
   }, [ordersQ.data, filter, srcFilter, isReady, isDraft, sortKey, sortDir]);
 
-  const totals = useMemo(() => filtered.reduce(
-    (acc: any, o: any) => {
-      acc.payment += Number(o.payment || 0);
-      acc.hpp += Number(o.hpp || 0);
-      acc.profit += Number(o.profit || 0);
-      return acc;
-    }, { payment: 0, hpp: 0, profit: 0 },
-  ), [filtered]);
 
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
@@ -822,11 +814,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         </Dialog>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-3">
-        <StatCard label="Total Payment" value={`Rp ${rp(totals.payment)}`} />
-        <StatCard label="Total HPP" value={`Rp ${rp(totals.hpp)}`} />
-        <StatCard label="Total Profit" value={`Rp ${rp(totals.profit)}`} positive={totals.profit >= 0} />
-      </div>
 
       <Card>
         <CardHeader className="pb-3 px-3 pt-3 sm:p-6">
@@ -1139,14 +1126,6 @@ function ItemCard({
   );
 }
 
-function StatCard({ label, value, positive }: { label: string; value: string; positive?: boolean }) {
-  return (
-    <Card><CardContent className="pt-4 px-3 pb-3 sm:pt-6 sm:px-6 sm:pb-6">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-bold ${positive === false ? "text-destructive" : positive ? "text-emerald-600" : ""}`}>{value}</div>
-    </CardContent></Card>
-  );
-}
 
 function SortableHead({
   label, col, sortKey, sortDir, onClick, align,
