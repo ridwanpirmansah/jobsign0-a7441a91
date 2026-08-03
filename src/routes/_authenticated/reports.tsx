@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { TrendingUp, Wallet, Receipt, DollarSign, Users, BarChart3, PieChart as PieIcon } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -68,12 +68,12 @@ function ReportsPage() {
     const omzet = orders.reduce((s, o: any) => s + Number(o.payment ?? 0) + Number(o.split ?? 0), 0);
     const approvedLogs = logs.filter((l: any) => l.status === "approved");
     const tenagaKerjaBorongan = approvedLogs.reduce((s, l: any) => s + Number(l.amount), 0);
-    const payrollPaid = payrolls.filter((p: any) => p.status === "paid").reduce((s, p: any) => s + Number(p.total), 0);
+    const payrollPaid = payrolls.filter((p: any) => p.status === "approved" || p.status === "paid").reduce((s, p: any) => s + Number(p.total), 0);
     const tenagaKerja = tenagaKerjaBorongan + payrollPaid;
     const belanjaAll = expenses.reduce((s, e: any) => s + Number(e.amount || 0), 0);
     const belanjaPnl = expenses.filter((e: any) => e.affects_pnl !== false).reduce((s, e: any) => s + Number(e.amount || 0), 0);
     const belanjaHutang = expenses.filter((e: any) => e.payment_status === "unpaid" || e.payment_status === "partial").reduce((s, e: any) => s + Number(e.amount || 0), 0);
-    const margin = omzet - tenagaKerja - belanjaPnl;
+    const margin = omzet - tenagaKerja - belanjaAll;
 
     // Per employee breakdown by rate unit + payrolls
     type Row = { name: string; borongan: number; area: number; payroll: number; total: number };
@@ -88,7 +88,7 @@ function ReportsPage() {
       map.set(name, row);
     }
     for (const p of payrolls as any[]) {
-      if (p.status !== "paid") continue;
+      if (p.status !== "approved" && p.status !== "paid") continue;
       const name = p.employee?.full_name ?? "—";
       const row = map.get(name) ?? { name, borongan: 0, area: 0, payroll: 0, total: 0 };
       row.payroll += Number(p.total || 0);
@@ -129,8 +129,8 @@ function ReportsPage() {
 
   const cards = [
     { label: "Omzet", value: stats.omzet, sub: "Kontrak + split", icon: TrendingUp, from: "from-emerald-500", to: "to-teal-500", text: "text-emerald-50" },
-    { label: "Tenaga Kerja", value: stats.tenagaKerja, sub: `Borongan ${fmtIDRShort(stats.tenagaKerjaBorongan)} + Payroll ${fmtIDRShort(stats.payrollPaid)}`, icon: Users, from: "from-amber-500", to: "to-orange-500", text: "text-amber-50" },
-    { label: "Beban Belanja", value: stats.belanjaPnl, sub: stats.belanjaHutang > 0 ? `Hutang ${fmtIDRShort(stats.belanjaHutang)}` : `Total ${fmtIDRShort(stats.belanjaAll)}`, icon: Receipt, from: "from-rose-500", to: "to-pink-500", text: "text-rose-50" },
+    { label: "Tenaga Kerja", value: stats.tenagaKerja, sub: `Borongan ${fmtIDRShort(stats.tenagaKerjaBorongan)} · Harian ${fmtIDRShort(stats.payrollPaid)}`, icon: Users, from: "from-amber-500", to: "to-orange-500", text: "text-amber-50" },
+    { label: "Beban Belanja", value: stats.belanjaAll, sub: stats.belanjaHutang > 0 ? `Termasuk hutang ${fmtIDRShort(stats.belanjaHutang)}` : "Seluruh belanja", icon: Receipt, from: "from-rose-500", to: "to-pink-500", text: "text-rose-50" },
     { label: "Estimasi Margin", value: stats.margin, sub: "Omzet − TK − Belanja", icon: DollarSign, from: stats.margin >= 0 ? "from-sky-500" : "from-red-500", to: stats.margin >= 0 ? "to-indigo-500" : "to-rose-600", text: "text-sky-50" },
   ];
 
@@ -154,6 +154,7 @@ function ReportsPage() {
               <div className="flex-1"><Label className="text-xs">Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
               <div className="flex flex-wrap gap-1.5">
                 {[
+                  { k: "lastmonth", label: "Bulan lalu", from: format(startOfMonth(subMonths(new Date(), 1)), "yyyy-MM-dd"), to: format(endOfMonth(subMonths(new Date(), 1)), "yyyy-MM-dd") },
                   { k: "month", label: "Bulan ini", from: format(startOfMonth(new Date()), "yyyy-MM-dd"), to: format(endOfMonth(new Date()), "yyyy-MM-dd") },
                   { k: "7d", label: "7 hari", from: format(new Date(Date.now() - 6*86400000), "yyyy-MM-dd"), to: format(new Date(), "yyyy-MM-dd") },
                   { k: "30d", label: "30 hari", from: format(new Date(Date.now() - 29*86400000), "yyyy-MM-dd"), to: format(new Date(), "yyyy-MM-dd") },
