@@ -89,8 +89,7 @@ function ReportsPage() {
       row.total = row.borongan + row.area + row.payroll;
       map.set(name, row);
     }
-    for (const p of payrolls as any[]) {
-      if (p.status !== "approved" && p.status !== "paid") continue;
+    for (const p of approvedPayrolls as any[]) {
       const name = p.employee?.full_name ?? "—";
       const row = map.get(name) ?? { name, borongan: 0, area: 0, payroll: 0, total: 0 };
       row.payroll += Number(p.total || 0);
