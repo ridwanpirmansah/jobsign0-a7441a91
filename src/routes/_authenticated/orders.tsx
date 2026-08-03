@@ -822,11 +822,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         </Dialog>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-3">
-        <StatCard label="Total Payment" value={`Rp ${rp(totals.payment)}`} />
-        <StatCard label="Total HPP" value={`Rp ${rp(totals.hpp)}`} />
-        <StatCard label="Total Profit" value={`Rp ${rp(totals.profit)}`} positive={totals.profit >= 0} />
-      </div>
 
       <Card>
         <CardHeader className="pb-3 px-3 pt-3 sm:p-6">
