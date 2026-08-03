@@ -589,14 +589,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     return sorted;
   }, [ordersQ.data, filter, srcFilter, isReady, isDraft, sortKey, sortDir]);
 
-  const totals = useMemo(() => filtered.reduce(
-    (acc: any, o: any) => {
-      acc.payment += Number(o.payment || 0);
-      acc.hpp += Number(o.hpp || 0);
-      acc.profit += Number(o.profit || 0);
-      return acc;
-    }, { payment: 0, hpp: 0, profit: 0 },
-  ), [filtered]);
 
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
