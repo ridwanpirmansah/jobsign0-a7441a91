@@ -236,13 +236,6 @@ function AnalyticsPage() {
         </h1>
         <p className="text-sm text-slate-500">Ringkasan omset, margin, biaya tenaga kerja, dan performa karyawan.</p>
       </div>
-      <div>
-        <Button size="sm" variant="outline" onClick={() => setHideMoney((v) => !v)} className="gap-1.5">
-          {hideMoney ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          {hideMoney ? "Tampilkan Nominal" : "Sembunyikan Nominal"}
-        </Button>
-      </div>
-
       {/* Period selector — soft gradient card */}
       <Card className="border-0 shadow-sm overflow-hidden bg-gradient-to-br from-emerald-50 via-sky-50 to-violet-50">
         <CardContent className="p-4 sm:p-5 space-y-3">
