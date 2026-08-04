@@ -569,11 +569,12 @@ function AnalyticsPage() {
 }
 
 function KpiCard({
-  title, value, delta, icon: Icon, color, subtitle, inverse, hide,
+  title, value, delta, icon: Icon, color, subtitle, inverse, hide, onToggleHide,
 }: {
   title: string; value: number; delta: number; subtitle?: string; inverse?: boolean; hide?: boolean;
   icon: React.ComponentType<{ className?: string }>;
   color: "emerald" | "sky" | "amber" | "violet";
+  onToggleHide?: () => void;
 }) {
   const palette = {
     emerald: { bg: "bg-emerald-50", text: "text-emerald-700", icon: "bg-emerald-100 text-emerald-600" },
