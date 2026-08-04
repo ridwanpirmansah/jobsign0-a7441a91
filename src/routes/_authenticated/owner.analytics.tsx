@@ -38,7 +38,7 @@ function fmtIDR(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 }
 function maskDigits(text: string) {
-  return text.replace(/\d/g, "X");
+  return text.replace(/\d/g, "x");
 }
 function fmtShortIDR(n: number) {
   if (Math.abs(n) >= 1e9) return `${(n / 1e9).toFixed(1)}M`;
@@ -236,13 +236,6 @@ function AnalyticsPage() {
         </h1>
         <p className="text-sm text-slate-500">Ringkasan omset, margin, biaya tenaga kerja, dan performa karyawan.</p>
       </div>
-      <div>
-        <Button size="sm" variant="outline" onClick={() => setHideMoney((v) => !v)} className="gap-1.5">
-          {hideMoney ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          {hideMoney ? "Tampilkan Nominal" : "Sembunyikan Nominal"}
-        </Button>
-      </div>
-
       {/* Period selector — soft gradient card */}
       <Card className="border-0 shadow-sm overflow-hidden bg-gradient-to-br from-emerald-50 via-sky-50 to-violet-50">
         <CardContent className="p-4 sm:p-5 space-y-3">
@@ -411,7 +404,7 @@ function AnalyticsPage() {
 
       {/* KPI */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Omset" value={omset} delta={pct(omset, prevOmset)} icon={DollarSign} color="emerald" subtitle={`${orderCount} order · ${projectCount} project`} hide={hideMoney} />
+        <KpiCard title="Omset" value={omset} delta={pct(omset, prevOmset)} icon={DollarSign} color="emerald" subtitle={`${orderCount} order · ${projectCount} project`} hide={hideMoney} onToggleHide={() => setHideMoney((v) => !v)} />
         <KpiCard title="Profit Kotor" value={profit} delta={pct(profit, prevProfit)} icon={TrendingUp} color="sky" subtitle={`Margin ${omset ? Math.round((profit / omset) * 100) : 0}%`} hide={hideMoney} />
         <KpiCard title="Biaya Tenaga Kerja" value={tk} delta={pct(tk, prevTk)} icon={Wallet} color="amber" inverse subtitle="Garapan disetujui & pending" hide={hideMoney} />
         <KpiCard title="Margin Bersih" value={margin} delta={pct(margin, prevProfit - prevTk)} icon={Award} color="violet" subtitle="Profit − Tenaga Kerja" hide={hideMoney} />
@@ -576,11 +569,12 @@ function AnalyticsPage() {
 }
 
 function KpiCard({
-  title, value, delta, icon: Icon, color, subtitle, inverse, hide,
+  title, value, delta, icon: Icon, color, subtitle, inverse, hide, onToggleHide,
 }: {
   title: string; value: number; delta: number; subtitle?: string; inverse?: boolean; hide?: boolean;
   icon: React.ComponentType<{ className?: string }>;
   color: "emerald" | "sky" | "amber" | "violet";
+  onToggleHide?: () => void;
 }) {
   const palette = {
     emerald: { bg: "bg-emerald-50", text: "text-emerald-700", icon: "bg-emerald-100 text-emerald-600" },
@@ -594,7 +588,19 @@ function KpiCard({
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wide text-slate-500">{title}</div>
+            <div className="text-xs uppercase tracking-wide text-slate-500 flex items-center gap-1.5">
+              {title}
+              {onToggleHide && (
+                <button
+                  type="button"
+                  onClick={onToggleHide}
+                  aria-label={hide ? "Tampilkan nominal" : "Sembunyikan nominal"}
+                  className="inline-flex items-center justify-center rounded p-0.5 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                >
+                  {hide ? <EyeOff className="h-3.5 w-3.5 text-slate-400" /> : <Eye className="h-3.5 w-3.5 text-slate-400" />}
+                </button>
+              )}
+            </div>
             <div className="text-2xl font-bold text-slate-900 mt-1 truncate">{hide ? maskDigits(fmtIDR(value)) : fmtIDR(value)}</div>
             {subtitle && <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>}
           </div>
