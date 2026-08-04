@@ -588,7 +588,19 @@ function KpiCard({
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wide text-slate-500">{title}</div>
+            <div className="text-xs uppercase tracking-wide text-slate-500 flex items-center gap-1.5">
+              {title}
+              {onToggleHide && (
+                <button
+                  type="button"
+                  onClick={onToggleHide}
+                  aria-label={hide ? "Tampilkan nominal" : "Sembunyikan nominal"}
+                  className="inline-flex items-center justify-center rounded p-0.5 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                >
+                  {hide ? <EyeOff className="h-3.5 w-3.5 text-slate-400" /> : <Eye className="h-3.5 w-3.5 text-slate-400" />}
+                </button>
+              )}
+            </div>
             <div className="text-2xl font-bold text-slate-900 mt-1 truncate">{hide ? maskDigits(fmtIDR(value)) : fmtIDR(value)}</div>
             {subtitle && <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>}
           </div>
