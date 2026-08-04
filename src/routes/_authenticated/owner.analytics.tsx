@@ -404,7 +404,7 @@ function AnalyticsPage() {
 
       {/* KPI */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Omset" value={omset} delta={pct(omset, prevOmset)} icon={DollarSign} color="emerald" subtitle={`${orderCount} order · ${projectCount} project`} hide={hideMoney} />
+        <KpiCard title="Omset" value={omset} delta={pct(omset, prevOmset)} icon={DollarSign} color="emerald" subtitle={`${orderCount} order · ${projectCount} project`} hide={hideMoney} onToggleHide={() => setHideMoney((v) => !v)} />
         <KpiCard title="Profit Kotor" value={profit} delta={pct(profit, prevProfit)} icon={TrendingUp} color="sky" subtitle={`Margin ${omset ? Math.round((profit / omset) * 100) : 0}%`} hide={hideMoney} />
         <KpiCard title="Biaya Tenaga Kerja" value={tk} delta={pct(tk, prevTk)} icon={Wallet} color="amber" inverse subtitle="Garapan disetujui & pending" hide={hideMoney} />
         <KpiCard title="Margin Bersih" value={margin} delta={pct(margin, prevProfit - prevTk)} icon={Award} color="violet" subtitle="Profit − Tenaga Kerja" hide={hideMoney} />
