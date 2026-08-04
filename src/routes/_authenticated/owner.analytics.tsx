@@ -38,7 +38,7 @@ function fmtIDR(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 }
 function maskDigits(text: string) {
-  return text.replace(/\d/g, "X");
+  return text.replace(/\d/g, "x");
 }
 function fmtShortIDR(n: number) {
   if (Math.abs(n) >= 1e9) return `${(n / 1e9).toFixed(1)}M`;
