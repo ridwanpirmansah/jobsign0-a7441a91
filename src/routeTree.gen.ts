@@ -33,6 +33,7 @@ import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authentica
 import { Route as AuthenticatedOwnerShopeeRouteImport } from './routes/_authenticated/owner.shopee'
 import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
 import { Route as AuthenticatedOwnerPermissionsRouteImport } from './routes/_authenticated/owner.permissions'
+import { Route as AuthenticatedOwnerMenuOrderRouteImport } from './routes/_authenticated/owner.menu-order'
 import { Route as AuthenticatedOwnerExpensesRouteImport } from './routes/_authenticated/owner.expenses'
 import { Route as AuthenticatedOwnerCarriersRouteImport } from './routes/_authenticated/owner.carriers'
 import { Route as AuthenticatedOwnerBackupRouteImport } from './routes/_authenticated/owner.backup'
@@ -175,6 +176,12 @@ const AuthenticatedOwnerPermissionsRoute =
     path: '/owner/permissions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOwnerMenuOrderRoute =
+  AuthenticatedOwnerMenuOrderRouteImport.update({
+    id: '/owner/menu-order',
+    path: '/owner/menu-order',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOwnerExpensesRoute =
   AuthenticatedOwnerExpensesRouteImport.update({
     id: '/owner/expenses',
@@ -296,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/owner/backup': typeof AuthenticatedOwnerBackupRoute
   '/owner/carriers': typeof AuthenticatedOwnerCarriersRoute
   '/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
+  '/owner/menu-order': typeof AuthenticatedOwnerMenuOrderRoute
   '/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
@@ -337,6 +345,7 @@ export interface FileRoutesByTo {
   '/owner/backup': typeof AuthenticatedOwnerBackupRoute
   '/owner/carriers': typeof AuthenticatedOwnerCarriersRoute
   '/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
+  '/owner/menu-order': typeof AuthenticatedOwnerMenuOrderRoute
   '/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
@@ -380,6 +389,7 @@ export interface FileRoutesById {
   '/_authenticated/owner/backup': typeof AuthenticatedOwnerBackupRoute
   '/_authenticated/owner/carriers': typeof AuthenticatedOwnerCarriersRoute
   '/_authenticated/owner/expenses': typeof AuthenticatedOwnerExpensesRoute
+  '/_authenticated/owner/menu-order': typeof AuthenticatedOwnerMenuOrderRoute
   '/_authenticated/owner/permissions': typeof AuthenticatedOwnerPermissionsRoute
   '/_authenticated/owner/prices': typeof AuthenticatedOwnerPricesRoute
   '/_authenticated/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/owner/backup'
     | '/owner/carriers'
     | '/owner/expenses'
+    | '/owner/menu-order'
     | '/owner/permissions'
     | '/owner/prices'
     | '/owner/shopee'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/owner/backup'
     | '/owner/carriers'
     | '/owner/expenses'
+    | '/owner/menu-order'
     | '/owner/permissions'
     | '/owner/prices'
     | '/owner/shopee'
@@ -506,6 +518,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner/backup'
     | '/_authenticated/owner/carriers'
     | '/_authenticated/owner/expenses'
+    | '/_authenticated/owner/menu-order'
     | '/_authenticated/owner/permissions'
     | '/_authenticated/owner/prices'
     | '/_authenticated/owner/shopee'
@@ -696,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnerPermissionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/owner/menu-order': {
+      id: '/_authenticated/owner/menu-order'
+      path: '/owner/menu-order'
+      fullPath: '/owner/menu-order'
+      preLoaderRoute: typeof AuthenticatedOwnerMenuOrderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/owner/expenses': {
       id: '/_authenticated/owner/expenses'
       path: '/owner/expenses'
@@ -840,6 +860,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerBackupRoute: typeof AuthenticatedOwnerBackupRoute
   AuthenticatedOwnerCarriersRoute: typeof AuthenticatedOwnerCarriersRoute
   AuthenticatedOwnerExpensesRoute: typeof AuthenticatedOwnerExpensesRoute
+  AuthenticatedOwnerMenuOrderRoute: typeof AuthenticatedOwnerMenuOrderRoute
   AuthenticatedOwnerPermissionsRoute: typeof AuthenticatedOwnerPermissionsRoute
   AuthenticatedOwnerPricesRoute: typeof AuthenticatedOwnerPricesRoute
   AuthenticatedOwnerShopeeRoute: typeof AuthenticatedOwnerShopeeRoute
@@ -878,6 +899,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerBackupRoute: AuthenticatedOwnerBackupRoute,
   AuthenticatedOwnerCarriersRoute: AuthenticatedOwnerCarriersRoute,
   AuthenticatedOwnerExpensesRoute: AuthenticatedOwnerExpensesRoute,
+  AuthenticatedOwnerMenuOrderRoute: AuthenticatedOwnerMenuOrderRoute,
   AuthenticatedOwnerPermissionsRoute: AuthenticatedOwnerPermissionsRoute,
   AuthenticatedOwnerPricesRoute: AuthenticatedOwnerPricesRoute,
   AuthenticatedOwnerShopeeRoute: AuthenticatedOwnerShopeeRoute,

@@ -1,8 +1,8 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  UserCog, LogOut, Zap, QrCode, FileSpreadsheet,
-  ShoppingBag, Tags, Truck, Shield, DatabaseBackup,
+  UserCog, LogOut, Zap, FileSpreadsheet,
+  ShoppingBag, Tags, Truck, Shield, DatabaseBackup, ListOrdered,
   Settings, ChevronDown,
 } from "lucide-react";
 
@@ -23,7 +23,7 @@ import { useMenuLayout } from "@/hooks/useMenuLayout";
 const settingsItems: NavItem[] = [
   { title: "Master Harga", url: "/owner/prices", icon: Tags, group: "owner" },
   { title: "Master Ekspedisi", url: "/owner/carriers", icon: Truck, group: "owner" },
-  { title: "Susunan Menu", url: "/owner/menu-order", icon: QrCode, group: "owner" },
+  { title: "Susunan Menu", url: "/owner/menu-order", icon: ListOrdered, group: "owner" },
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet, group: "owner" },
   { title: "Integrasi Shopee", url: "/owner/shopee", icon: ShoppingBag, group: "owner" },
   { title: "Kelola User", url: "/users", icon: UserCog, group: "owner" },
