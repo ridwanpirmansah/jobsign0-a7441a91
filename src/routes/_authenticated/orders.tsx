@@ -726,9 +726,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               <div><Label>Tgl CO</Label><Input type="date" value={header.co_date} onChange={(e) => setHeader((f) => ({ ...f, co_date: e.target.value }))}/></div>
               <div><Label>User Pembeli</Label><Input value={header.username} onChange={(e) => setHeader((f) => ({ ...f, username: e.target.value }))}/></div>
               <div><Label>Kota</Label><Input value={header.kota} onChange={(e) => setHeader((f) => ({ ...f, kota: e.target.value }))}/></div>
-              <div><Label>Payment (Rp)</Label><Input type="number" value={header.payment} onChange={(e) => setHeader((f) => ({ ...f, payment: e.target.value }))}/></div>
-              <div><Label>DP (Rp)</Label><Input type="number" value={header.dp} onChange={(e) => setHeader((f) => ({ ...f, dp: e.target.value }))}/></div>
-              <div><Label>Split (Rp)</Label><Input type="number" value={header.split} onChange={(e) => setHeader((f) => ({ ...f, split: e.target.value }))}/></div>
+              <div><Label>Payment (Rp)</Label><NumericInput value={header.payment} onChange={(v) => setHeader((f) => ({ ...f, payment: v }))}/></div>
+              <div><Label>DP (Rp)</Label><NumericInput value={header.dp} onChange={(v) => setHeader((f) => ({ ...f, dp: v }))}/></div>
+              <div><Label>Split (Rp)</Label><NumericInput value={header.split} onChange={(v) => setHeader((f) => ({ ...f, split: v }))}/></div>
               <div>
                 <Label className="flex items-center gap-1"><Truck className="h-3.5 w-3.5"/> No Resi</Label>
                 <Input placeholder="Nomor resi pengiriman" value={header.no_resi} onChange={(e) => setHeader((f) => ({ ...f, no_resi: e.target.value }))}/>
