@@ -56,11 +56,17 @@ export function AppSidebar() {
 
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
 
-  const filterItems = (items: NavItem[]) =>
-    items.filter((i) => !i.feature || hasFeature(role, i.feature, overrides));
+  const { layout } = useMenuLayout();
 
-  const visibleMe = filterItems(meItems);
-  const visibleAdmin = filterItems(adminItems);
+  const registry = new Map(NAV_ITEMS.map((i) => [i.url, i]));
+  const grouped: Record<NavGroup, NavItem[]> = { owner: [], operasional: [], karyawan: [] };
+  for (const entry of layout) {
+    const base = registry.get(entry.url);
+    if (!base) continue;
+    if (base.ownerOnly && role !== "owner") continue;
+    if (base.feature && !hasFeature(role, base.feature, overrides)) continue;
+    grouped[entry.group].push(base);
+  }
 
   const settingsActive = settingsItems.some((i) => isActive(i.url));
   const [settingsOpen, setSettingsOpen] = useState(settingsActive);
@@ -95,58 +101,47 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="bg-slate-950">
-        {role === "owner" && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-amber-400/80">Owner</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {renderItems(ownerItems)}
+        {GROUP_ORDER.map((g) => {
+          const items = grouped[g];
+          const showSettings = g === "owner" && role === "owner";
+          if (items.length === 0 && !showSettings) return null;
+          return (
+            <SidebarGroup key={g}>
+              <SidebarGroupLabel className={g === "owner" ? "text-amber-400/80" : "text-slate-500"}>
+                {GROUP_LABELS[g]}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {renderItems(items)}
+                  {showSettings && (
+                    <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            isActive={settingsActive}
+                            className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white"
+                          >
+                            <Settings className="h-4 w-4" />
+                            <span>Pengaturan</span>
+                            <ChevronDown
+                              className={`ml-auto h-4 w-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+                            />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                      </SidebarMenuItem>
+                      <CollapsibleContent>
+                        <div className="ml-3 border-l border-slate-800 pl-2">
+                          <SidebarMenu>{renderItems(settingsItems)}</SidebarMenu>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
 
-                <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton
-                        isActive={settingsActive}
-                        className="data-[active=true]:bg-slate-800 data-[active=true]:text-white text-slate-300 hover:bg-slate-800 hover:text-white"
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Pengaturan</span>
-                        <ChevronDown
-                          className={`ml-auto h-4 w-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
-                        />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                  </SidebarMenuItem>
-                  <CollapsibleContent>
-                    <div className="ml-3 border-l border-slate-800 pl-2">
-                      <SidebarMenu>
-                        {renderItems(settingsItems)}
-                      </SidebarMenu>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {visibleAdmin.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500">Operasional</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderItems(visibleAdmin)}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {visibleMe.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500">Karyawan</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderItems(visibleMe)}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
 
 
