@@ -1,11 +1,9 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  LayoutDashboard, ClipboardList, CalendarCheck, Wallet,
-  FolderKanban, Users, DollarSign, BadgeCheck, UserCog,
-  BarChart3, Building2, LogOut, Zap, QrCode, ScanLine, FileSpreadsheet,
-  ShoppingBag, Tags, Sparkles, BadgeDollarSign, Wrench, Receipt, Utensils, Truck, Activity, Shield, DatabaseBackup,
-  Settings, ChevronDown, ShoppingCart,
+  UserCog, LogOut, Zap, QrCode, FileSpreadsheet,
+  ShoppingBag, Tags, Truck, Shield, DatabaseBackup,
+  Settings, ChevronDown,
 } from "lucide-react";
 
 import {
@@ -18,53 +16,21 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useQueryClient } from "@tanstack/react-query";
-import { hasFeature, type FeatureKey } from "@/lib/features";
-
-type NavItem = { title: string; url: string; icon: any; feature?: FeatureKey };
-
-const meItems: NavItem[] = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, feature: "dashboard" },
-  { title: "Status Orderan", url: "/status", icon: Activity, feature: "status" },
-  { title: "Scan Absensi", url: "/me/scan", icon: ScanLine, feature: "me/scan" },
-  { title: "Input Garapan", url: "/me/jobs", icon: ClipboardList, feature: "me/jobs" },
-  { title: "Klaim Reparasi", url: "/me/repairs", icon: Wrench, feature: "me/repairs" },
-  { title: "Absensi Saya", url: "/me/attendance", icon: CalendarCheck, feature: "me/attendance" },
-  { title: "Pendapatan Saya", url: "/me/earnings", icon: Wallet, feature: "me/earnings" },
-  { title: "Cashbon", url: "/cashbon", icon: BadgeDollarSign, feature: "cashbon" },
-  { title: "Catatan Belanja", url: "/shopping-notes", icon: ShoppingCart, feature: "shopping-notes" },
-  { title: "Scan Siap Kirim", url: "/me/ship", icon: ScanLine, feature: "me/ship" },
-];
-const adminItems: NavItem[] = [
-  { title: "Order", url: "/orders", icon: ShoppingBag, feature: "orders" },
-  { title: "Project", url: "/projects", icon: FolderKanban, feature: "projects" },
-  { title: "Karyawan", url: "/employees", icon: Users, feature: "employees" },
-  { title: "Tarif Borongan", url: "/rates", icon: DollarSign, feature: "rates" },
-  { title: "Approval", url: "/approvals", icon: BadgeCheck, feature: "approvals" },
-  { title: "Konsumsi Karyawan", url: "/consumption", icon: Utensils, feature: "consumption" },
-  { title: "Customer", url: "/customers", icon: Building2, feature: "customers" },
-  { title: "Pickup Paket", url: "/me/pickup", icon: Truck, feature: "me/pickup" },
-  
-];
-
-const ownerItems: NavItem[] = [
-  { title: "QR Absensi", url: "/owner/attendance-qr", icon: QrCode },
-  { title: "Riwayat Absensi", url: "/owner/attendance-history", icon: CalendarCheck },
-  
-  { title: "Payroll", url: "/payroll", icon: Wallet },
-  { title: "Analitik & Performa", url: "/owner/analytics", icon: Sparkles },
-  { title: "Catatan Pengeluaran", url: "/owner/expenses", icon: Receipt },
-  { title: "Laporan", url: "/reports", icon: BarChart3 },
-];
+import { hasFeature } from "@/lib/features";
+import { NAV_ITEMS, GROUP_LABELS, GROUP_ORDER, type NavItem, type NavGroup } from "@/lib/nav-items";
+import { useMenuLayout } from "@/hooks/useMenuLayout";
 
 const settingsItems: NavItem[] = [
-  { title: "Master Harga", url: "/owner/prices", icon: Tags },
-  { title: "Master Ekspedisi", url: "/owner/carriers", icon: Truck },
-  { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet },
-  { title: "Integrasi Shopee", url: "/owner/shopee", icon: ShoppingBag },
-  { title: "Kelola User", url: "/users", icon: UserCog },
-  { title: "Setelan Akses Fitur", url: "/owner/permissions", icon: Shield },
-  { title: "Backup & Restore", url: "/owner/backup", icon: DatabaseBackup },
+  { title: "Master Harga", url: "/owner/prices", icon: Tags, group: "owner" },
+  { title: "Master Ekspedisi", url: "/owner/carriers", icon: Truck, group: "owner" },
+  { title: "Susunan Menu", url: "/owner/menu-order", icon: QrCode, group: "owner" },
+  { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet, group: "owner" },
+  { title: "Integrasi Shopee", url: "/owner/shopee", icon: ShoppingBag, group: "owner" },
+  { title: "Kelola User", url: "/users", icon: UserCog, group: "owner" },
+  { title: "Setelan Akses Fitur", url: "/owner/permissions", icon: Shield, group: "owner" },
+  { title: "Backup & Restore", url: "/owner/backup", icon: DatabaseBackup, group: "owner" },
 ];
+
 
 
 export function AppSidebar() {
