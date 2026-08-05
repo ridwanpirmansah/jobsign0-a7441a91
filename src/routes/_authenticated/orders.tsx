@@ -60,6 +60,73 @@ function suggestAdaptor(ledMeter: number): typeof ADAPTOR_VARIANTS[number] {
 const rp = (n: number) => new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
 const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
 
+// Membersihkan teks menjadi angka murni (mis. "Rp 20.000" -> "20000")
+function sanitizeNumericInput(raw: string): string {
+  // Hapus semua karakter kecuali angka, koma, titik
+  let cleaned = raw.replace(/[^0-9.,]/g, "");
+  // Normalisasi pemisah ribuan & desimal ke format yang bisa diparse JS
+  // Jika ada koma dan titik, anggap yang terakhir adalah desimal
+  const lastDot = cleaned.lastIndexOf(".");
+  const lastComma = cleaned.lastIndexOf(",");
+  if (lastDot > -1 && lastComma > -1) {
+    // format 1.234,56 -> 1234.56
+    if (lastComma > lastDot) {
+      cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+    } else {
+      // format 1,234.56 -> 1234.56
+      cleaned = cleaned.replace(/,/g, "");
+    }
+  } else if (lastComma > -1) {
+    // bisa jadi desimal atau pemisah ribuan
+    // anggap desimal hanya jika koma diikuti 1-2 digit di akhir
+    const afterComma = cleaned.slice(lastComma + 1);
+    if (/^\d{1,2}$/.test(afterComma) && lastComma !== cleaned.length - 1 - afterComma.length + 1) {
+      cleaned = cleaned.replace(",", ".");
+    } else {
+      cleaned = cleaned.replace(/,/g, "");
+    }
+  }
+  // Hapus pemisah ribuan (titik) yang tersisa
+  cleaned = cleaned.replace(/\./g, "");
+  // Buang leading zeros
+  cleaned = cleaned.replace(/^0+(?=\d)/, "");
+  return cleaned;
+}
+
+function NumericInput({
+  value,
+  onChange,
+  placeholder,
+  id,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  id?: string;
+}) {
+  return (
+    <Input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => {
+        const v = e.target.value;
+        // Izinkan hanya angka saat ketik manual
+        if (/^[0-9]*$/.test(v)) onChange(v);
+      }}
+      onPaste={(e) => {
+        e.preventDefault();
+        const paste = e.clipboardData.getData("text");
+        const cleaned = sanitizeNumericInput(paste);
+        onChange(cleaned);
+      }}
+    />
+  );
+}
+
 type HeaderForm = {
   id?: string;
   source: Source;
@@ -659,9 +726,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               <div><Label>Tgl CO</Label><Input type="date" value={header.co_date} onChange={(e) => setHeader((f) => ({ ...f, co_date: e.target.value }))}/></div>
               <div><Label>User Pembeli</Label><Input value={header.username} onChange={(e) => setHeader((f) => ({ ...f, username: e.target.value }))}/></div>
               <div><Label>Kota</Label><Input value={header.kota} onChange={(e) => setHeader((f) => ({ ...f, kota: e.target.value }))}/></div>
-              <div><Label>Payment (Rp)</Label><Input type="number" value={header.payment} onChange={(e) => setHeader((f) => ({ ...f, payment: e.target.value }))}/></div>
-              <div><Label>DP (Rp)</Label><Input type="number" value={header.dp} onChange={(e) => setHeader((f) => ({ ...f, dp: e.target.value }))}/></div>
-              <div><Label>Split (Rp)</Label><Input type="number" value={header.split} onChange={(e) => setHeader((f) => ({ ...f, split: e.target.value }))}/></div>
+              <div><Label>Payment (Rp)</Label><NumericInput value={header.payment} onChange={(v) => setHeader((f) => ({ ...f, payment: v }))}/></div>
+              <div><Label>DP (Rp)</Label><NumericInput value={header.dp} onChange={(v) => setHeader((f) => ({ ...f, dp: v }))}/></div>
+              <div><Label>Split (Rp)</Label><NumericInput value={header.split} onChange={(v) => setHeader((f) => ({ ...f, split: v }))}/></div>
               <div>
                 <Label className="flex items-center gap-1"><Truck className="h-3.5 w-3.5"/> No Resi</Label>
                 <Input placeholder="Nomor resi pengiriman" value={header.no_resi} onChange={(e) => setHeader((f) => ({ ...f, no_resi: e.target.value }))}/>
