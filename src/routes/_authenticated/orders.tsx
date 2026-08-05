@@ -60,6 +60,73 @@ function suggestAdaptor(ledMeter: number): typeof ADAPTOR_VARIANTS[number] {
 const rp = (n: number) => new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
 const num = (s: string) => { const n = parseFloat(s); return isNaN(n) ? 0 : n; };
 
+// Membersihkan teks menjadi angka murni (mis. "Rp 20.000" -> "20000")
+function sanitizeNumericInput(raw: string): string {
+  // Hapus semua karakter kecuali angka, koma, titik
+  let cleaned = raw.replace(/[^0-9.,]/g, "");
+  // Normalisasi pemisah ribuan & desimal ke format yang bisa diparse JS
+  // Jika ada koma dan titik, anggap yang terakhir adalah desimal
+  const lastDot = cleaned.lastIndexOf(".");
+  const lastComma = cleaned.lastIndexOf(",");
+  if (lastDot > -1 && lastComma > -1) {
+    // format 1.234,56 -> 1234.56
+    if (lastComma > lastDot) {
+      cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+    } else {
+      // format 1,234.56 -> 1234.56
+      cleaned = cleaned.replace(/,/g, "");
+    }
+  } else if (lastComma > -1) {
+    // bisa jadi desimal atau pemisah ribuan
+    // anggap desimal hanya jika koma diikuti 1-2 digit di akhir
+    const afterComma = cleaned.slice(lastComma + 1);
+    if (/^\d{1,2}$/.test(afterComma) && lastComma !== cleaned.length - 1 - afterComma.length + 1) {
+      cleaned = cleaned.replace(",", ".");
+    } else {
+      cleaned = cleaned.replace(/,/g, "");
+    }
+  }
+  // Hapus pemisah ribuan (titik) yang tersisa
+  cleaned = cleaned.replace(/\./g, "");
+  // Buang leading zeros
+  cleaned = cleaned.replace(/^0+(?=\d)/, "");
+  return cleaned;
+}
+
+function NumericInput({
+  value,
+  onChange,
+  placeholder,
+  id,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  id?: string;
+}) {
+  return (
+    <Input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => {
+        const v = e.target.value;
+        // Izinkan hanya angka saat ketik manual
+        if (/^[0-9]*$/.test(v)) onChange(v);
+      }}
+      onPaste={(e) => {
+        e.preventDefault();
+        const paste = e.clipboardData.getData("text");
+        const cleaned = sanitizeNumericInput(paste);
+        onChange(cleaned);
+      }}
+    />
+  );
+}
+
 type HeaderForm = {
   id?: string;
   source: Source;
