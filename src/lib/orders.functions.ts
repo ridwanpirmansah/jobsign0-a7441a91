@@ -38,6 +38,7 @@ const orderSchema = z.object({
   order_no: z.string().default(""),
   co_date: z.string().nullable().optional(),
   username: z.string().optional().nullable(),
+  phone: z.string().max(30).optional().nullable(),
   kota: z.string().optional().nullable(),
   text_neon: z.string().default(""),
   akrilik_p: z.number().min(0).default(0),
