@@ -672,7 +672,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       return 0;
     });
     return sorted;
-  }, [ordersQ.data, filter, srcFilter, isReady, isDraft, sortKey, sortDir]);
+  }, [ordersQ.data, filter, srcFilter, isReady, isDraft, sortKey, sortDir, consumedSourceIds]);
 
 
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
