@@ -134,6 +134,7 @@ type HeaderForm = {
   order_no: string;
   co_date: string;
   username: string;
+  phone: string;
   kota: string;
   payment: string;
   dp: string;
@@ -193,7 +194,7 @@ function emptyHeader(nextOrderNo = "", status: OrderStatus = "active"): HeaderFo
   return {
     source: "shopee", status, order_no: nextOrderNo,
     co_date: new Date().toISOString().slice(0, 10),
-    username: "", kota: "",
+    username: "", phone: "", kota: "",
     payment: "", dp: "", split: "", notes: "",
     no_resi: "", ekspedisi: "",
     deadline: "", packing_kayu: false,
@@ -406,7 +407,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     setHeader({
       id: o.id, source: o.source, status: (o.status as OrderStatus) ?? "active",
       order_no: o.order_no, co_date: o.co_date ?? "",
-      username: o.username ?? "", kota: o.kota ?? "",
+      username: o.username ?? "", phone: o.phone ?? "", kota: o.kota ?? "",
       payment: String(o.payment ?? ""), dp: String(o.dp ?? ""), split: String(o.split ?? ""),
       notes: o.notes ?? "",
       no_resi: o.no_resi ?? "", ekspedisi: o.ekspedisi ?? "",
@@ -426,7 +427,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       source: o.source, status: (o.status as OrderStatus) ?? "active",
       order_no: isReady ? nextReadyStockNo : nextOrderNo,
       co_date: new Date().toISOString().slice(0, 10),
-      username: "", kota: "",
+      username: "", phone: "", kota: "",
       payment: String(o.payment ?? ""), dp: "", split: String(o.split ?? ""),
       notes: o.notes ?? "",
       no_resi: "", ekspedisi: o.ekspedisi ?? "",
@@ -539,6 +540,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           order_no: header.order_no.trim(),
           co_date: header.co_date || null,
           username: header.username || null,
+          phone: header.phone || null,
           kota: header.kota || null,
           text_neon: firstLabel,
           akrilik_p: 0, akrilik_l: 0, led_meter: 0, titik: 0,
@@ -743,6 +745,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               </div>
               <div><Label>Tgl CO</Label><Input type="date" value={header.co_date} onChange={(e) => setHeader((f) => ({ ...f, co_date: e.target.value }))}/></div>
               <div><Label>User Pembeli</Label><Input value={header.username} onChange={(e) => setHeader((f) => ({ ...f, username: e.target.value }))}/></div>
+              <div><Label>No HP Pemesan</Label><Input type="tel" inputMode="tel" maxLength={30} placeholder="08xxxxxxxxxx" value={header.phone} onChange={(e) => setHeader((f) => ({ ...f, phone: e.target.value }))}/></div>
               <div><Label>Kota</Label><Input value={header.kota} onChange={(e) => setHeader((f) => ({ ...f, kota: e.target.value }))}/></div>
               <div><Label>Payment (Rp)</Label><NumericInput value={header.payment} onChange={(v) => setHeader((f) => ({ ...f, payment: v }))}/></div>
               <div><Label>DP (Rp)</Label><NumericInput value={header.dp} onChange={(v) => setHeader((f) => ({ ...f, dp: v }))}/></div>
@@ -779,6 +782,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                       kota: header.kota,
                       text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
                       username: header.username,
+                      phone: header.phone,
                       order_no: header.order_no,
                     })}
                   >
