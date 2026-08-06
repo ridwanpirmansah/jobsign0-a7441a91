@@ -699,7 +699,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isReady
-              ? "Produk ready stock — tidak masuk laporan penjualan, tapi tetap muncul di Project untuk dikerjakan."
+              ? "Kumpulan produk/project yang siap dipakai: ready stock + produk retur. Begitu produknya diambil oleh sebuah order, item ini otomatis hilang dari daftar."
               : isDraft
               ? "Simpan rancangan order di sini sebelum dikonfirmasi menjadi order aktif."
               : "Semua orderan ditampilkan disini"}
