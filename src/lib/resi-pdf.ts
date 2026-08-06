@@ -115,12 +115,18 @@ export function printResiPdf(payload: ResiPayload) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.text(payload.username || "-", pad, y);
+  if (payload.phone) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(payload.phone, W - pad, y, { align: "right" });
+  }
   y += 4;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   const kota = doc.splitTextToSize(payload.kota || "-", W - pad * 2);
   doc.text(kota, pad, y);
   y += kota.length * 4 + 2;
+
 
   // Detail produk (kalau masih muat)
   if (y < H - 14) {
