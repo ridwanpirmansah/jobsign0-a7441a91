@@ -745,6 +745,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               </div>
               <div><Label>Tgl CO</Label><Input type="date" value={header.co_date} onChange={(e) => setHeader((f) => ({ ...f, co_date: e.target.value }))}/></div>
               <div><Label>User Pembeli</Label><Input value={header.username} onChange={(e) => setHeader((f) => ({ ...f, username: e.target.value }))}/></div>
+              <div><Label>No HP Pemesan</Label><Input type="tel" inputMode="tel" maxLength={30} placeholder="08xxxxxxxxxx" value={header.phone} onChange={(e) => setHeader((f) => ({ ...f, phone: e.target.value }))}/></div>
               <div><Label>Kota</Label><Input value={header.kota} onChange={(e) => setHeader((f) => ({ ...f, kota: e.target.value }))}/></div>
               <div><Label>Payment (Rp)</Label><NumericInput value={header.payment} onChange={(v) => setHeader((f) => ({ ...f, payment: v }))}/></div>
               <div><Label>DP (Rp)</Label><NumericInput value={header.dp} onChange={(v) => setHeader((f) => ({ ...f, dp: v }))}/></div>
@@ -781,6 +782,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                       kota: header.kota,
                       text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
                       username: header.username,
+                      phone: header.phone,
                       order_no: header.order_no,
                     })}
                   >
