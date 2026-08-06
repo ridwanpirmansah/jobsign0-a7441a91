@@ -970,9 +970,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                             {firstText}
                           </button>
                           <span className="text-xs text-muted-foreground">{moreLabel}</span>
+                          {isReady && o.status === "return" && (
+                            <div className="mt-0.5">
+                              <span className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">Produk Retur</span>
+                            </div>
+                          )}
                           {!its.length && (
                             <div className="text-[10px] text-muted-foreground">riwayat produk (sudah dipindah)</div>
                           )}
+
                         </TableCell>
                         <TableCell className="text-right">{o.titik}</TableCell>
                         <TableCell className="text-right">{rp(Number(o.hpp))}</TableCell>
