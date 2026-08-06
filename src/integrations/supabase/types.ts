@@ -688,6 +688,7 @@ export type Database = {
           packing_kayu: boolean
           paket: string | null
           payment: number
+          phone: string | null
           picked_up_at: string | null
           picked_up_by: string | null
           profit: number
@@ -736,6 +737,7 @@ export type Database = {
           packing_kayu?: boolean
           paket?: string | null
           payment?: number
+          phone?: string | null
           picked_up_at?: string | null
           picked_up_by?: string | null
           profit?: number
@@ -784,6 +786,7 @@ export type Database = {
           packing_kayu?: boolean
           paket?: string | null
           payment?: number
+          phone?: string | null
           picked_up_at?: string | null
           picked_up_by?: string | null
           profit?: number
