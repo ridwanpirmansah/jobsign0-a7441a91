@@ -30,6 +30,7 @@ export interface ResiPayload {
   kota?: string | null;
   text_neon?: string | null;
   username?: string | null;
+  phone?: string | null;
   order_no?: string | null;
 }
 
