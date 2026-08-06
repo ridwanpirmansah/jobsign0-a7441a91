@@ -134,6 +134,7 @@ type HeaderForm = {
   order_no: string;
   co_date: string;
   username: string;
+  phone: string;
   kota: string;
   payment: string;
   dp: string;
