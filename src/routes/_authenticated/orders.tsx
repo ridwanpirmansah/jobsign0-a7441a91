@@ -622,10 +622,27 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
     onError: (e: any) => toast.error(e?.message ?? "Gagal hapus"),
   });
 
+  // ID sumber (ready stock / retur) yang produknya sudah diambil order lain
+  const consumedSourceIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const o of (ordersQ.data ?? []) as any[]) {
+      for (const it of (o.order_items ?? []) as any[]) {
+        if (it.source_ready_stock_order_id) s.add(it.source_ready_stock_order_id);
+      }
+    }
+    return s;
+  }, [ordersQ.data]);
+
   const filtered = useMemo(() => {
     const list = ordersQ.data ?? [];
     const out = list.filter((o: any) => {
-      if (isReady) { if (o.status !== "ready_stock") return false; }
+      if (isReady) {
+        // Ready Stock = kumpulan produk ready stock + produk retur yang masih tersedia
+        if (o.status !== "ready_stock" && o.status !== "return") return false;
+        const its = (o.order_items ?? []) as any[];
+        if (!its.length) return false;               // produk sudah dipindah → hilang dari sini
+        if (consumedSourceIds.has(o.id)) return false; // sudah diambil order lain
+      }
       else if (isDraft) { if (o.status !== "draft") return false; }
       else { if (o.status === "ready_stock" || o.status === "draft") return false; }
       if (srcFilter !== "all" && o.source !== srcFilter) return false;
@@ -633,6 +650,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       const q = filter.toLowerCase();
       return [o.order_no, o.username, o.kota, o.text_neon].some((v) => String(v ?? "").toLowerCase().includes(q));
     });
+
     const numericKeys: SortKey[] = ["titik", "hpp", "payment", "profit"];
     const sorted = [...out].sort((a: any, b: any) => {
       let av: any; let bv: any;
@@ -654,7 +672,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       return 0;
     });
     return sorted;
-  }, [ordersQ.data, filter, srcFilter, isReady, isDraft, sortKey, sortDir]);
+  }, [ordersQ.data, filter, srcFilter, isReady, isDraft, sortKey, sortDir, consumedSourceIds]);
 
 
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
@@ -681,7 +699,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isReady
-              ? "Produk ready stock — tidak masuk laporan penjualan, tapi tetap muncul di Project untuk dikerjakan."
+              ? "Kumpulan produk/project yang siap dipakai: ready stock + produk retur. Begitu produknya diambil oleh sebuah order, item ini otomatis hilang dari daftar."
               : isDraft
               ? "Simpan rancangan order di sini sebelum dikonfirmasi menjadi order aktif."
               : "Semua orderan ditampilkan disini"}
@@ -952,9 +970,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                             {firstText}
                           </button>
                           <span className="text-xs text-muted-foreground">{moreLabel}</span>
+                          {isReady && o.status === "return" && (
+                            <div className="mt-0.5">
+                              <span className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">Produk Retur</span>
+                            </div>
+                          )}
                           {!its.length && (
                             <div className="text-[10px] text-muted-foreground">riwayat produk (sudah dipindah)</div>
                           )}
+
                         </TableCell>
                         <TableCell className="text-right">{o.titik}</TableCell>
                         <TableCell className="text-right">{rp(Number(o.hpp))}</TableCell>
