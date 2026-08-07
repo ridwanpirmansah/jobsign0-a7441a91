@@ -710,13 +710,15 @@ function KpiCard({ label, value, hint, tone, icon, active, onClick }: { label: s
 
 
 function ExpenseDialog({
-  open, onOpenChange, editing, onSaved,
+  open, onOpenChange, editing, existing, onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: ExpenseRow | null;
+  existing: ExpenseRow[];
   onSaved: () => void;
 }) {
+
   const [form, setForm] = useState({
     expense_date: format(new Date(), "yyyy-MM-dd"),
     category: "iklan" as Category,
