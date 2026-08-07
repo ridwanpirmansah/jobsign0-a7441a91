@@ -32,9 +32,11 @@ import { id as idLocale } from "date-fns/locale";
 import {
   CalendarRange, ChevronDown, Plus, Pencil, Trash2, Wallet, TrendingDown, Tag,
   Megaphone, Package2, Boxes, Wrench, Banknote, Zap, Car, MoreHorizontal, Receipt,
-  Archive,
+  Archive, Search, X, CopyCheck, AlertTriangle,
 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
+import { buildDuplicateMap, findDuplicates } from "@/lib/expense-duplicates";
+
 
 export const Route = createFileRoute("/_authenticated/owner/expenses")({
   component: ExpensesPage,
@@ -116,6 +118,9 @@ function ExpensesPage() {
   const [showMore, setShowMore] = useState(false);
   const [catFilter, setCatFilter] = useState<Category | "all">("all");
   const [payFilter, setPayFilter] = useState<"all" | "hutang" | "lunas">("all");
+  const [search, setSearch] = useState("");
+  const [dupOnly, setDupOnly] = useState(false);
+
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ExpenseRow | null>(null);
@@ -151,12 +156,24 @@ function ExpensesPage() {
   });
 
   const rows = data ?? [];
+
+  // deteksi duplikat (nominal sama + tanggal berdekatan + kategori/nama mirip)
+  const dupMap = useMemo(() => buildDuplicateMap(rows as any), [rows]);
+  const dupCount = Object.keys(dupMap).length;
+
+  const q = search.trim().toLowerCase();
   const filtered = rows.filter((r) => {
     if (catFilter !== "all" && r.category !== catFilter) return false;
     if (payFilter === "hutang" && r.payment_status !== "hutang") return false;
     if (payFilter === "lunas" && r.payment_status !== "lunas") return false;
+    if (dupOnly && !dupMap[r.id]) return false;
+    if (q) {
+      const hay = `${r.description} ${r.vendor ?? ""} ${r.note ?? ""} ${catMap[r.category]?.label ?? ""} ${r.amount}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
+
 
 
   // KPI
@@ -488,40 +505,85 @@ function ExpensesPage() {
         </CardContent>
       </Card>
 
+      {/* Peringatan duplikat */}
+      {dupCount > 0 && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-amber-900">
+              {dupCount} catatan terindikasi ganda pada periode ini
+            </div>
+            <div className="text-[11px] text-amber-700">
+              Nominal sama dengan tanggal berdekatan (maks. 3 hari) dan kategori/nama belanja mirip.
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant={dupOnly ? "default" : "outline"}
+            className="h-8 text-xs shrink-0"
+            onClick={() => setDupOnly((v) => !v)}
+          >
+            <CopyCheck className="h-3.5 w-3.5 mr-1" />
+            {dupOnly ? "Tampilkan semua" : "Lihat duplikat"}
+          </Button>
+        </div>
+      )}
+
       {/* List + filter */}
       <Card className="border-slate-200">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
-            <Tag className="h-4 w-4 text-slate-500" />
-            <span>Riwayat Pengeluaran{payFilter === "hutang" ? " — Belum Dibayar" : payFilter === "lunas" ? " — Sudah Lunas" : ""}</span>
-            {(payFilter !== "all" || catFilter !== "all") && (
+        <CardHeader className="pb-2 space-y-2">
+          <div className="flex flex-row items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+              <Tag className="h-4 w-4 text-slate-500" />
+              <span>Riwayat Pengeluaran{payFilter === "hutang" ? " — Belum Dibayar" : payFilter === "lunas" ? " — Sudah Lunas" : ""}</span>
+              {(payFilter !== "all" || catFilter !== "all" || dupOnly || !!q) && (
+                <button
+                  type="button"
+                  onClick={() => { setPayFilter("all"); setCatFilter("all"); setDupOnly(false); setSearch(""); }}
+                  className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+                >
+                  × reset filter
+                </button>
+              )}
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={payFilter} onValueChange={(v) => setPayFilter(v as any)}>
+                <SelectTrigger className="w-[170px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="hutang">● Belum Dibayar</SelectItem>
+                  <SelectItem value="lunas">● Sudah Lunas</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={catFilter} onValueChange={(v) => setCatFilter(v as any)}>
+                <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kategori</SelectItem>
+                  {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="relative">
+            <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nama belanja, vendor, catatan, atau nominal…"
+              className="pl-9 pr-9 h-9 text-sm"
+            />
+            {!!search && (
               <button
                 type="button"
-                onClick={() => { setPayFilter("all"); setCatFilter("all"); }}
-                className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                × reset filter
+                <X className="h-4 w-4" />
               </button>
             )}
-          </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select value={payFilter} onValueChange={(v) => setPayFilter(v as any)}>
-              <SelectTrigger className="w-[170px] h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="hutang">● Belum Dibayar</SelectItem>
-                <SelectItem value="lunas">● Sudah Lunas</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={catFilter} onValueChange={(v) => setCatFilter(v as any)}>
-              <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Kategori</SelectItem>
-                {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
+
         <CardContent>
           {filtered.length === 0 ? (
             <p className="text-sm text-slate-400 py-8 text-center">
@@ -533,8 +595,12 @@ function ExpensesPage() {
               {filtered.map((r) => {
                 const c = catMap[r.category];
                 const Icon = c.icon;
+                const dup = dupMap[r.id];
                 return (
-                  <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+                  <div
+                    key={r.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border bg-white transition-colors ${dup ? (dup.level === "tinggi" ? "border-amber-400 bg-amber-50/50 hover:bg-amber-50" : "border-amber-200 hover:bg-amber-50/40") : "border-slate-200 hover:bg-slate-50"}`}
+                  >
                     <div
                       className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center"
                       style={{ background: `${c.color}1a`, color: c.color }}
@@ -555,12 +621,22 @@ function ExpensesPage() {
                         ) : (
                           <Badge className="text-[10px] bg-orange-100 text-orange-700 border-0 hover:bg-orange-100">● Hutang</Badge>
                         )}
+                        {dup && (
+                          <Badge className={`text-[10px] border-0 ${dup.level === "tinggi" ? "bg-amber-500 text-white hover:bg-amber-500" : "bg-amber-100 text-amber-700 hover:bg-amber-100"}`}>
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            {dup.level === "tinggi" ? "Kemungkinan Ganda" : "Mirip"} ({dup.count})
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap mt-0.5">
                         <span>{format(new Date(r.expense_date), "EEE, d MMM yyyy", { locale: idLocale })}</span>
                         {r.vendor && <span>• {r.vendor}</span>}
                         {r.note && <span className="truncate">• {r.note}</span>}
                       </div>
+                      {dup && (
+                        <div className="text-[11px] text-amber-700 mt-0.5">Terindikasi ganda: {dup.reason}</div>
+                      )}
+
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-bold text-slate-900">{fmtIDR(Number(r.amount))}</div>
@@ -595,8 +671,10 @@ function ExpensesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editing={editing}
+        existing={rows}
         onSaved={() => qc.invalidateQueries({ queryKey: ["expenses"] })}
       />
+
     </div>
   );
 }
@@ -632,13 +710,15 @@ function KpiCard({ label, value, hint, tone, icon, active, onClick }: { label: s
 
 
 function ExpenseDialog({
-  open, onOpenChange, editing, onSaved,
+  open, onOpenChange, editing, existing, onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: ExpenseRow | null;
+  existing: ExpenseRow[];
   onSaved: () => void;
 }) {
+
   const [form, setForm] = useState({
     expense_date: format(new Date(), "yyyy-MM-dd"),
     category: "iklan" as Category,
@@ -709,6 +789,23 @@ function ExpenseDialog({
   const onCatChange = (v: Category) => {
     setForm((f) => ({ ...f, category: v, affects_pnl: catMap[v].affectsPnl }));
   };
+
+  // deteksi duplikat realtime saat mengisi form
+  const dupHits = useMemo(
+    () =>
+      findDuplicates(
+        {
+          id: editing?.id,
+          expense_date: form.expense_date,
+          category: form.category,
+          amount: Number(form.amount),
+          description: form.description,
+        },
+        existing as any,
+      ),
+    [form.expense_date, form.category, form.amount, form.description, existing, editing],
+  );
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -823,17 +920,40 @@ function ExpenseDialog({
             <Switch checked={form.affects_pnl} onCheckedChange={(v) => setForm((f) => ({ ...f, affects_pnl: v }))} />
           </div>
 
+          {dupHits.length > 0 && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+                <AlertTriangle className="h-4 w-4" />
+                Mirip dengan {dupHits.length} pengeluaran yang sudah tercatat
+              </div>
+              <div className="space-y-1.5">
+                {dupHits.slice(0, 3).map((h) => (
+                  <div key={h.row.id} className="text-[11px] text-amber-800 bg-white/70 rounded-md px-2 py-1.5">
+                    <div className="font-semibold truncate">{h.row.description} — {fmtIDR(Number(h.row.amount))}</div>
+                    <div>
+                      {format(new Date(h.row.expense_date), "d MMM yyyy", { locale: idLocale })} · {catMap[h.row.category as Category]?.label} · {h.reason}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-[11px] text-amber-700">Pastikan ini bukan belanja yang sama sebelum menyimpan.</div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
           <Button
-            onClick={() => mutation.mutate()}
+            onClick={() => {
+              if (dupHits.length > 0 && !confirm("Pengeluaran ini terindikasi ganda. Tetap simpan?")) return;
+              mutation.mutate();
+            }}
             disabled={mutation.isPending}
-            className="bg-gradient-to-r from-rose-500 to-amber-500 text-white border-0"
+            className={`text-white border-0 ${dupHits.length > 0 ? "bg-amber-500 hover:bg-amber-600" : "bg-gradient-to-r from-rose-500 to-amber-500"}`}
           >
-            {mutation.isPending ? "Menyimpan…" : "Simpan"}
+            {mutation.isPending ? "Menyimpan…" : dupHits.length > 0 ? "Simpan Tetap" : "Simpan"}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
