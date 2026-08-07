@@ -32,9 +32,11 @@ import { id as idLocale } from "date-fns/locale";
 import {
   CalendarRange, ChevronDown, Plus, Pencil, Trash2, Wallet, TrendingDown, Tag,
   Megaphone, Package2, Boxes, Wrench, Banknote, Zap, Car, MoreHorizontal, Receipt,
-  Archive,
+  Archive, Search, X, CopyCheck, AlertTriangle,
 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
+import { buildDuplicateMap, findDuplicates } from "@/lib/expense-duplicates";
+
 
 export const Route = createFileRoute("/_authenticated/owner/expenses")({
   component: ExpensesPage,
