@@ -790,6 +790,23 @@ function ExpenseDialog({
     setForm((f) => ({ ...f, category: v, affects_pnl: catMap[v].affectsPnl }));
   };
 
+  // deteksi duplikat realtime saat mengisi form
+  const dupHits = useMemo(
+    () =>
+      findDuplicates(
+        {
+          id: editing?.id,
+          expense_date: form.expense_date,
+          category: form.category,
+          amount: Number(form.amount),
+          description: form.description,
+        },
+        existing as any,
+      ),
+    [form.expense_date, form.category, form.amount, form.description, existing, editing],
+  );
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
