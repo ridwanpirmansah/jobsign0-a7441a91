@@ -156,12 +156,24 @@ function ExpensesPage() {
   });
 
   const rows = data ?? [];
+
+  // deteksi duplikat (nominal sama + tanggal berdekatan + kategori/nama mirip)
+  const dupMap = useMemo(() => buildDuplicateMap(rows as any), [rows]);
+  const dupCount = Object.keys(dupMap).length;
+
+  const q = search.trim().toLowerCase();
   const filtered = rows.filter((r) => {
     if (catFilter !== "all" && r.category !== catFilter) return false;
     if (payFilter === "hutang" && r.payment_status !== "hutang") return false;
     if (payFilter === "lunas" && r.payment_status !== "lunas") return false;
+    if (dupOnly && !dupMap[r.id]) return false;
+    if (q) {
+      const hay = `${r.description} ${r.vendor ?? ""} ${r.note ?? ""} ${catMap[r.category]?.label ?? ""} ${r.amount}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
+
 
 
   // KPI
