@@ -671,8 +671,10 @@ function ExpensesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editing={editing}
+        existing={rows}
         onSaved={() => qc.invalidateQueries({ queryKey: ["expenses"] })}
       />
+
     </div>
   );
 }
