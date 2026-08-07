@@ -505,40 +505,85 @@ function ExpensesPage() {
         </CardContent>
       </Card>
 
+      {/* Peringatan duplikat */}
+      {dupCount > 0 && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-amber-900">
+              {dupCount} catatan terindikasi ganda pada periode ini
+            </div>
+            <div className="text-[11px] text-amber-700">
+              Nominal sama dengan tanggal berdekatan (maks. 3 hari) dan kategori/nama belanja mirip.
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant={dupOnly ? "default" : "outline"}
+            className="h-8 text-xs shrink-0"
+            onClick={() => setDupOnly((v) => !v)}
+          >
+            <CopyCheck className="h-3.5 w-3.5 mr-1" />
+            {dupOnly ? "Tampilkan semua" : "Lihat duplikat"}
+          </Button>
+        </div>
+      )}
+
       {/* List + filter */}
       <Card className="border-slate-200">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
-            <Tag className="h-4 w-4 text-slate-500" />
-            <span>Riwayat Pengeluaran{payFilter === "hutang" ? " — Belum Dibayar" : payFilter === "lunas" ? " — Sudah Lunas" : ""}</span>
-            {(payFilter !== "all" || catFilter !== "all") && (
+        <CardHeader className="pb-2 space-y-2">
+          <div className="flex flex-row items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+              <Tag className="h-4 w-4 text-slate-500" />
+              <span>Riwayat Pengeluaran{payFilter === "hutang" ? " — Belum Dibayar" : payFilter === "lunas" ? " — Sudah Lunas" : ""}</span>
+              {(payFilter !== "all" || catFilter !== "all" || dupOnly || !!q) && (
+                <button
+                  type="button"
+                  onClick={() => { setPayFilter("all"); setCatFilter("all"); setDupOnly(false); setSearch(""); }}
+                  className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+                >
+                  × reset filter
+                </button>
+              )}
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={payFilter} onValueChange={(v) => setPayFilter(v as any)}>
+                <SelectTrigger className="w-[170px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="hutang">● Belum Dibayar</SelectItem>
+                  <SelectItem value="lunas">● Sudah Lunas</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={catFilter} onValueChange={(v) => setCatFilter(v as any)}>
+                <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kategori</SelectItem>
+                  {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="relative">
+            <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nama belanja, vendor, catatan, atau nominal…"
+              className="pl-9 pr-9 h-9 text-sm"
+            />
+            {!!search && (
               <button
                 type="button"
-                onClick={() => { setPayFilter("all"); setCatFilter("all"); }}
-                className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                × reset filter
+                <X className="h-4 w-4" />
               </button>
             )}
-          </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select value={payFilter} onValueChange={(v) => setPayFilter(v as any)}>
-              <SelectTrigger className="w-[170px] h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="hutang">● Belum Dibayar</SelectItem>
-                <SelectItem value="lunas">● Sudah Lunas</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={catFilter} onValueChange={(v) => setCatFilter(v as any)}>
-              <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Kategori</SelectItem>
-                {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
+
         <CardContent>
           {filtered.length === 0 ? (
             <p className="text-sm text-slate-400 py-8 text-center">
