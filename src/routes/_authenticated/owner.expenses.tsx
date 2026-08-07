@@ -920,17 +920,40 @@ function ExpenseDialog({
             <Switch checked={form.affects_pnl} onCheckedChange={(v) => setForm((f) => ({ ...f, affects_pnl: v }))} />
           </div>
 
+          {dupHits.length > 0 && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+                <AlertTriangle className="h-4 w-4" />
+                Mirip dengan {dupHits.length} pengeluaran yang sudah tercatat
+              </div>
+              <div className="space-y-1.5">
+                {dupHits.slice(0, 3).map((h) => (
+                  <div key={h.row.id} className="text-[11px] text-amber-800 bg-white/70 rounded-md px-2 py-1.5">
+                    <div className="font-semibold truncate">{h.row.description} — {fmtIDR(Number(h.row.amount))}</div>
+                    <div>
+                      {format(new Date(h.row.expense_date), "d MMM yyyy", { locale: idLocale })} · {catMap[h.row.category as Category]?.label} · {h.reason}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-[11px] text-amber-700">Pastikan ini bukan belanja yang sama sebelum menyimpan.</div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
           <Button
-            onClick={() => mutation.mutate()}
+            onClick={() => {
+              if (dupHits.length > 0 && !confirm("Pengeluaran ini terindikasi ganda. Tetap simpan?")) return;
+              mutation.mutate();
+            }}
             disabled={mutation.isPending}
-            className="bg-gradient-to-r from-rose-500 to-amber-500 text-white border-0"
+            className={`text-white border-0 ${dupHits.length > 0 ? "bg-amber-500 hover:bg-amber-600" : "bg-gradient-to-r from-rose-500 to-amber-500"}`}
           >
-            {mutation.isPending ? "Menyimpan…" : "Simpan"}
+            {mutation.isPending ? "Menyimpan…" : dupHits.length > 0 ? "Simpan Tetap" : "Simpan"}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
