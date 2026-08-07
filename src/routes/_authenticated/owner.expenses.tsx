@@ -595,8 +595,12 @@ function ExpensesPage() {
               {filtered.map((r) => {
                 const c = catMap[r.category];
                 const Icon = c.icon;
+                const dup = dupMap[r.id];
                 return (
-                  <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+                  <div
+                    key={r.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border bg-white transition-colors ${dup ? (dup.level === "tinggi" ? "border-amber-400 bg-amber-50/50 hover:bg-amber-50" : "border-amber-200 hover:bg-amber-50/40") : "border-slate-200 hover:bg-slate-50"}`}
+                  >
                     <div
                       className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center"
                       style={{ background: `${c.color}1a`, color: c.color }}
@@ -617,12 +621,22 @@ function ExpensesPage() {
                         ) : (
                           <Badge className="text-[10px] bg-orange-100 text-orange-700 border-0 hover:bg-orange-100">● Hutang</Badge>
                         )}
+                        {dup && (
+                          <Badge className={`text-[10px] border-0 ${dup.level === "tinggi" ? "bg-amber-500 text-white hover:bg-amber-500" : "bg-amber-100 text-amber-700 hover:bg-amber-100"}`}>
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            {dup.level === "tinggi" ? "Kemungkinan Ganda" : "Mirip"} ({dup.count})
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap mt-0.5">
                         <span>{format(new Date(r.expense_date), "EEE, d MMM yyyy", { locale: idLocale })}</span>
                         {r.vendor && <span>• {r.vendor}</span>}
                         {r.note && <span className="truncate">• {r.note}</span>}
                       </div>
+                      {dup && (
+                        <div className="text-[11px] text-amber-700 mt-0.5">Terindikasi ganda: {dup.reason}</div>
+                      )}
+
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-bold text-slate-900">{fmtIDR(Number(r.amount))}</div>
