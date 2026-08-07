@@ -118,6 +118,9 @@ function ExpensesPage() {
   const [showMore, setShowMore] = useState(false);
   const [catFilter, setCatFilter] = useState<Category | "all">("all");
   const [payFilter, setPayFilter] = useState<"all" | "hutang" | "lunas">("all");
+  const [search, setSearch] = useState("");
+  const [dupOnly, setDupOnly] = useState(false);
+
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ExpenseRow | null>(null);
