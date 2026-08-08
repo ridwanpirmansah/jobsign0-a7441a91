@@ -92,9 +92,9 @@ function AnalyticsPage() {
     enabled: me?.role === "owner",
     queryKey: ["owner-analytics", fromStr, toStr],
     queryFn: async () => {
-      const [orders, logs, attendances, employees, prevOrders, prevLogs, projectsCount] = await Promise.all([
+      const [orders, logs, attendances, employees, prevOrders, prevLogs] = await Promise.all([
         supabase.from("orders")
-          .select("co_date,created_at,payment,split,hpp,profit,led_cost,akrilik_cost,solder_cost,tempel_cost,kabel_cost,kabel_socket_cost,adaptor,modul,biaya_lainnya,socket_dc,baut_fischer,outdoor_cost,status")
+          .select("id,co_date,created_at,payment,split,hpp,profit,led_cost,akrilik_cost,solder_cost,tempel_cost,kabel_cost,kabel_socket_cost,adaptor,modul,biaya_lainnya,socket_dc,baut_fischer,outdoor_cost,status")
           .not("status", "in", "(draft,ready_stock)")
           .gte("co_date", fromStr).lte("co_date", toStr),
         supabase.from("job_logs")
@@ -106,9 +106,21 @@ function AnalyticsPage() {
         supabase.from("employees").select("id,full_name,type,active").eq("active", true),
         supabase.from("orders").select("payment,hpp,profit,status").not("status", "in", "(draft,ready_stock)").gte("co_date", prevFromStr).lte("co_date", prevToStr),
         supabase.from("job_logs").select("amount,status").gte("log_date", prevFromStr).lte("log_date", prevToStr),
-        supabase.from("projects").select("id", { count: "exact", head: true })
-          .gte("created_at", `${fromStr}T00:00:00`).lte("created_at", `${toStr}T23:59:59`),
       ]);
+
+      // Project dihitung dari project yang menempel pada order di periode ini
+      // (mengikuti tanggal order masuk, bukan tanggal project dibuat).
+      const orderIds = (orders.data ?? []).map((o: any) => o.id);
+      const projectIds = new Set<string>();
+      if (orderIds.length) {
+        const [byParent, byItem] = await Promise.all([
+          supabase.from("projects").select("id").in("parent_order_id", orderIds),
+          supabase.from("order_items").select("project_id").in("order_id", orderIds).not("project_id", "is", null),
+        ]);
+        for (const p of byParent.data ?? []) projectIds.add((p as any).id);
+        for (const it of byItem.data ?? []) projectIds.add((it as any).project_id);
+      }
+
       return {
         orders: orders.data ?? [],
         logs: logs.data ?? [],
@@ -116,10 +128,11 @@ function AnalyticsPage() {
         employees: employees.data ?? [],
         prevOrders: prevOrders.data ?? [],
         prevLogs: prevLogs.data ?? [],
-        projectCount: projectsCount.count ?? 0,
+        projectCount: projectIds.size,
       };
     },
   });
+
 
   if (me && me.role !== "owner") {
     return <p className="p-6 text-sm text-rose-600">Akses ditolak. Halaman ini hanya untuk owner.</p>;
