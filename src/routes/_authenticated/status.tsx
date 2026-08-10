@@ -125,6 +125,19 @@ function StatusPage() {
     return [...list].sort(cmp);
   }, [rows, filter, stepFilter, sortBy]);
 
+  // Kelompokkan project yang berasal dari order yang sama
+  const groups = useMemo(() => {
+    const map = new Map<string, Row[]>();
+    const order: string[] = [];
+    filtered.forEach((r) => {
+      const k = r.order_id ?? `p:${r.project_id}`;
+      if (!map.has(k)) { map.set(k, []); order.push(k); }
+      map.get(k)!.push(r);
+    });
+    return order.map((k) => ({ key: k, rows: map.get(k)! }));
+  }, [filtered]);
+
+
   const stepCounts = useMemo(() => {
     const m: Record<Step, number> = { waiting: 0, cutting: 0, potong: 0, solder: 0, tempel: 0, kabel: 0, packing: 0, shipping: 0 };
     (rows ?? []).forEach((r) => {
