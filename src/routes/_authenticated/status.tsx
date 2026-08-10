@@ -265,7 +265,7 @@ function StatusPage() {
             g.rows.length === 1 ? (
               <ProjectCard key={g.key} row={g.rows[0]} onClick={() => setSelectedId(g.rows[0].project_id)} />
             ) : (
-              <div key={g.key} className="sm:col-span-2 rounded-2xl border border-slate-300 bg-slate-50/60 p-2 sm:p-3">
+              <div key={g.key} className="sm:col-span-2 rounded-2xl border border-slate-200 border-l-4 border-l-primary bg-white shadow-sm p-2 sm:p-3">
                 <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
                   <span className="font-mono text-xs font-semibold text-slate-700">#{g.rows[0].order_no}</span>
                   <span className="rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
