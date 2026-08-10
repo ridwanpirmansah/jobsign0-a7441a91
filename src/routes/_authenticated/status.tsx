@@ -125,6 +125,19 @@ function StatusPage() {
     return [...list].sort(cmp);
   }, [rows, filter, stepFilter, sortBy]);
 
+  // Kelompokkan project yang berasal dari order yang sama
+  const groups = useMemo(() => {
+    const map = new Map<string, Row[]>();
+    const order: string[] = [];
+    filtered.forEach((r) => {
+      const k = r.order_id ?? `p:${r.project_id}`;
+      if (!map.has(k)) { map.set(k, []); order.push(k); }
+      map.get(k)!.push(r);
+    });
+    return order.map((k) => ({ key: k, rows: map.get(k)! }));
+  }, [filtered]);
+
+
   const stepCounts = useMemo(() => {
     const m: Record<Step, number> = { waiting: 0, cutting: 0, potong: 0, solder: 0, tempel: 0, kabel: 0, packing: 0, shipping: 0 };
     (rows ?? []).forEach((r) => {
@@ -248,11 +261,41 @@ function StatusPage() {
         <Card><CardContent className="py-10 text-center text-sm text-slate-500">Tidak ada orderan aktif saat ini.</CardContent></Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {filtered.map((r) => (
-            <ProjectCard key={r.project_id} row={r} onClick={() => setSelectedId(r.project_id)} />
-          ))}
+          {groups.map((g) =>
+            g.rows.length === 1 ? (
+              <ProjectCard key={g.key} row={g.rows[0]} onClick={() => setSelectedId(g.rows[0].project_id)} />
+            ) : (
+              <div key={g.key} className="sm:col-span-2 rounded-2xl border border-slate-300 bg-slate-50/60 p-2 sm:p-3">
+                <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+                  <span className="font-mono text-xs font-semibold text-slate-700">#{g.rows[0].order_no}</span>
+                  <span className="rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                    {g.rows.length} project
+                  </span>
+                  {g.rows[0].customer_name && (
+                    <span className="text-xs text-slate-500 truncate">👤 {g.rows[0].customer_name}</span>
+                  )}
+                  {g.rows[0].packing_kayu && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                      <TreePine className="h-3 w-3" /> Packing Kayu
+                    </span>
+                  )}
+                  {g.rows.every((r) => STEP_INDEX[r.current_step] >= STEP_INDEX["packing"]) && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-teal-300 bg-teal-50 px-1.5 py-0.5 text-[10px] font-semibold text-teal-800">
+                      <PackageCheck className="h-3 w-3" /> Siap dikemas
+                    </span>
+                  )}
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {g.rows.map((r) => (
+                    <ProjectCard key={r.project_id} row={r} onClick={() => setSelectedId(r.project_id)} />
+                  ))}
+                </div>
+              </div>
+            )
+          )}
         </div>
       )}
+
 
       <DetailDialog projectId={selectedId} onOpenChange={(o) => !o && setSelectedId(null)} />
 

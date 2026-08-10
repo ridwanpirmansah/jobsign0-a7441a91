@@ -666,6 +666,7 @@ export type Database = {
           baut_fischer: number
           biaya_lainnya: number
           co_date: string | null
+          consumed_at: string | null
           created_at: string
           created_by: string | null
           deadline: string | null
@@ -715,6 +716,7 @@ export type Database = {
           baut_fischer?: number
           biaya_lainnya?: number
           co_date?: string | null
+          consumed_at?: string | null
           created_at?: string
           created_by?: string | null
           deadline?: string | null
@@ -764,6 +766,7 @@ export type Database = {
           baut_fischer?: number
           biaya_lainnya?: number
           co_date?: string | null
+          consumed_at?: string | null
           created_at?: string
           created_by?: string | null
           deadline?: string | null
