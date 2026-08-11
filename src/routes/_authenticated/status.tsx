@@ -420,7 +420,7 @@ function ScanResultDialog({ result, onClose, onOpenDetail }: {
   );
 }
 
-function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
+function ProjectCard({ row, onClick, compact }: { row: Row; onClick: () => void; compact?: boolean }) {
   const cur = STEP_INDEX[row.current_step];
   const stepMeta = STEPS[cur];
   const Icon = stepMeta.icon;
@@ -431,13 +431,15 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full min-w-0 overflow-hidden text-left rounded-2xl border bg-white p-3 sm:p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.99] ${urgent ? "border-red-300 ring-1 ring-red-200" : "border-slate-200"}`}
+      className={`w-full min-w-0 overflow-hidden text-left rounded-2xl border bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.99] ${compact ? "p-2.5" : "p-3 sm:p-4"} ${urgent && !compact ? "border-red-300 ring-1 ring-red-200" : "border-slate-200"}`}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
         <div className="min-w-0">
-          <div className="font-mono text-[10px] uppercase tracking-wide text-slate-400 truncate">{row.order_no ?? row.project_code}</div>
-          <div className="font-semibold text-slate-900 truncate">{row.project_title}</div>
-          {row.customer_name && (
+          {!compact && (
+            <div className="font-mono text-[10px] uppercase tracking-wide text-slate-400 truncate">{row.order_no ?? row.project_code}</div>
+          )}
+          <div className={`font-semibold text-slate-900 truncate ${compact ? "text-sm" : ""}`}>{row.project_title}</div>
+          {!compact && row.customer_name && (
             <div className="text-xs text-slate-500 truncate">👤 {row.customer_name}</div>
           )}
         </div>
@@ -446,7 +448,7 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
         </Badge>
       </div>
 
-      {(row.packing_kayu || row.use_outdoor) && (
+      {!compact && (row.packing_kayu || row.use_outdoor) && (
         <div className="mt-2 flex flex-wrap gap-1">
           {row.packing_kayu && (
             <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
@@ -460,9 +462,16 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
           )}
         </div>
       )}
+      {compact && row.use_outdoor && (
+        <div className="mt-1.5">
+          <span className="inline-flex items-center gap-1 rounded-md border border-sky-300 bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800">
+            <Sun className="h-3 w-3" /> Outdoor
+          </span>
+        </div>
+      )}
 
       {/* Pipeline progress */}
-      <div className="mt-3 flex items-center gap-1">
+      <div className={`${compact ? "mt-2" : "mt-3"} flex items-center gap-1`}>
         {STEPS.map((s, i) => {
           const done = i < cur || (i === cur && cur === STEPS.length - 1);
           const active = i === cur;
@@ -480,19 +489,22 @@ function ProjectCard({ row, onClick }: { row: Row; onClick: () => void }) {
         <span className="shrink-0">{cur + 1}/{STEPS.length}</span>
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-500 min-w-0">
-        <span className="truncate">{row.co_date ? format(new Date(row.co_date), "dd MMM yyyy", { locale: idLocale }) : "-"}</span>
-        {row.no_resi && (
-          <span className="font-mono truncate max-w-[55%] text-right" title={row.no_resi}>📦 {row.no_resi}</span>
-        )}
-      </div>
+      {!compact && (
+        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-500 min-w-0">
+          <span className="truncate">{row.co_date ? format(new Date(row.co_date), "dd MMM yyyy", { locale: idLocale }) : "-"}</span>
+          {row.no_resi && (
+            <span className="font-mono truncate max-w-[55%] text-right" title={row.no_resi}>📦 {row.no_resi}</span>
+          )}
+        </div>
+      )}
 
-      {dl && (
+      {!compact && dl && (
         <div className={`mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${dl.tone}`}>
           {urgent && <AlertTriangle className="h-3 w-3" />}
           Deadline: {format(new Date(row.deadline!), "dd MMM", { locale: idLocale })} · {dl.label}
         </div>
       )}
+
     </button>
   );
 }
