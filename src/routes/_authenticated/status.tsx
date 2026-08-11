@@ -1,18 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResiScanner } from "@/components/ResiScanner";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun } from "lucide-react";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun, Eye, Download } from "lucide-react";
 import { format, differenceInCalendarDays, differenceInHours } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 import { beepSuccess, beepError } from "@/lib/scan-feedback";
+import { printResiPdf, ResiPayload, generateBarcodeDataUrl } from "@/lib/resi-pdf";
 
 export const Route = createFileRoute("/_authenticated/status")({
   component: StatusPage,
@@ -76,6 +78,7 @@ function StatusPage() {
   const [scanResult, setScanResult] = useState<ScanLookup | null>(null);
   const [sortBy, setSortBy] = useState<"co_date_desc" | "co_date_asc" | "deadline_asc" | "deadline_desc" | "progress_asc" | "progress_desc">("co_date_desc");
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
+  const [previewPayload, setPreviewPayload] = useState<ResiPayload | null>(null);
 
   const { data: rows, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["active-pipeline"],
@@ -184,6 +187,28 @@ function StatusPage() {
     toast.error(`Resi/order "${text}" tidak ditemukan`);
   };
 
+  const openPreview = async (orderId: string, fallback: Partial<ResiPayload> & { no_resi: string }) => {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("no_resi, ekspedisi, co_date, kota, text_neon, username, phone, order_no")
+      .eq("id", orderId)
+      .single();
+    if (error) {
+      toast.error("Gagal memuat data resi");
+      return;
+    }
+    setPreviewPayload({
+      no_resi: data.no_resi || fallback.no_resi,
+      ekspedisi: data.ekspedisi ?? fallback.ekspedisi ?? null,
+      co_date: data.co_date ?? fallback.co_date ?? null,
+      kota: data.kota ?? fallback.kota ?? null,
+      text_neon: data.text_neon ?? fallback.text_neon ?? null,
+      username: data.username ?? fallback.username ?? null,
+      phone: data.phone ?? fallback.phone ?? null,
+      order_no: data.order_no ?? fallback.order_no ?? null,
+    });
+  };
+
   return (
     <div className="mx-auto max-w-6xl p-3 sm:p-6 space-y-4 pb-24">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -284,6 +309,24 @@ function StatusPage() {
                       <PackageCheck className="h-3 w-3" /> Siap dikemas
                     </span>
                   )}
+                  {g.rows[0].no_resi && g.rows[0].order_id && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPreview(g.rows[0].order_id!, {
+                          no_resi: g.rows[0].no_resi!,
+                          ekspedisi: g.rows[0].ekspedisi,
+                          co_date: g.rows[0].co_date,
+                          username: g.rows[0].customer_name,
+                          order_no: g.rows[0].order_no,
+                        });
+                      }}
+                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Preview Resi
+                    </button>
+                  )}
                 </div>
                 <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[11px] text-slate-500">
                   <span>{g.rows[0].co_date ? format(new Date(g.rows[0].co_date!), "dd MMM yyyy", { locale: idLocale }) : "-"}</span>
@@ -341,6 +384,8 @@ function StatusPage() {
         onClose={() => setScanResult(null)}
         onOpenDetail={(pid) => { setScanResult(null); setSelectedId(pid); }}
       />
+
+      <ResiPreviewDialog payload={previewPayload} onClose={() => setPreviewPayload(null)} />
     </div>
   );
 }
@@ -625,6 +670,71 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
             )}
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ResiPreviewDialog({ payload, onClose }: { payload: ResiPayload | null; onClose: () => void }) {
+  const [barcodeUrl, setBarcodeUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (payload?.no_resi) {
+      setBarcodeUrl(generateBarcodeDataUrl(payload.no_resi));
+    } else {
+      setBarcodeUrl(null);
+    }
+  }, [payload]);
+
+  if (!payload) return null;
+  const tgl = payload.co_date
+    ? new Date(payload.co_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+    : "-";
+
+  return (
+    <Dialog open={!!payload} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Preview Resi</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-xl border border-slate-300 bg-white p-3 text-[8px] shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-300 pb-1">
+              <span className="font-bold text-[10px]">FUJI ELECTRIC</span>
+              <span className="text-[7px] text-slate-500">NEON SIGN WORKSHOP</span>
+            </div>
+            <div className="mt-1 flex items-center justify-between text-[9px] font-bold">
+              <span>{(payload.ekspedisi || "REGULER").toUpperCase()}</span>
+              <span className="font-normal text-slate-600">Tgl: {tgl}</span>
+            </div>
+            {barcodeUrl ? (
+              <img src={barcodeUrl} alt="barcode" className="mx-auto my-1 h-12 object-contain" />
+            ) : (
+              <div className="my-1 h-12 bg-slate-100" />
+            )}
+            <div className="text-center font-mono text-[10px] font-bold">{payload.no_resi}</div>
+            <div className="my-1 border-t border-slate-300" />
+            <div className="text-[7px] font-bold text-slate-500">PENGIRIM</div>
+            <div className="flex items-center justify-between text-[8px]">
+              <span className="font-bold">Fuji Electric</span>
+              <span>0877-7980-3435</span>
+            </div>
+            <div className="text-[8px]">Tasikmalaya</div>
+            <div className="my-1 border-t border-slate-300" />
+            <div className="text-[7px] font-bold text-slate-500">PENERIMA</div>
+            <div className="flex items-center justify-between text-[9px] font-bold">
+              <span>{payload.username || "-"}</span>
+              <span className="font-normal text-[8px]">{payload.phone || ""}</span>
+            </div>
+            <div className="text-[8px]">{payload.kota || "-"}</div>
+            <div className="my-1 border-t border-slate-300" />
+            <div className="text-[7px] font-bold text-slate-500">DETAIL</div>
+            <div className="text-[8px]">Neon: {payload.text_neon || "-"}</div>
+            <div className="text-[7px] text-slate-500">No. Order: {payload.order_no || "-"}</div>
+          </div>
+          <Button onClick={() => printResiPdf(payload)} className="w-full gap-2">
+            <Download className="h-4 w-4" /> Download Resi PDF
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

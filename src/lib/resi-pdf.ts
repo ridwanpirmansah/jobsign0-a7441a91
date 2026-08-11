@@ -11,7 +11,7 @@ export function generateResiNumber(prefix = "FE"): string {
   return `${prefix}${yy}${mm}${dd}${rnd}`;
 }
 
-function barcodeDataUrl(value: string): string {
+export function generateBarcodeDataUrl(value: string): string {
   const canvas = document.createElement("canvas");
   JsBarcode(canvas, value, {
     format: "CODE128",
@@ -73,7 +73,7 @@ export function printResiPdf(payload: ResiPayload) {
   doc.line(pad, y, W - pad, y);
   y += 4;
   try {
-    const img = barcodeDataUrl(payload.no_resi);
+    const img = generateBarcodeDataUrl(payload.no_resi);
     doc.addImage(img, "PNG", pad + 3, y, W - (pad + 3) * 2, 14);
   } catch {
     /* ignore */
