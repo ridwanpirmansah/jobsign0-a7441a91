@@ -11,7 +11,7 @@ export function generateResiNumber(prefix = "FE"): string {
   return `${prefix}${yy}${mm}${dd}${rnd}`;
 }
 
-function barcodeDataUrl(value: string): string {
+export function generateBarcodeDataUrl(value: string): string {
   const canvas = document.createElement("canvas");
   JsBarcode(canvas, value, {
     format: "CODE128",
