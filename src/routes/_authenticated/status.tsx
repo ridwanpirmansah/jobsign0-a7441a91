@@ -384,6 +384,8 @@ function StatusPage() {
         onClose={() => setScanResult(null)}
         onOpenDetail={(pid) => { setScanResult(null); setSelectedId(pid); }}
       />
+
+      <ResiPreviewDialog payload={previewPayload} onClose={() => setPreviewPayload(null)} />
     </div>
   );
 }
