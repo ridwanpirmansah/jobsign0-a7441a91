@@ -5,14 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResiScanner } from "@/components/ResiScanner";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun } from "lucide-react";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun, Eye, Download } from "lucide-react";
 import { format, differenceInCalendarDays, differenceInHours } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 import { beepSuccess, beepError } from "@/lib/scan-feedback";
+import { printResiPdf, ResiPayload, generateBarcodeDataUrl } from "@/lib/resi-pdf";
 
 export const Route = createFileRoute("/_authenticated/status")({
   component: StatusPage,
