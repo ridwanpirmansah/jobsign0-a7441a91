@@ -309,6 +309,24 @@ function StatusPage() {
                       <PackageCheck className="h-3 w-3" /> Siap dikemas
                     </span>
                   )}
+                  {g.rows[0].no_resi && g.rows[0].order_id && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPreview(g.rows[0].order_id!, {
+                          no_resi: g.rows[0].no_resi!,
+                          ekspedisi: g.rows[0].ekspedisi,
+                          co_date: g.rows[0].co_date,
+                          username: g.rows[0].customer_name,
+                          order_no: g.rows[0].order_no,
+                        });
+                      }}
+                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Preview Resi
+                    </button>
+                  )}
                 </div>
                 <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[11px] text-slate-500">
                   <span>{g.rows[0].co_date ? format(new Date(g.rows[0].co_date!), "dd MMM yyyy", { locale: idLocale }) : "-"}</span>
