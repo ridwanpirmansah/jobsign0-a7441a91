@@ -187,6 +187,28 @@ function StatusPage() {
     toast.error(`Resi/order "${text}" tidak ditemukan`);
   };
 
+  const openPreview = async (orderId: string, fallback: Partial<ResiPayload> & { no_resi: string }) => {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("no_resi, ekspedisi, co_date, kota, text_neon, username, phone, order_no")
+      .eq("id", orderId)
+      .single();
+    if (error) {
+      toast.error("Gagal memuat data resi");
+      return;
+    }
+    setPreviewPayload({
+      no_resi: data.no_resi || fallback.no_resi,
+      ekspedisi: data.ekspedisi ?? fallback.ekspedisi ?? null,
+      co_date: data.co_date ?? fallback.co_date ?? null,
+      kota: data.kota ?? fallback.kota ?? null,
+      text_neon: data.text_neon ?? fallback.text_neon ?? null,
+      username: data.username ?? fallback.username ?? null,
+      phone: data.phone ?? fallback.phone ?? null,
+      order_no: data.order_no ?? fallback.order_no ?? null,
+    });
+  };
+
   return (
     <div className="mx-auto max-w-6xl p-3 sm:p-6 space-y-4 pb-24">
       <div className="flex items-start justify-between gap-3 flex-wrap">
