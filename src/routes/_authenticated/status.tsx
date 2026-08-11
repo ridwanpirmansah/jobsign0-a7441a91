@@ -285,12 +285,27 @@ function StatusPage() {
                     </span>
                   )}
                 </div>
+                <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[11px] text-slate-500">
+                  <span>{g.rows[0].co_date ? format(new Date(g.rows[0].co_date!), "dd MMM yyyy", { locale: idLocale }) : "-"}</span>
+                  {g.rows[0].no_resi && <span className="font-mono truncate">📦 {g.rows[0].no_resi}</span>}
+                  {(() => {
+                    const dl = deadlineMeta(g.rows[0].deadline);
+                    if (!dl) return null;
+                    return (
+                      <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${dl.tone}`}>
+                        {dl.urgent48 && <AlertTriangle className="h-3 w-3" />}
+                        Deadline: {format(new Date(g.rows[0].deadline!), "dd MMM", { locale: idLocale })} · {dl.label}
+                      </span>
+                    );
+                  })()}
+                </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {g.rows.map((r) => (
-                    <ProjectCard key={r.project_id} row={r} onClick={() => setSelectedId(r.project_id)} />
+                    <ProjectCard key={r.project_id} row={r} compact onClick={() => setSelectedId(r.project_id)} />
                   ))}
                 </div>
               </div>
+
             )
           )}
         </div>
