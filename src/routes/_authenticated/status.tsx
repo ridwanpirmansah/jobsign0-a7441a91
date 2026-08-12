@@ -288,7 +288,18 @@ function StatusPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           {groups.map((g) =>
             g.rows.length === 1 ? (
-              <ProjectCard key={g.key} row={g.rows[0]} onClick={() => setSelectedId(g.rows[0].project_id)} />
+              <ProjectCard
+                key={g.key}
+                row={g.rows[0]}
+                onClick={() => setSelectedId(g.rows[0].project_id)}
+                onPreview={g.rows[0].no_resi && g.rows[0].order_id ? () => openPreview(g.rows[0].order_id!, {
+                  no_resi: g.rows[0].no_resi!,
+                  ekspedisi: g.rows[0].ekspedisi,
+                  co_date: g.rows[0].co_date,
+                  username: g.rows[0].customer_name,
+                  order_no: g.rows[0].order_no,
+                }) : undefined}
+              />
             ) : (
               <div key={g.key} className="sm:col-span-2 rounded-2xl border border-slate-200 border-l-4 border-l-primary bg-white shadow-sm p-2 sm:p-3">
                 <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
@@ -465,7 +476,7 @@ function ScanResultDialog({ result, onClose, onOpenDetail }: {
   );
 }
 
-function ProjectCard({ row, onClick, compact }: { row: Row; onClick: () => void; compact?: boolean }) {
+function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: () => void; compact?: boolean; onPreview?: () => void }) {
   const cur = STEP_INDEX[row.current_step];
   const stepMeta = STEPS[cur];
   const Icon = stepMeta.icon;
@@ -476,9 +487,9 @@ function ProjectCard({ row, onClick, compact }: { row: Row; onClick: () => void;
     <button
       type="button"
       onClick={onClick}
-      className={`w-full min-w-0 overflow-hidden text-left rounded-2xl border bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.99] ${compact ? "p-2.5" : "p-3 sm:p-4"} ${urgent && !compact ? "border-red-300 ring-1 ring-red-200" : "border-slate-200"}`}
+      className={`relative w-full min-w-0 overflow-hidden text-left rounded-2xl border bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.99] ${compact ? "p-2.5" : "p-3 sm:p-4"} ${urgent && !compact ? "border-red-300 ring-1 ring-red-200" : "border-slate-200"}`}
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-2">
         <div className="min-w-0">
           {!compact && (
             <div className="font-mono text-[10px] uppercase tracking-wide text-slate-400 truncate">{row.order_no ?? row.project_code}</div>
@@ -491,6 +502,19 @@ function ProjectCard({ row, onClick, compact }: { row: Row; onClick: () => void;
         <Badge className={`${stepMeta.color} text-white border-transparent shrink-0 gap-1`}>
           <Icon className="h-3 w-3" /> {stepMeta.short}
         </Badge>
+        {!compact && onPreview && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPreview();
+            }}
+            className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 shrink-0"
+            title="Preview Resi"
+          >
+            <Eye className="h-3.5 w-3.5" /> Resi
+          </button>
+        )}
       </div>
 
       {!compact && (row.packing_kayu || row.use_outdoor) && (
