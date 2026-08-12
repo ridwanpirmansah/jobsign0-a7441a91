@@ -288,7 +288,18 @@ function StatusPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           {groups.map((g) =>
             g.rows.length === 1 ? (
-              <ProjectCard key={g.key} row={g.rows[0]} onClick={() => setSelectedId(g.rows[0].project_id)} />
+              <ProjectCard
+                key={g.key}
+                row={g.rows[0]}
+                onClick={() => setSelectedId(g.rows[0].project_id)}
+                onPreview={g.rows[0].no_resi && g.rows[0].order_id ? () => openPreview(g.rows[0].order_id!, {
+                  no_resi: g.rows[0].no_resi!,
+                  ekspedisi: g.rows[0].ekspedisi,
+                  co_date: g.rows[0].co_date,
+                  username: g.rows[0].customer_name,
+                  order_no: g.rows[0].order_no,
+                }) : undefined}
+              />
             ) : (
               <div key={g.key} className="sm:col-span-2 rounded-2xl border border-slate-200 border-l-4 border-l-primary bg-white shadow-sm p-2 sm:p-3">
                 <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
