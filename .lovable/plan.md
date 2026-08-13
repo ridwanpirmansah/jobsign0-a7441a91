@@ -1,55 +1,31 @@
-## Tujuan
+# Perbaikan Project "Nyangkut" di Orderan
 
-Menambahkan **cadangan otomatis ke project Supabase kedua** (di luar Lovable Cloud) agar data webapp bisa disalin secara berkala dan bisa di-restore jika diperlukan.
+## Masalah (sudah diverifikasi di data)
 
-## Yang perlu Anda siapkan
+Order **522** hanya punya **1 item** di form input order (project P-0064), tetapi di database ada **3 project** yang masih menunjuk ke order 522:
 
-1. Project Supabase kedua (bisa gratis atau berbayar di Supabase) dengan **schema tabel yang sama** seperti project utama.
-2. URL project kedua dan **Service Role Key**-nya. Kredensial ini akan disimpan sebagai secret backend, tidak ditampilkan di frontend.
+- P-0064 — masih dipakai item order (benar)
+- P-0049 — tidak punya item order lagi (nyangkut)
+- P-0058 — tidak punya item order lagi (nyangkut)
 
-## Yang akan dibangun
+Penyebabnya: saat sebuah item dihapus dari orderan, project-nya tidak pernah dilepas dari order. Kolom penghubung di project tetap terisi order lama, sehingga halaman Status Orderan tetap membaca 3 project.
 
-### 1. Konfigurasi target backup
-- Dua secret backend: `BACKUP_SUPABASE_URL` dan `BACKUP_SUPABASE_SERVICE_ROLE_KEY`.
-- Tabel `backup_runs` untuk mencatat: waktu mulai, waktu selesai, status (running/success/failed), jumlah baris, dan pesan error jika gagal.
+## Yang akan diperbaiki
 
-### 2. Server function backup (khusus owner/admin)
-- `testBackupConnection`: cek apakah project kedua bisa dijangkau.
-- `runBackupToSupabase`: salin seluruh tabel yang sudah ada di daftar backup (`BACKUP_TABLES`) ke project kedua.
-  - Mengikuti urutan tabel agar relasi antar data tidak bermasalah.
-  - Membaca data per halaman (pagination) dari project utama lalu upsert ke project kedua berdasarkan kolom conflict yang sama.
-  - Mencatat hasilnya di `backup_runs`.
+1. **Lepas otomatis saat item dihapus**
+   Ketika sebuah item dihapus dari orderan (atau item dipindah ke orderan lain), project yang terkait langsung dilepas dari orderan itu dan kembali menjadi **Ready Stock** (tanpa orderan), bukan dihapus. Semua riwayat garapan/klaim project tetap utuh.
 
-### 3. Endpoint cron publik
-- Route `/api/public/hooks/backup-to-supabase` yang menerima POST dengan verifikasi `apikey` (sama seperti cron Google Sheets / Shopee yang sudah ada).
-- Endpoint ini bisa dipanggil oleh scheduler eksternal (pg_cron, cron-job.org, dll) untuk menjalankan backup otomatis tanpa login.
+2. **Project yang sudah terlanjur nyangkut dibersihkan**
+   Sekali jalan: semua project yang menunjuk ke sebuah orderan padahal sudah tidak punya item di orderan tersebut akan dilepas menjadi Ready Stock. Ini otomatis merapikan order 522 (P-0049 dan P-0058 lepas, tinggal P-0064).
 
-### 4. UI di halaman Backup
-- Tambahkan bagian **"Backup ke Supabase Lain"** di `/owner/backup`:
-  - Tombol **Test Koneksi**.
-  - Tombol **Jalankan Backup Sekarang**.
-  - Tabel riwayat `backup_runs` (waktu, status, jumlah baris).
-  - Petunjuk cara mengatur cron otomatis.
+3. **Status Orderan & Input Garapan ikut rapi**
+   Karena keduanya membaca keterkaitan project–order, setelah perbaikan order 522 hanya menampilkan 1 project, dan project lepasan muncul di daftar Ready Stock.
 
-## Detail teknis
+## Catatan teknis
 
-- Client ke project kedua dibuat di dalam handler server function dengan `createClient` dari `@supabase/supabase-js`, bukan di module scope, supaya kredensial tidak bocor ke client bundle.
-- Backup menggunakan service role key project kedua, sehingga RLS di project kedua tidak menghalangi proses upsert.
-- Data di project kedua di-update/insert dengan `upsert(..., { onConflict })` sesuai konfigurasi `BACKUP_TABLES` yang sudah ada.
-- Endpoint cron memvalidasi header `apikey` terhadap `SUPABASE_PUBLISHABLE_KEY` environment variable.
-- Server function `runBackupToSupabase` memeriksa role owner/admin melalui `user_roles` sebelum mengeksekusi.
-
-## Batasan
-
-- Ini adalah **backup periodik**, bukan replika real-time atau failover otomatis.
-- File di Storage (foto, PDF, dll) **tidak ikut** tersalin secara otomatis; yang dicadangkan hanya data tabel.
-- Data auth/users (tabel `auth.users`) tidak ikut tersalin karena dikelola Supabase Auth. Setelah restore ke project baru, user perlu dibuat ulang atau diatur ulang.
-- Project kedua harus sudah memiliki tabel dan kolom yang identik. Backup tidak membuat schema baru.
-
-## Urutan pengerjaan
-
-1. Tambahkan tabel `backup_runs` (migrasi + GRANT + RLS).
-2. Minta dan simpan secret `BACKUP_SUPABASE_URL` serta `BACKUP_SUPABASE_SERVICE_ROLE_KEY`.
-3. Buat server function `testBackupConnection` dan `runBackupToSupabase`.
-4. Buat route cron `/api/public/hooks/backup-to-supabase`.
-5. Tambahkan UI di `/owner/backup` untuk test, jalankan manual, dan lihat riwayat.
+- Tambah trigger `AFTER DELETE ON public.order_items`: jika `OLD.project_id` tidak lagi direferensikan oleh item mana pun, set `projects.parent_order_id = NULL` dan status project dikembalikan ke `active` (ready stock tanpa order); jika order tersebut punya `orders.project_id` yang sama, kosongkan juga.
+- Tambah trigger/`AFTER UPDATE OF project_id` pada `order_items` untuk kasus item ditukar produknya, agar project lama juga dilepas.
+- Migration cleanup satu kali:
+  `UPDATE public.projects p SET parent_order_id = NULL WHERE parent_order_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.order_items oi WHERE oi.project_id = p.id) AND NOT EXISTS (SELECT 1 FROM public.orders o WHERE o.project_id = p.id AND o.id = p.parent_order_id);`
+  (varian aman: tetap pertahankan project header order lama yang memang masih dirujuk `orders.project_id`).
+- Tidak ada perubahan tampilan; hanya data + trigger. Halaman `/status`, `/me/jobs`, dan tab Ready Stock otomatis ikut benar.
