@@ -63,6 +63,15 @@ function deadlineMeta(deadline: string | null) {
   return { days, hours, urgent48, tone, label };
 }
 
+/** Tampilkan hanya bagian ujung alamat (mis. "Cikarang barat, Kab. Bekasi") */
+function shortAddress(text: string, parts = 2) {
+  const segs = text.split(",").map((s) => s.trim()).filter(Boolean);
+  if (segs.length <= parts) return text.length > 40 ? `…${text.slice(-40)}` : text;
+  const tail = segs.slice(-parts).join(", ");
+  return `…${tail.length > 42 ? tail.slice(-42) : tail}`;
+}
+
+
 type ScanLookup = {
   order_id: string; order_no: string; status: string; no_resi: string | null;
   ekspedisi: string | null; text_neon: string | null; username: string | null;
