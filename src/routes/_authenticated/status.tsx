@@ -492,13 +492,20 @@ function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: 
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-2">
         <div className="min-w-0">
           {!compact && (
-            <div className="font-mono text-[10px] uppercase tracking-wide text-slate-400 truncate">{row.order_no ?? row.project_code}</div>
+            <div className="font-mono text-[10px] uppercase tracking-wide text-slate-400 truncate">
+              {row.order_no ?? row.project_code}
+              {row.order_no && <span className="ml-1 text-slate-400">· #{row.project_code}</span>}
+            </div>
           )}
           <div className={`font-semibold text-slate-900 truncate ${compact ? "text-sm" : ""}`}>{row.project_title}</div>
+          {compact && (
+            <div className="font-mono text-[10px] text-slate-400 truncate">#{row.project_code}</div>
+          )}
           {!compact && row.customer_name && (
-            <div className="text-xs text-slate-500 truncate">👤 {row.customer_name}</div>
+            <div className="text-xs text-slate-500 truncate" title={row.customer_name}>👤 {shortAddress(row.customer_name)}</div>
           )}
         </div>
+
         <Badge className={`${stepMeta.color} text-white border-transparent shrink-0 gap-1`}>
           <Icon className="h-3 w-3" /> {stepMeta.short}
         </Badge>
