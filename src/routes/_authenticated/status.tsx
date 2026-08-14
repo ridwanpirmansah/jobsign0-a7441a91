@@ -298,8 +298,8 @@ function StatusPage() {
           </div>
         )}
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-          <SelectTrigger className="h-9 w-9 border-slate-200 bg-white p-0 text-slate-600 hover:bg-slate-50 hover:text-slate-900 [&>svg]:hidden" title="Urutkan">
-            <ArrowUpDown className="mx-auto h-4 w-4" />
+          <SelectTrigger className="inline-flex h-9 w-9 shrink-0 items-center justify-center border-slate-200 bg-white p-0 text-slate-600 hover:bg-slate-50 hover:text-slate-900 [&>svg]:hidden" title="Urutkan">
+            <ArrowUpDown className="h-4 w-4" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="co_date_desc">Tanggal CO — Terbaru</SelectItem>
