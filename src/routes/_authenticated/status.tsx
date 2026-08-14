@@ -88,6 +88,7 @@ function StatusPage() {
   const [sortBy, setSortBy] = useState<"co_date_desc" | "co_date_asc" | "deadline_asc" | "deadline_desc" | "progress_asc" | "progress_desc">("co_date_desc");
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
   const [previewPayload, setPreviewPayload] = useState<ResiPayload | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const { data: rows, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["active-pipeline"],
