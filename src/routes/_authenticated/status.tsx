@@ -96,7 +96,11 @@ function StatusPage() {
       // Exclude ready-stock orders from active pipeline
       if ((r.order_status ?? "") === "ready_stock") return false;
       if (String(r.order_no ?? "").toUpperCase().startsWith("RS-")) return false;
+      // Sembunyikan yang sudah dikirim kecuali tab "Dikirim" dipilih
+      const shipped = !!r.picked_up_at || r.current_step === "shipping";
+      if (shipped && stepFilter !== "shipping") return false;
       if (stepFilter !== "all" && r.current_step !== stepFilter) return false;
+
       if (!q) return true;
       return [r.project_code, r.project_title, r.order_no, r.customer_name, r.no_resi]
         .some((v) => String(v ?? "").toLowerCase().includes(q));
