@@ -362,7 +362,7 @@ function StatusPage() {
                     return (
                       <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${dl.tone}`}>
                         {dl.urgent48 && <AlertTriangle className="h-3 w-3" />}
-                        Deadline: {format(new Date(g.rows[0].deadline!), "dd MMM", { locale: idLocale })} · {dl.label}
+                        DL: {format(new Date(g.rows[0].deadline!), "dd MMM", { locale: idLocale })} · {dl.label}
                       </span>
                     );
                   })()}
@@ -591,7 +591,7 @@ function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: 
       {!compact && dl && (
         <div className={`mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${dl.tone}`}>
           {urgent && <AlertTriangle className="h-3 w-3" />}
-          Deadline: {format(new Date(row.deadline!), "dd MMM", { locale: idLocale })} · {dl.label}
+          DL: {format(new Date(row.deadline!), "dd MMM", { locale: idLocale })} · {dl.label}
         </div>
       )}
 
@@ -634,7 +634,7 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
               {dl && (
                 <div className={`mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${dl.tone}`}>
                   {(dl.urgent48 || dl.days <= 0) && <AlertTriangle className="h-3 w-3" />}
-                  Deadline: {format(new Date(data.project.deadline!), "dd MMM yyyy", { locale: idLocale })} · {dl.label}
+                  DL: {format(new Date(data.project.deadline!), "dd MMM yyyy", { locale: idLocale })} · {dl.label}
                 </div>
               )}
               {(data.order?.packing_kayu || data.order?.use_outdoor) && (
