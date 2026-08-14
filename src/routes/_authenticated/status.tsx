@@ -349,7 +349,7 @@ function StatusPage() {
                       }}
                       className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
                     >
-                      <Eye className="h-3.5 w-3.5" /> Preview Resi
+                      <Eye className="h-3.5 w-3.5" /> Resi
                     </button>
                   )}
                 </div>
