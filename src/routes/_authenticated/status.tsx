@@ -268,15 +268,39 @@ function StatusPage() {
         })}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <Input
-          placeholder="Cari no order / project / customer / resi..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="max-w-md"
-        />
+      <div className="flex items-center gap-2">
+        {!searchOpen ? (
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+            title="Cari"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        ) : (
+          <div className="flex flex-1 items-center gap-2">
+            <Input
+              autoFocus
+              placeholder="Cari no order / project / customer / resi..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => { setFilter(""); setSearchOpen(false); }}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              title="Tutup pencarian"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-9 w-9 border-slate-200 bg-white p-0 text-slate-600 hover:bg-slate-50 hover:text-slate-900 [&>svg]:hidden" title="Urutkan">
+            <ArrowUpDown className="mx-auto h-4 w-4" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="co_date_desc">Tanggal CO — Terbaru</SelectItem>
             <SelectItem value="co_date_asc">Tanggal CO — Terlama</SelectItem>
@@ -289,8 +313,8 @@ function StatusPage() {
         {stepFilter !== "all" && (
           <button
             onClick={() => setStepFilter("all")}
-            className="text-xs text-slate-500 underline hover:text-slate-800"
-          >Reset filter tahap</button>
+            className="text-xs text-slate-500 underline hover:text-slate-800 whitespace-nowrap"
+          >Reset filter</button>
         )}
       </div>
 
