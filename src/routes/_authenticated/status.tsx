@@ -372,9 +372,9 @@ function StatusPage() {
                           order_no: g.rows[0].order_no,
                         });
                       }}
-                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-50 shrink-0"
                     >
-                      <Eye className="h-3.5 w-3.5" /> Resi
+                      <Eye className="h-3 w-3" /> Resi
                     </button>
                   )}
                 </div>
