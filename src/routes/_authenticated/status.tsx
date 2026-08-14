@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResiScanner } from "@/components/ResiScanner";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun, Eye, Download } from "lucide-react";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun, Eye, Download, Search, ArrowUpDown, X } from "lucide-react";
 import { format, differenceInCalendarDays, differenceInHours } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -88,6 +88,7 @@ function StatusPage() {
   const [sortBy, setSortBy] = useState<"co_date_desc" | "co_date_asc" | "deadline_asc" | "deadline_desc" | "progress_asc" | "progress_desc">("co_date_desc");
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
   const [previewPayload, setPreviewPayload] = useState<ResiPayload | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const { data: rows, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["active-pipeline"],
@@ -267,15 +268,39 @@ function StatusPage() {
         })}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <Input
-          placeholder="Cari no order / project / customer / resi..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="max-w-md"
-        />
+      <div className="flex items-center gap-2">
+        {!searchOpen ? (
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+            title="Cari"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        ) : (
+          <div className="flex flex-1 items-center gap-2">
+            <Input
+              autoFocus
+              placeholder="Cari no order / project / customer / resi..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => { setFilter(""); setSearchOpen(false); }}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              title="Tutup pencarian"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="inline-flex h-9 w-9 shrink-0 items-center justify-center border-slate-200 bg-white p-0 text-slate-600 hover:bg-slate-50 hover:text-slate-900 [&>svg]:hidden" title="Urutkan">
+            <ArrowUpDown className="h-4 w-4" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="co_date_desc">Tanggal CO — Terbaru</SelectItem>
             <SelectItem value="co_date_asc">Tanggal CO — Terlama</SelectItem>
@@ -288,8 +313,8 @@ function StatusPage() {
         {stepFilter !== "all" && (
           <button
             onClick={() => setStepFilter("all")}
-            className="text-xs text-slate-500 underline hover:text-slate-800"
-          >Reset filter tahap</button>
+            className="text-xs text-slate-500 underline hover:text-slate-800 whitespace-nowrap"
+          >Reset filter</button>
         )}
       </div>
 
@@ -347,9 +372,9 @@ function StatusPage() {
                           order_no: g.rows[0].order_no,
                         });
                       }}
-                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-50 shrink-0"
                     >
-                      <Eye className="h-3.5 w-3.5" /> Resi
+                      <Eye className="h-3 w-3" /> Resi
                     </button>
                   )}
                 </div>
@@ -530,10 +555,10 @@ function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: 
               e.stopPropagation();
               onPreview();
             }}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 shrink-0"
+            className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-50 shrink-0"
             title="Preview Resi"
           >
-            <Eye className="h-3.5 w-3.5" /> Resi
+            <Eye className="h-3 w-3" /> Resi
           </button>
         )}
       </div>
