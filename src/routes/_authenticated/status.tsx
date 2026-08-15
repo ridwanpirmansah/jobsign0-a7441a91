@@ -446,6 +446,40 @@ function StatusPage() {
       />
 
       <ResiPreviewDialog payload={previewPayload} onClose={() => setPreviewPayload(null)} />
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Riwayat Pesanan</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">Pesanan yang sudah dikirim / selesai.</p>
+          <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+            {(() => {
+              const done = (rows ?? []).filter((r) => !!r.picked_up_at || r.current_step === "shipping");
+              if (done.length === 0) return <div className="py-8 text-center text-sm text-slate-500">Belum ada riwayat.</div>;
+              return done
+                .sort((a, b) => String(b.picked_up_at ?? b.co_date ?? "").localeCompare(String(a.picked_up_at ?? a.co_date ?? "")))
+                .map((r) => (
+                  <button
+                    key={r.project_id}
+                    type="button"
+                    onClick={() => { setHistoryOpen(false); setSelectedId(r.project_id); }}
+                    className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-slate-900">{r.project_title}</div>
+                      <div className="truncate font-mono text-[10px] text-slate-400">#{r.project_code}{r.order_no ? ` · Order ${r.order_no}` : ""}</div>
+                      {r.no_resi && <div className="truncate font-mono text-[10px] text-slate-500">📦 {r.no_resi}</div>}
+                    </div>
+                    <Badge className="shrink-0 gap-1 border-transparent bg-green-600 text-white">
+                      <Truck className="h-3 w-3" /> Dikirim
+                    </Badge>
+                  </button>
+                ));
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
