@@ -89,6 +89,7 @@ function StatusPage() {
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
   const [previewPayload, setPreviewPayload] = useState<ResiPayload | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const { data: rows, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["active-pipeline"],
@@ -243,6 +244,12 @@ function StatusPage() {
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />Refresh
           </button>
+          <button
+            onClick={() => setHistoryOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <History className="h-3.5 w-3.5" /> Riwayat
+          </button>
         </div>
       </div>
 
@@ -300,7 +307,7 @@ function StatusPage() {
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
           <SelectTrigger className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white p-0 text-slate-600 hover:bg-slate-50 hover:text-slate-900 [&>svg]:hidden" title="Urutkan">
             <span className="pointer-events-none flex items-center justify-center">
-              <ListFilter className="h-4 w-4" />
+              <Filter className="h-4 w-4" />
             </span>
           </SelectTrigger>
 
