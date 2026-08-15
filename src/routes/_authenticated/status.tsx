@@ -742,7 +742,20 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
                 <div className="text-amber-800 whitespace-pre-wrap">{data.order.notes}</div>
               </section>
             )}
+
+            <div className="sticky bottom-0 -mx-6 border-t border-slate-200 bg-white px-6 pb-1 pt-3">
+              <Button
+                className="w-full gap-2"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate({ to: "/me/jobs", search: { project: data.project.id } });
+                }}
+              >
+                <Hammer className="h-4 w-4" /> Klaim garapan project ini
+              </Button>
+            </div>
           </div>
+
         )}
       </DialogContent>
     </Dialog>
