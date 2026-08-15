@@ -20,9 +20,9 @@ import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_authenticated/me/jobs")({
   component: MyJobs,
-  validateSearch: (search: Record<string, unknown>) => ({
-    project: typeof search.project === "string" ? search.project : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { project?: string } =>
+    typeof search.project === "string" ? { project: search.project } : {},
+
 });
 
 function fmtIDR(n: number) {
