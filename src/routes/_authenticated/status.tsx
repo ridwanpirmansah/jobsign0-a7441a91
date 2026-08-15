@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResiScanner } from "@/components/ResiScanner";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun, Eye, Download, Search, ListFilter, X, Hammer } from "lucide-react";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun, Eye, Download, Search, Filter, X, Hammer, History } from "lucide-react";
 import { format, differenceInCalendarDays, differenceInHours } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -89,6 +89,7 @@ function StatusPage() {
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
   const [previewPayload, setPreviewPayload] = useState<ResiPayload | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const { data: rows, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["active-pipeline"],
@@ -243,6 +244,12 @@ function StatusPage() {
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />Refresh
           </button>
+          <button
+            onClick={() => setHistoryOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <History className="h-3.5 w-3.5" /> Riwayat
+          </button>
         </div>
       </div>
 
@@ -300,7 +307,7 @@ function StatusPage() {
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
           <SelectTrigger className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white p-0 text-slate-600 hover:bg-slate-50 hover:text-slate-900 [&>svg]:hidden" title="Urutkan">
             <span className="pointer-events-none flex items-center justify-center">
-              <ListFilter className="h-4 w-4" />
+              <Filter className="h-4 w-4" />
             </span>
           </SelectTrigger>
 
@@ -375,7 +382,7 @@ function StatusPage() {
                           order_no: g.rows[0].order_no,
                         });
                       }}
-                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-50 shrink-0"
+                      className="ml-auto inline-flex min-h-0 items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-50 shrink-0 [&>svg]:!h-3 [&>svg]:!w-3"
                     >
                       <Eye className="h-3 w-3" /> Resi
                     </button>
@@ -439,6 +446,40 @@ function StatusPage() {
       />
 
       <ResiPreviewDialog payload={previewPayload} onClose={() => setPreviewPayload(null)} />
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Riwayat Pesanan</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">Pesanan yang sudah dikirim / selesai.</p>
+          <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+            {(() => {
+              const done = (rows ?? []).filter((r) => !!r.picked_up_at || r.current_step === "shipping");
+              if (done.length === 0) return <div className="py-8 text-center text-sm text-slate-500">Belum ada riwayat.</div>;
+              return done
+                .sort((a, b) => String(b.picked_up_at ?? b.co_date ?? "").localeCompare(String(a.picked_up_at ?? a.co_date ?? "")))
+                .map((r) => (
+                  <button
+                    key={r.project_id}
+                    type="button"
+                    onClick={() => { setHistoryOpen(false); setSelectedId(r.project_id); }}
+                    className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-slate-900">{r.project_title}</div>
+                      <div className="truncate font-mono text-[10px] text-slate-400">#{r.project_code}{r.order_no ? ` · Order ${r.order_no}` : ""}</div>
+                      {r.no_resi && <div className="truncate font-mono text-[10px] text-slate-500">📦 {r.no_resi}</div>}
+                    </div>
+                    <Badge className="shrink-0 gap-1 border-transparent bg-green-600 text-white">
+                      <Truck className="h-3 w-3" /> Dikirim
+                    </Badge>
+                  </button>
+                ));
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -558,7 +599,7 @@ function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: 
               e.stopPropagation();
               onPreview();
             }}
-            className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shrink-0"
+            className="inline-flex min-h-0 items-center gap-1 rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shrink-0 [&>svg]:!h-3 [&>svg]:!w-3"
             title="Preview Resi"
           >
             <Eye className="h-3 w-3" /> Resi
