@@ -18,7 +18,12 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
-export const Route = createFileRoute("/_authenticated/me/jobs")({ component: MyJobs });
+export const Route = createFileRoute("/_authenticated/me/jobs")({
+  component: MyJobs,
+  validateSearch: (search: Record<string, unknown>) => ({
+    project: typeof search.project === "string" ? search.project : undefined,
+  }),
+});
 
 function fmtIDR(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
@@ -28,8 +33,10 @@ function MyJobs() {
   const { data: me } = useCurrentUser();
   const staff = isStaff(me?.role);
   const qc = useQueryClient();
+  const { project: projectFromUrl } = Route.useSearch();
 
-  const [projectId, setProjectId] = useState<string>("");
+  const [projectId, setProjectId] = useState<string>(projectFromUrl ?? "");
+
   const [projectOpen, setProjectOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
   const [note, setNote] = useState("");
