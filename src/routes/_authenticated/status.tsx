@@ -629,7 +629,9 @@ function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: 
 }
 
 function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; onOpenChange: (o: boolean) => void }) {
+  const navigate = useNavigate();
   const { data } = useQuery({
+
     enabled: !!projectId,
     queryKey: ["project-worker-detail", projectId],
     queryFn: async () => {
