@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResiScanner } from "@/components/ResiScanner";
-import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun, Eye, Download, Search, ArrowUpDown, X } from "lucide-react";
+import { Scissors, Zap, Cable, Sparkles, PackageCheck, Truck, Clock, Ruler, RefreshCw, AlertTriangle, ScanLine, TreePine, Sun, Eye, Download, Search, ListFilter, X, Hammer } from "lucide-react";
 import { format, differenceInCalendarDays, differenceInHours } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -298,9 +298,12 @@ function StatusPage() {
           </div>
         )}
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-          <SelectTrigger className="inline-flex h-9 w-9 shrink-0 items-center justify-center border-slate-200 bg-white p-0 text-slate-600 hover:bg-slate-50 hover:text-slate-900 [&>svg]:hidden" title="Urutkan">
-            <ArrowUpDown className="h-4 w-4" />
+          <SelectTrigger className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white p-0 text-slate-600 hover:bg-slate-50 hover:text-slate-900 [&>svg]:hidden" title="Urutkan">
+            <span className="pointer-events-none flex items-center justify-center">
+              <ListFilter className="h-4 w-4" />
+            </span>
           </SelectTrigger>
+
           <SelectContent>
             <SelectItem value="co_date_desc">Tanggal CO — Terbaru</SelectItem>
             <SelectItem value="co_date_asc">Tanggal CO — Terlama</SelectItem>
@@ -555,12 +558,13 @@ function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: 
               e.stopPropagation();
               onPreview();
             }}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-50 shrink-0"
+            className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shrink-0"
             title="Preview Resi"
           >
             <Eye className="h-3 w-3" /> Resi
           </button>
         )}
+
       </div>
 
       {!compact && (row.packing_kayu || row.use_outdoor) && (
@@ -625,7 +629,9 @@ function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: 
 }
 
 function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; onOpenChange: (o: boolean) => void }) {
+  const navigate = useNavigate();
   const { data } = useQuery({
+
     enabled: !!projectId,
     queryKey: ["project-worker-detail", projectId],
     queryFn: async () => {
@@ -738,7 +744,20 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
                 <div className="text-amber-800 whitespace-pre-wrap">{data.order.notes}</div>
               </section>
             )}
+
+            <div className="sticky bottom-0 -mx-6 border-t border-slate-200 bg-white px-6 pb-1 pt-3">
+              <Button
+                className="w-full gap-2"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate({ to: "/me/jobs", search: { project: data.project.id } });
+                }}
+              >
+                <Hammer className="h-4 w-4" /> Klaim garapan project ini
+              </Button>
+            </div>
           </div>
+
         )}
       </DialogContent>
     </Dialog>
