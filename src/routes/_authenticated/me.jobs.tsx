@@ -666,7 +666,14 @@ function MyJobs() {
                   <div className="min-w-0">
                     <div className="text-xs text-slate-500">{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</div>
                     {l.project && <div className="text-sm font-medium text-slate-900 truncate">{l.project.title}</div>}
-                    {l.project && <div className="font-mono text-[10px] text-slate-400">{l.project.code}</div>}
+                    {l.project && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-[10px] text-slate-400">{l.project.code}</span>
+                        {!l.project.parent_order_id && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">Ready Stok</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {l.is_repair && <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 text-[10px]">🔧 Reparasi</Badge>}
