@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, CheckCheck, ShieldCheck, Search, FolderOpen, ChevronDown, Check, Package, X } from "lucide-react";
+import { Trash2, CheckCheck, ShieldCheck, Search, FolderOpen, ChevronDown, Check, Package, X, Pencil, ShoppingCart, Boxes } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -39,7 +39,9 @@ function MyJobs() {
 
   const [projectOpen, setProjectOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
+  const [projectTab, setProjectTab] = useState<"order" | "stock">("order");
   const [note, setNote] = useState("");
+  const [noteOpen, setNoteOpen] = useState(false);
   const [qtyMap, setQtyMap] = useState<Record<string, string>>({});
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
 
@@ -62,7 +64,7 @@ function MyJobs() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_available_projects");
       if (error) throw error;
-      return (data ?? []) as Array<{ id: string; code: string; title: string; status: string; total_points: number; claimed_points: number; remaining_points: number }>;
+      return (data ?? []) as Array<{ id: string; code: string; title: string; status: string; total_points: number; claimed_points: number; remaining_points: number; parent_order_id: string | null; order_no: string | null }>;
     },
   });
 
@@ -94,7 +96,7 @@ function MyJobs() {
     queryKey: ["my-logs", effectiveEmpId],
     queryFn: async () => {
       const { data } = await supabase.from("job_logs")
-        .select("*, project:projects(code,title), rate:job_rates(name,unit,rate_per_unit)")
+        .select("*, project:projects(code,title,parent_order_id), rate:job_rates(name,unit,rate_per_unit)")
         .eq("employee_id", effectiveEmpId!).order("log_date", { ascending: false }).limit(50);
       return data ?? [];
     },
@@ -122,14 +124,22 @@ function MyJobs() {
 
   const selectedProject = projects?.find((p) => p.id === projectId);
 
+  // Keep the picker tab in sync with the currently selected project
+  useEffect(() => {
+    if (selectedProject) setProjectTab(selectedProject.parent_order_id ? "order" : "stock");
+  }, [selectedProject]);
+
+  const orderProjects = useMemo(() => (projects ?? []).filter((p) => !!p.parent_order_id), [projects]);
+  const stockProjects = useMemo(() => (projects ?? []).filter((p) => !p.parent_order_id), [projects]);
+
   const filteredProjects = useMemo(() => {
-    const list = projects ?? [];
+    const list = projectTab === "order" ? orderProjects : stockProjects;
     const q = projectSearch.trim().toLowerCase();
     if (!q) return list;
     return list.filter((p) =>
-      `${p.code} ${p.title}`.toLowerCase().includes(q)
+      `${p.code} ${p.title} ${p.order_no ?? ""}`.toLowerCase().includes(q)
     );
-  }, [projects, projectSearch]);
+  }, [orderProjects, stockProjects, projectTab, projectSearch]);
 
   // Colorful accents so the list matches the vibe of the attendance history page
   const projectPalette = [
@@ -334,7 +344,18 @@ function MyJobs() {
                     <div className="flex items-start gap-2 min-w-0 text-left">
                       <FolderOpen className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold text-sky-700">{selectedProject.code}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-semibold text-sky-700">{selectedProject.code}</span>
+                          {selectedProject.parent_order_id ? (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-200">
+                              Order {selectedProject.order_no ?? ""}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">
+                              Ready Stok
+                            </span>
+                          )}
+                        </div>
                         <div className="text-sm text-slate-900 leading-tight whitespace-normal break-words">
                           {selectedProject.title}
                         </div>
@@ -358,6 +379,26 @@ function MyJobs() {
                     <DialogTitle className="text-base flex items-center gap-2">
                       <FolderOpen className="h-4 w-4 text-sky-600" /> Pilih Project
                     </DialogTitle>
+                    <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-white/70 border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setProjectTab("order")}
+                        className={`flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold transition ${
+                          projectTab === "order" ? "bg-emerald-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        <ShoppingCart className="h-3.5 w-3.5" /> Order ({orderProjects.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProjectTab("stock")}
+                        className={`flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold transition ${
+                          projectTab === "stock" ? "bg-amber-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        <Boxes className="h-3.5 w-3.5" /> Ready Stok ({stockProjects.length})
+                      </button>
+                    </div>
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
@@ -379,7 +420,7 @@ function MyJobs() {
                       )}
                     </div>
                     <div className="text-[11px] text-slate-500 px-1">
-                      {filteredProjects.length} project ditemukan
+                      {filteredProjects.length} project {projectTab === "order" ? "orderan aktif" : "ready stok"} ditemukan
                     </div>
                   </DialogHeader>
                   <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
@@ -411,6 +452,15 @@ function MyJobs() {
                                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${c.chip}`}>
                                   {p.code}
                                 </span>
+                                {p.parent_order_id ? (
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-200">
+                                    Order {p.order_no ?? ""}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">
+                                    Ready Stok
+                                  </span>
+                                )}
                                 {full && <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">PENUH</span>}
                                 {active && <Check className="h-3.5 w-3.5 text-emerald-600" />}
                               </div>
@@ -441,8 +491,31 @@ function MyJobs() {
               )}
             </div>
             <div>
-              <Label>Beri Catatan Untuk Project ini</Label>
-              <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
+              <div className="flex items-center gap-2">
+                <Label className="text-slate-500">Catatan</Label>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className={`h-7 w-7 ${note ? "text-sky-600" : "text-slate-400"}`}
+                  onClick={() => setNoteOpen((v) => !v)}
+                  title="Beri catatan untuk project ini"
+                  aria-label="Beri catatan untuk project ini"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                {!noteOpen && note && <span className="text-xs text-slate-500 truncate">{note}</span>}
+              </div>
+              {noteOpen && (
+                <Textarea
+                  autoFocus
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={2}
+                  placeholder="Catatan untuk project ini (opsional)"
+                  className="mt-1"
+                />
+              )}
             </div>
           </div>
 
@@ -598,7 +671,14 @@ function MyJobs() {
                   <div className="min-w-0">
                     <div className="text-xs text-slate-500">{format(new Date(l.log_date), "EEE, dd MMM yyyy", { locale: idLocale })}</div>
                     {l.project && <div className="text-sm font-medium text-slate-900 truncate">{l.project.title}</div>}
-                    {l.project && <div className="font-mono text-[10px] text-slate-400">{l.project.code}</div>}
+                    {l.project && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-[10px] text-slate-400">{l.project.code}</span>
+                        {!l.project.parent_order_id && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">Ready Stok</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {l.is_repair && <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 text-[10px]">🔧 Reparasi</Badge>}
@@ -658,7 +738,12 @@ function MyJobs() {
                     <TableCell>
                       {l.project ? (
                         <div className="leading-tight">
-                          <div className="font-mono text-xs text-slate-500">{l.project.code}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs text-slate-500">{l.project.code}</span>
+                            {!l.project.parent_order_id && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">Ready Stok</span>
+                            )}
+                          </div>
                           <div className="font-medium text-slate-900">{l.project.title}</div>
                         </div>
                       ) : "—"}
