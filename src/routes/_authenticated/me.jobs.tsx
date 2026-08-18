@@ -486,8 +486,31 @@ function MyJobs() {
               )}
             </div>
             <div>
-              <Label>Beri Catatan Untuk Project ini</Label>
-              <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
+              <div className="flex items-center gap-2">
+                <Label className="text-slate-500">Catatan</Label>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className={`h-7 w-7 ${note ? "text-sky-600" : "text-slate-400"}`}
+                  onClick={() => setNoteOpen((v) => !v)}
+                  title="Beri catatan untuk project ini"
+                  aria-label="Beri catatan untuk project ini"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                {!noteOpen && note && <span className="text-xs text-slate-500 truncate">{note}</span>}
+              </div>
+              {noteOpen && (
+                <Textarea
+                  autoFocus
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={2}
+                  placeholder="Catatan untuk project ini (opsional)"
+                  className="mt-1"
+                />
+              )}
             </div>
           </div>
 
