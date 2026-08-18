@@ -447,6 +447,15 @@ function MyJobs() {
                                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${c.chip}`}>
                                   {p.code}
                                 </span>
+                                {p.parent_order_id ? (
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-200">
+                                    Order {p.order_no ?? ""}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">
+                                    Ready Stok
+                                  </span>
+                                )}
                                 {full && <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">PENUH</span>}
                                 {active && <Check className="h-3.5 w-3.5 text-emerald-600" />}
                               </div>
