@@ -415,7 +415,7 @@ function MyJobs() {
                       )}
                     </div>
                     <div className="text-[11px] text-slate-500 px-1">
-                      {filteredProjects.length} project ditemukan
+                      {filteredProjects.length} project {projectTab === "order" ? "orderan aktif" : "ready stok"} ditemukan
                     </div>
                   </DialogHeader>
                   <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
