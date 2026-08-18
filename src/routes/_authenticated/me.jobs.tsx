@@ -124,14 +124,17 @@ function MyJobs() {
 
   const selectedProject = projects?.find((p) => p.id === projectId);
 
+  const orderProjects = useMemo(() => (projects ?? []).filter((p) => !!p.parent_order_id), [projects]);
+  const stockProjects = useMemo(() => (projects ?? []).filter((p) => !p.parent_order_id), [projects]);
+
   const filteredProjects = useMemo(() => {
-    const list = projects ?? [];
+    const list = projectTab === "order" ? orderProjects : stockProjects;
     const q = projectSearch.trim().toLowerCase();
     if (!q) return list;
     return list.filter((p) =>
-      `${p.code} ${p.title}`.toLowerCase().includes(q)
+      `${p.code} ${p.title} ${p.order_no ?? ""}`.toLowerCase().includes(q)
     );
-  }, [projects, projectSearch]);
+  }, [orderProjects, stockProjects, projectTab, projectSearch]);
 
   // Colorful accents so the list matches the vibe of the attendance history page
   const projectPalette = [
