@@ -124,6 +124,11 @@ function MyJobs() {
 
   const selectedProject = projects?.find((p) => p.id === projectId);
 
+  // Keep the picker tab in sync with the currently selected project
+  useEffect(() => {
+    if (selectedProject) setProjectTab(selectedProject.parent_order_id ? "order" : "stock");
+  }, [selectedProject]);
+
   const orderProjects = useMemo(() => (projects ?? []).filter((p) => !!p.parent_order_id), [projects]);
   const stockProjects = useMemo(() => (projects ?? []).filter((p) => !p.parent_order_id), [projects]);
 
