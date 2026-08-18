@@ -96,7 +96,7 @@ function MyJobs() {
     queryKey: ["my-logs", effectiveEmpId],
     queryFn: async () => {
       const { data } = await supabase.from("job_logs")
-        .select("*, project:projects(code,title), rate:job_rates(name,unit,rate_per_unit)")
+        .select("*, project:projects(code,title,parent_order_id), rate:job_rates(name,unit,rate_per_unit)")
         .eq("employee_id", effectiveEmpId!).order("log_date", { ascending: false }).limit(50);
       return data ?? [];
     },
