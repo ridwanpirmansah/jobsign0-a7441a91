@@ -374,6 +374,26 @@ function MyJobs() {
                     <DialogTitle className="text-base flex items-center gap-2">
                       <FolderOpen className="h-4 w-4 text-sky-600" /> Pilih Project
                     </DialogTitle>
+                    <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-white/70 border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setProjectTab("order")}
+                        className={`flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold transition ${
+                          projectTab === "order" ? "bg-emerald-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        <ShoppingCart className="h-3.5 w-3.5" /> Order ({orderProjects.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProjectTab("stock")}
+                        className={`flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold transition ${
+                          projectTab === "stock" ? "bg-amber-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        <Boxes className="h-3.5 w-3.5" /> Ready Stok ({stockProjects.length})
+                      </button>
+                    </div>
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
