@@ -733,7 +733,12 @@ function MyJobs() {
                     <TableCell>
                       {l.project ? (
                         <div className="leading-tight">
-                          <div className="font-mono text-xs text-slate-500">{l.project.code}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs text-slate-500">{l.project.code}</span>
+                            {!l.project.parent_order_id && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">Ready Stok</span>
+                            )}
+                          </div>
                           <div className="font-medium text-slate-900">{l.project.title}</div>
                         </div>
                       ) : "—"}
