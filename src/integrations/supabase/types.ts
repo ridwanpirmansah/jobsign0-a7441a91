@@ -1412,6 +1412,8 @@ export type Database = {
           claimed_points: number
           code: string
           id: string
+          order_no: string
+          parent_order_id: string
           remaining_points: number
           status: Database["public"]["Enums"]["project_status"]
           title: string
