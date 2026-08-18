@@ -339,7 +339,18 @@ function MyJobs() {
                     <div className="flex items-start gap-2 min-w-0 text-left">
                       <FolderOpen className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold text-sky-700">{selectedProject.code}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-semibold text-sky-700">{selectedProject.code}</span>
+                          {selectedProject.parent_order_id ? (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-200">
+                              Order {selectedProject.order_no ?? ""}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">
+                              Ready Stok
+                            </span>
+                          )}
+                        </div>
                         <div className="text-sm text-slate-900 leading-tight whitespace-normal break-words">
                           {selectedProject.title}
                         </div>
