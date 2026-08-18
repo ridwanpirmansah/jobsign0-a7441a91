@@ -39,7 +39,9 @@ function MyJobs() {
 
   const [projectOpen, setProjectOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
+  const [projectTab, setProjectTab] = useState<"order" | "stock">("order");
   const [note, setNote] = useState("");
+  const [noteOpen, setNoteOpen] = useState(false);
   const [qtyMap, setQtyMap] = useState<Record<string, string>>({});
   const [onBehalfEmpId, setOnBehalfEmpId] = useState<string>("");
 
