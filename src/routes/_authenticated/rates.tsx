@@ -140,7 +140,12 @@ function RatesPage() {
                 </>
               )}
               <div><Label>Urutan Tampil</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" className="h-4 w-4" checked={form.require_photo} onChange={(e) => setForm({ ...form, require_photo: e.target.checked })} />
+                Wajib upload foto hasil garapan saat klaim
+              </label>
               <div><Label>Catatan</Label><Input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></div>
+
               <DialogFooter><Button type="submit" disabled={saveMut.isPending}>Simpan</Button></DialogFooter>
             </form>
           </DialogContent>
