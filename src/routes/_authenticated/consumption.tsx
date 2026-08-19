@@ -118,7 +118,8 @@ function ConsumptionPage() {
           description: desc,
           note: `Konsumsi karyawan (${paymentMethod === "cash" ? "Cash" : "Cashbon"})`,
           affects_pnl: true,
-          payment_status: paymentMethod === "cash" ? "lunas" : "lunas",
+          payment_status: "hutang",
+
         }).select("id").maybeSingle();
         if (expErr) throw expErr;
         expenseId = exp?.id ?? null;
