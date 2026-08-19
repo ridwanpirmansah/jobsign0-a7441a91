@@ -458,6 +458,7 @@ export type Database = {
           note: string | null
           pricing_mode: string
           rate_per_unit: number
+          require_photo: boolean
           sort_order: number
           unit: string
           updated_at: string
@@ -472,6 +473,7 @@ export type Database = {
           note?: string | null
           pricing_mode?: string
           rate_per_unit: number
+          require_photo?: boolean
           sort_order?: number
           unit?: string
           updated_at?: string
@@ -486,6 +488,7 @@ export type Database = {
           note?: string | null
           pricing_mode?: string
           rate_per_unit?: number
+          require_photo?: boolean
           sort_order?: number
           unit?: string
           updated_at?: string

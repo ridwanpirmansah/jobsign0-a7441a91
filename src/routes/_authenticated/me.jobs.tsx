@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, CheckCheck, ShieldCheck, Search, FolderOpen, ChevronDown, Check, Package, X, Pencil, ShoppingCart, Boxes } from "lucide-react";
+import { Trash2, CheckCheck, ShieldCheck, Search, FolderOpen, ChevronDown, Check, Package, X, Pencil, ShoppingCart, Boxes, Camera, Loader2, ImageIcon } from "lucide-react";
+import { uploadJobPhoto } from "@/lib/job-photos.functions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -153,19 +154,19 @@ function MyJobs() {
 
 
   // Build a unified list of rate rows for display
-  type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null; pricing_mode: "per_unit" | "area"; min_amount: number };
+  type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null; pricing_mode: "per_unit" | "area"; min_amount: number; require_photo: boolean };
   const ratesMeta = useMemo(() => {
-    const m = new Map<string, { pricing_mode: "per_unit" | "area"; min_amount: number }>();
+    const m = new Map<string, { pricing_mode: "per_unit" | "area"; min_amount: number; require_photo: boolean }>();
     (rates ?? []).forEach((r) => {
-      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string };
-      m.set(r.id, { pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area", min_amount: Number(anyR.min_amount ?? 0) });
+      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string; require_photo?: boolean };
+      m.set(r.id, { pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area", min_amount: Number(anyR.min_amount ?? 0), require_photo: !!anyR.require_photo });
     });
     return m;
   }, [rates]);
   const rateRows: Row[] = useMemo(() => {
     if (projectId) {
       return (rateAvail ?? []).map((r) => {
-        const meta = ratesMeta.get(r.rate_id) ?? { pricing_mode: "per_unit" as const, min_amount: 0 };
+        const meta = ratesMeta.get(r.rate_id) ?? { pricing_mode: "per_unit" as const, min_amount: 0, require_photo: false };
         return {
           rate_id: r.rate_id,
           rate_name: r.rate_name,
@@ -177,11 +178,12 @@ function MyJobs() {
           claimed: meta.pricing_mode === "area" ? Number(r.claimed_points) : Number(r.claimed_points),
           pricing_mode: meta.pricing_mode,
           min_amount: meta.min_amount,
+          require_photo: meta.require_photo,
         };
       });
     }
     return (rates ?? []).map((r) => {
-      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string };
+      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string; require_photo?: boolean };
       return {
         rate_id: r.id,
         rate_name: r.name,
@@ -192,11 +194,49 @@ function MyJobs() {
         claimed: null,
         pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area",
         min_amount: Number(anyR.min_amount ?? 0),
+        require_photo: !!anyR.require_photo,
       };
     });
   }, [projectId, rateAvail, rates, ratesMeta]);
 
+  // Photo proof (uploaded to Google Drive) per rate
+  const [photoMap, setPhotoMap] = useState<Record<string, { url: string; name: string }>>({});
+  const [uploadingRate, setUploadingRate] = useState<string | null>(null);
 
+  const handlePhotoPick = async (rateId: string, file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("File harus berupa gambar"); return; }
+    if (file.size > 8 * 1024 * 1024) { toast.error("Ukuran foto maksimal 8MB"); return; }
+    setUploadingRate(rateId);
+    try {
+      const dataBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+        reader.onerror = () => reject(new Error("Gagal membaca file"));
+        reader.readAsDataURL(file);
+      });
+      const res = await uploadJobPhoto({
+        data: {
+          filename: `${format(new Date(), "yyyyMMdd-HHmmss")}-${file.name}`,
+          mimeType: file.type,
+          dataBase64,
+        },
+      });
+      setPhotoMap((m) => ({ ...m, [rateId]: { url: res.url, name: file.name } }));
+      toast.success("Foto berhasil diunggah ke Google Drive");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload foto gagal");
+    } finally {
+      setUploadingRate(null);
+    }
+  };
+
+  const requirePhotoCheck = (rateId: string) => {
+    const row = rateRows.find((r) => r.rate_id === rateId);
+    if (row?.require_photo && !photoMap[rateId]) {
+      throw new Error(`Wajib upload foto hasil garapan untuk ${row.rate_name}`);
+    }
+    return photoMap[rateId]?.url ?? null;
+  };
 
   const submitMut = useMutation({
     mutationFn: async (args: { rateId: string; qty: number }) => {
@@ -206,12 +246,14 @@ function MyJobs() {
       if (row?.pricing_mode !== "area" && row?.remaining !== null && row && args.qty > row.remaining!) {
         throw new Error(`Sisa titik ${row.rate_name} hanya ${row.remaining}`);
       }
+      const photoUrl = requirePhotoCheck(args.rateId);
       const { error } = await supabase.from("job_logs").insert({
         employee_id: effectiveEmpId,
         project_id: projectId || null,
         rate_id: args.rateId,
         qty: args.qty,
         note: note || null,
+        photo_url: photoUrl,
         status: "pending",
       });
       if (error) throw error;
@@ -219,6 +261,7 @@ function MyJobs() {
     onSuccess: (_d, args) => {
       toast.success("Laporan tersimpan");
       setQtyMap((m) => ({ ...m, [args.rateId]: "" }));
+      setPhotoMap((m) => { const n = { ...m }; delete n[args.rateId]; return n; });
       qc.invalidateQueries({ queryKey: ["my-logs"] });
       qc.invalidateQueries({ queryKey: ["available-projects"] });
       qc.invalidateQueries({ queryKey: ["project-rate-availability"] });
@@ -233,12 +276,14 @@ function MyJobs() {
       if (!row) throw new Error("Tarif tidak ditemukan");
       if (row.remaining === null || row.remaining === undefined) throw new Error("Pilih project terlebih dahulu untuk mengetahui sisa titik");
       if (row.remaining <= 0) throw new Error(`Sisa titik ${row.rate_name} sudah habis`);
+      const photoUrl = requirePhotoCheck(rateId);
       const { error } = await supabase.from("job_logs").insert({
         employee_id: effectiveEmpId,
         project_id: projectId || null,
         rate_id: rateId,
         qty: row.remaining,
         note: note || null,
+        photo_url: photoUrl,
         status: "pending",
       });
       if (error) throw error;
@@ -246,6 +291,7 @@ function MyJobs() {
     onSuccess: (_d, rateId) => {
       toast.success("Semua titik berhasil diklaim");
       setQtyMap((m) => ({ ...m, [rateId]: "" }));
+      setPhotoMap((m) => { const n = { ...m }; delete n[rateId]; return n; });
       qc.invalidateQueries({ queryKey: ["my-logs"] });
       qc.invalidateQueries({ queryKey: ["available-projects"] });
       qc.invalidateQueries({ queryKey: ["project-rate-availability"] });
@@ -258,17 +304,21 @@ function MyJobs() {
       if (!effectiveEmpId) throw new Error("Pilih karyawan terlebih dahulu");
       const rows = rateRows.filter((r) => r.remaining !== null && r.remaining !== undefined && r.remaining > 0);
       if (!rows.length) throw new Error("Tidak ada titik tersisa untuk diklaim");
+      const missing = rows.filter((r) => r.require_photo && !photoMap[r.rate_id]);
+      if (missing.length) throw new Error(`Wajib upload foto hasil garapan untuk ${missing.map((r) => r.rate_name).join(", ")}`);
       const inserts = rows.map((r) => ({
         employee_id: effectiveEmpId,
         project_id: projectId || null,
         rate_id: r.rate_id,
         qty: r.remaining!,
         note: note || null,
+        photo_url: photoMap[r.rate_id]?.url ?? null,
         status: "pending" as const,
       }));
       const { error } = await supabase.from("job_logs").insert(inserts);
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success("Seluruh pekerjaan berhasil diklaim");
       setQtyMap({});
@@ -527,7 +577,7 @@ function MyJobs() {
                   type="button"
                   size="sm"
                   className="bg-red-500 hover:bg-red-600 text-white"
-                  disabled={submitAllMut.isPending || !effectiveEmpId}
+                  disabled={submitAllMut.isPending || !effectiveEmpId || rateRows.some((r) => r.require_photo && r.remaining !== null && r.remaining > 0 && !photoMap[r.rate_id])}
                   onClick={() => submitAllMut.mutate()}
                   title="Klaim seluruh titik untuk semua jenis garapan sekaligus"
                 >
@@ -612,19 +662,75 @@ function MyJobs() {
                       </div>
                     )}
 
+                    {r.require_photo && (
+                      <div className="mt-2 rounded-md border border-dashed border-sky-300 bg-sky-50 p-2 text-xs">
+                        {photoMap[r.rate_id] ? (
+                          <div className="flex items-center justify-between gap-2">
+                            <a
+                              href={photoMap[r.rate_id].url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex min-w-0 items-center gap-1 text-sky-700 underline"
+                            >
+                              <ImageIcon className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">{photoMap[r.rate_id].name}</span>
+                            </a>
+                            <button
+                              type="button"
+                              className="text-slate-400 hover:text-rose-600"
+                              onClick={() => setPhotoMap((m) => { const n = { ...m }; delete n[r.rate_id]; return n; })}
+                              aria-label="Hapus foto"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sky-700">Wajib upload foto hasil garapan sebelum klaim.</span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="mt-2 flex items-center justify-between">
                       <div className="text-xs text-slate-500">
                         Upah: <span className="font-semibold text-slate-900">{fmtIDR(preview)}</span>
                         {minApplied && <span className="ml-1 text-amber-600">(min)</span>}
                       </div>
                       <div className="flex gap-2">
+                        {r.require_photo && (
+                          <>
+                            <input
+                              id={`photo-${r.rate_id}`}
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) void handlePhotoPick(r.rate_id, f);
+                                e.target.value = "";
+                              }}
+                            />
+                            <Button
+                              type="button" size="sm" variant="outline"
+                              className="border-sky-400 text-sky-700 hover:bg-sky-50"
+                              disabled={uploadingRate === r.rate_id}
+                              onClick={() => document.getElementById(`photo-${r.rate_id}`)?.click()}
+                              title="Upload foto hasil garapan"
+                            >
+                              {uploadingRate === r.rate_id
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <Camera className="h-4 w-4" />}
+                              <span className="ml-1">{photoMap[r.rate_id] ? "Ganti Foto" : "Foto"}</span>
+                            </Button>
+                          </>
+                        )}
                         {hasRemaining && (
                           <Button
                             type="button" size="sm" variant="outline"
                             className="bg-yellow-400 hover:bg-yellow-500 text-white border-yellow-400 hover:border-yellow-500"
-                            disabled={submitAllForTypeMut.isPending || !effectiveEmpId}
+                            disabled={submitAllForTypeMut.isPending || !effectiveEmpId || (r.require_photo && !photoMap[r.rate_id])}
                             onClick={() => submitAllForTypeMut.mutate(r.rate_id)}
-                            title={`Langsung klaim seluruh ${r.remaining} ${r.unit} ${r.rate_name}`}
+                            title={r.require_photo && !photoMap[r.rate_id] ? "Upload foto hasil garapan terlebih dahulu" : `Langsung klaim seluruh ${r.remaining} ${r.unit} ${r.rate_name}`}
                           >
                             Klaim Semua
                           </Button>
@@ -633,7 +739,7 @@ function MyJobs() {
                           <Button
                             type="button" size="sm"
                             className="bg-green-500 hover:bg-green-600 text-white"
-                            disabled={!qtyNum || disabledClaim || submitMut.isPending || !effectiveEmpId}
+                            disabled={!qtyNum || disabledClaim || submitMut.isPending || !effectiveEmpId || (r.require_photo && !photoMap[r.rate_id])}
                             onClick={() => submitMut.mutate({ rateId: r.rate_id, qty: qtyNum })}
                           >
                             {isArea ? "Klaim" : "Simpan"}
@@ -642,6 +748,7 @@ function MyJobs() {
 
                       </div>
                     </div>
+
                   </div>
                 );
               })}

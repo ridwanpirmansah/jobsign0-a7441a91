@@ -20,8 +20,8 @@ function fmtIDR(n: number) { return new Intl.NumberFormat("id-ID", { style: "cur
 
 type PricingMode = "per_unit" | "area";
 type AreaScope = "project" | "order";
-type FormState = { name: string; unit: string; rate_per_unit: number; min_amount: number; pricing_mode: PricingMode; area_scope: AreaScope; sort_order: number; note: string };
-const emptyForm: FormState = { name: "", unit: "titik", rate_per_unit: 0, min_amount: 0, pricing_mode: "per_unit", area_scope: "project", sort_order: 0, note: "" };
+type FormState = { name: string; unit: string; rate_per_unit: number; min_amount: number; pricing_mode: PricingMode; area_scope: AreaScope; sort_order: number; note: string; require_photo: boolean };
+const emptyForm: FormState = { name: "", unit: "titik", rate_per_unit: 0, min_amount: 0, pricing_mode: "per_unit", area_scope: "project", sort_order: 0, note: "", require_photo: false };
 
 function RatesPage() {
   const { data: me } = useCurrentUser();
@@ -52,6 +52,7 @@ function RatesPage() {
         pricing_mode: form.pricing_mode,
         area_scope: form.pricing_mode === "area" ? form.area_scope : "project",
         sort_order: form.sort_order,
+        require_photo: form.require_photo,
         note: form.note || null,
       };
       const { error } = editId
@@ -140,7 +141,12 @@ function RatesPage() {
                 </>
               )}
               <div><Label>Urutan Tampil</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} /></div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" className="h-4 w-4" checked={form.require_photo} onChange={(e) => setForm({ ...form, require_photo: e.target.checked })} />
+                Wajib upload foto hasil garapan saat klaim
+              </label>
               <div><Label>Catatan</Label><Input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></div>
+
               <DialogFooter><Button type="submit" disabled={saveMut.isPending}>Simpan</Button></DialogFooter>
             </form>
           </DialogContent>
@@ -176,7 +182,7 @@ function RatesPage() {
                   <TableCell className="text-right font-mono">{minA > 0 ? fmtIDR(minA) : "—"}</TableCell>
                   <TableCell><Badge variant={r.active ? "default" : "secondary"}>{r.active ? "aktif" : "nonaktif"}</Badge></TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setEditId(r.id); setForm({ name: r.name, unit: r.unit, rate_per_unit: Number(r.rate_per_unit), min_amount: minA, pricing_mode: mode, area_scope: scope, sort_order: Number(r.sort_order ?? 0), note: r.note ?? "" }); setOpen(true); }}>Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setEditId(r.id); setForm({ name: r.name, unit: r.unit, rate_per_unit: Number(r.rate_per_unit), min_amount: minA, pricing_mode: mode, area_scope: scope, sort_order: Number(r.sort_order ?? 0), note: r.note ?? "", require_photo: !!(r as typeof r & { require_photo?: boolean }).require_photo }); setOpen(true); }}>Edit</Button>
                     <Button variant="ghost" size="sm" onClick={() => toggleActive.mutate({ id: r.id, active: !r.active })}>{r.active ? "Nonaktifkan" : "Aktifkan"}</Button>
                   </TableCell>
                 </TableRow>
