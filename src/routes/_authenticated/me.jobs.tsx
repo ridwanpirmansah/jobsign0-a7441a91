@@ -577,7 +577,7 @@ function MyJobs() {
                   type="button"
                   size="sm"
                   className="bg-red-500 hover:bg-red-600 text-white"
-                  disabled={submitAllMut.isPending || !effectiveEmpId}
+                  disabled={submitAllMut.isPending || !effectiveEmpId || rateRows.some((r) => r.require_photo && r.remaining !== null && r.remaining > 0 && !photoMap[r.rate_id])}
                   onClick={() => submitAllMut.mutate()}
                   title="Klaim seluruh titik untuk semua jenis garapan sekaligus"
                 >
