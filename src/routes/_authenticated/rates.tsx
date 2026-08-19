@@ -20,8 +20,8 @@ function fmtIDR(n: number) { return new Intl.NumberFormat("id-ID", { style: "cur
 
 type PricingMode = "per_unit" | "area";
 type AreaScope = "project" | "order";
-type FormState = { name: string; unit: string; rate_per_unit: number; min_amount: number; pricing_mode: PricingMode; area_scope: AreaScope; sort_order: number; note: string };
-const emptyForm: FormState = { name: "", unit: "titik", rate_per_unit: 0, min_amount: 0, pricing_mode: "per_unit", area_scope: "project", sort_order: 0, note: "" };
+type FormState = { name: string; unit: string; rate_per_unit: number; min_amount: number; pricing_mode: PricingMode; area_scope: AreaScope; sort_order: number; note: string; require_photo: boolean };
+const emptyForm: FormState = { name: "", unit: "titik", rate_per_unit: 0, min_amount: 0, pricing_mode: "per_unit", area_scope: "project", sort_order: 0, note: "", require_photo: false };
 
 function RatesPage() {
   const { data: me } = useCurrentUser();
