@@ -662,19 +662,75 @@ function MyJobs() {
                       </div>
                     )}
 
+                    {r.require_photo && (
+                      <div className="mt-2 rounded-md border border-dashed border-sky-300 bg-sky-50 p-2 text-xs">
+                        {photoMap[r.rate_id] ? (
+                          <div className="flex items-center justify-between gap-2">
+                            <a
+                              href={photoMap[r.rate_id].url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex min-w-0 items-center gap-1 text-sky-700 underline"
+                            >
+                              <ImageIcon className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">{photoMap[r.rate_id].name}</span>
+                            </a>
+                            <button
+                              type="button"
+                              className="text-slate-400 hover:text-rose-600"
+                              onClick={() => setPhotoMap((m) => { const n = { ...m }; delete n[r.rate_id]; return n; })}
+                              aria-label="Hapus foto"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sky-700">Wajib upload foto hasil garapan sebelum klaim.</span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="mt-2 flex items-center justify-between">
                       <div className="text-xs text-slate-500">
                         Upah: <span className="font-semibold text-slate-900">{fmtIDR(preview)}</span>
                         {minApplied && <span className="ml-1 text-amber-600">(min)</span>}
                       </div>
                       <div className="flex gap-2">
+                        {r.require_photo && (
+                          <>
+                            <input
+                              id={`photo-${r.rate_id}`}
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) void handlePhotoPick(r.rate_id, f);
+                                e.target.value = "";
+                              }}
+                            />
+                            <Button
+                              type="button" size="sm" variant="outline"
+                              className="border-sky-400 text-sky-700 hover:bg-sky-50"
+                              disabled={uploadingRate === r.rate_id}
+                              onClick={() => document.getElementById(`photo-${r.rate_id}`)?.click()}
+                              title="Upload foto hasil garapan"
+                            >
+                              {uploadingRate === r.rate_id
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <Camera className="h-4 w-4" />}
+                              <span className="ml-1">{photoMap[r.rate_id] ? "Ganti Foto" : "Foto"}</span>
+                            </Button>
+                          </>
+                        )}
                         {hasRemaining && (
                           <Button
                             type="button" size="sm" variant="outline"
                             className="bg-yellow-400 hover:bg-yellow-500 text-white border-yellow-400 hover:border-yellow-500"
-                            disabled={submitAllForTypeMut.isPending || !effectiveEmpId}
+                            disabled={submitAllForTypeMut.isPending || !effectiveEmpId || (r.require_photo && !photoMap[r.rate_id])}
                             onClick={() => submitAllForTypeMut.mutate(r.rate_id)}
-                            title={`Langsung klaim seluruh ${r.remaining} ${r.unit} ${r.rate_name}`}
+                            title={r.require_photo && !photoMap[r.rate_id] ? "Upload foto hasil garapan terlebih dahulu" : `Langsung klaim seluruh ${r.remaining} ${r.unit} ${r.rate_name}`}
                           >
                             Klaim Semua
                           </Button>
@@ -683,7 +739,7 @@ function MyJobs() {
                           <Button
                             type="button" size="sm"
                             className="bg-green-500 hover:bg-green-600 text-white"
-                            disabled={!qtyNum || disabledClaim || submitMut.isPending || !effectiveEmpId}
+                            disabled={!qtyNum || disabledClaim || submitMut.isPending || !effectiveEmpId || (r.require_photo && !photoMap[r.rate_id])}
                             onClick={() => submitMut.mutate({ rateId: r.rate_id, qty: qtyNum })}
                           >
                             {isArea ? "Klaim" : "Simpan"}
@@ -692,6 +748,7 @@ function MyJobs() {
 
                       </div>
                     </div>
+
                   </div>
                 );
               })}
