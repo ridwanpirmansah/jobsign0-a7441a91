@@ -153,19 +153,19 @@ function MyJobs() {
 
 
   // Build a unified list of rate rows for display
-  type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null; pricing_mode: "per_unit" | "area"; min_amount: number };
+  type Row = { rate_id: string; rate_name: string; unit: string; rate_per_unit: number; remaining: number | null; total: number | null; claimed: number | null; pricing_mode: "per_unit" | "area"; min_amount: number; require_photo: boolean };
   const ratesMeta = useMemo(() => {
-    const m = new Map<string, { pricing_mode: "per_unit" | "area"; min_amount: number }>();
+    const m = new Map<string, { pricing_mode: "per_unit" | "area"; min_amount: number; require_photo: boolean }>();
     (rates ?? []).forEach((r) => {
-      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string };
-      m.set(r.id, { pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area", min_amount: Number(anyR.min_amount ?? 0) });
+      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string; require_photo?: boolean };
+      m.set(r.id, { pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area", min_amount: Number(anyR.min_amount ?? 0), require_photo: !!anyR.require_photo });
     });
     return m;
   }, [rates]);
   const rateRows: Row[] = useMemo(() => {
     if (projectId) {
       return (rateAvail ?? []).map((r) => {
-        const meta = ratesMeta.get(r.rate_id) ?? { pricing_mode: "per_unit" as const, min_amount: 0 };
+        const meta = ratesMeta.get(r.rate_id) ?? { pricing_mode: "per_unit" as const, min_amount: 0, require_photo: false };
         return {
           rate_id: r.rate_id,
           rate_name: r.rate_name,
@@ -177,11 +177,12 @@ function MyJobs() {
           claimed: meta.pricing_mode === "area" ? Number(r.claimed_points) : Number(r.claimed_points),
           pricing_mode: meta.pricing_mode,
           min_amount: meta.min_amount,
+          require_photo: meta.require_photo,
         };
       });
     }
     return (rates ?? []).map((r) => {
-      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string };
+      const anyR = r as typeof r & { pricing_mode?: "per_unit" | "area"; min_amount?: number | string; require_photo?: boolean };
       return {
         rate_id: r.id,
         rate_name: r.name,
@@ -192,9 +193,11 @@ function MyJobs() {
         claimed: null,
         pricing_mode: (anyR.pricing_mode ?? "per_unit") as "per_unit" | "area",
         min_amount: Number(anyR.min_amount ?? 0),
+        require_photo: !!anyR.require_photo,
       };
     });
   }, [projectId, rateAvail, rates, ratesMeta]);
+
 
 
 
