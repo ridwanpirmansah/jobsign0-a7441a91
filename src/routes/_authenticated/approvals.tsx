@@ -29,6 +29,7 @@ type JobLogRow = {
   project_id?: string | null;
   is_repair: boolean | null;
   repair_reason: string | null;
+  photo_url?: string | null;
   employee?: { full_name: string; employee_code: string; type?: string | null } | null;
   project?: { code: string; title: string; parent_order_id?: string | null } | null;
   rate?: { name: string; unit: string; rate_per_unit: number } | null;
@@ -159,6 +160,9 @@ function ApprovalsPage() {
                 )}
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" className="text-xs">{l.rate?.name}</Badge>
+                  {l.photo_url && (
+                    <a href={l.photo_url} target="_blank" rel="noreferrer" className="text-xs text-sky-700 underline">Lihat foto</a>
+                  )}
                 </div>
                 {(l.repair_reason || l.note) && (
                   <div className="text-xs text-slate-600 italic border-t border-dashed border-slate-200 pt-2">"{l.repair_reason || l.note}"</div>
