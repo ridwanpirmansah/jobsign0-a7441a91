@@ -382,7 +382,7 @@ function StatusPage() {
                           order_no: g.rows[0].order_no,
                         });
                       }}
-                      className="ml-auto inline-flex min-h-0 items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-50 shrink-0 [&>svg]:!h-3 [&>svg]:!w-3"
+                      className="ml-auto inline-flex min-h-0! items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-50 shrink-0 [&>svg]:!h-3 [&>svg]:!w-3"
                     >
                       <Eye className="h-3 w-3" /> Resi
                     </button>
@@ -599,7 +599,7 @@ function ProjectCard({ row, onClick, compact, onPreview }: { row: Row; onClick: 
               e.stopPropagation();
               onPreview();
             }}
-            className="inline-flex min-h-0 items-center gap-1 rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shrink-0 [&>svg]:!h-3 [&>svg]:!w-3"
+            className="inline-flex min-h-0! items-center gap-1 rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shrink-0 [&>svg]:!h-3 [&>svg]:!w-3"
             title="Preview Resi"
           >
             <Eye className="h-3 w-3" /> Resi
