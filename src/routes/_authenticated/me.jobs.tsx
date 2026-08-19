@@ -198,8 +198,44 @@ function MyJobs() {
     });
   }, [projectId, rateAvail, rates, ratesMeta]);
 
+  // Photo proof (uploaded to Google Drive) per rate
+  const [photoMap, setPhotoMap] = useState<Record<string, { url: string; name: string }>>({});
+  const [uploadingRate, setUploadingRate] = useState<string | null>(null);
 
+  const handlePhotoPick = async (rateId: string, file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("File harus berupa gambar"); return; }
+    if (file.size > 8 * 1024 * 1024) { toast.error("Ukuran foto maksimal 8MB"); return; }
+    setUploadingRate(rateId);
+    try {
+      const dataBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+        reader.onerror = () => reject(new Error("Gagal membaca file"));
+        reader.readAsDataURL(file);
+      });
+      const res = await uploadJobPhoto({
+        data: {
+          filename: `${format(new Date(), "yyyyMMdd-HHmmss")}-${file.name}`,
+          mimeType: file.type,
+          dataBase64,
+        },
+      });
+      setPhotoMap((m) => ({ ...m, [rateId]: { url: res.url, name: file.name } }));
+      toast.success("Foto berhasil diunggah ke Google Drive");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload foto gagal");
+    } finally {
+      setUploadingRate(null);
+    }
+  };
 
+  const requirePhotoCheck = (rateId: string) => {
+    const row = rateRows.find((r) => r.rate_id === rateId);
+    if (row?.require_photo && !photoMap[rateId]) {
+      throw new Error(`Wajib upload foto hasil garapan untuk ${row.rate_name}`);
+    }
+    return photoMap[rateId]?.url ?? null;
+  };
 
   const submitMut = useMutation({
     mutationFn: async (args: { rateId: string; qty: number }) => {
@@ -209,12 +245,14 @@ function MyJobs() {
       if (row?.pricing_mode !== "area" && row?.remaining !== null && row && args.qty > row.remaining!) {
         throw new Error(`Sisa titik ${row.rate_name} hanya ${row.remaining}`);
       }
+      const photoUrl = requirePhotoCheck(args.rateId);
       const { error } = await supabase.from("job_logs").insert({
         employee_id: effectiveEmpId,
         project_id: projectId || null,
         rate_id: args.rateId,
         qty: args.qty,
         note: note || null,
+        photo_url: photoUrl,
         status: "pending",
       });
       if (error) throw error;
@@ -222,6 +260,7 @@ function MyJobs() {
     onSuccess: (_d, args) => {
       toast.success("Laporan tersimpan");
       setQtyMap((m) => ({ ...m, [args.rateId]: "" }));
+      setPhotoMap((m) => { const n = { ...m }; delete n[args.rateId]; return n; });
       qc.invalidateQueries({ queryKey: ["my-logs"] });
       qc.invalidateQueries({ queryKey: ["available-projects"] });
       qc.invalidateQueries({ queryKey: ["project-rate-availability"] });
@@ -236,12 +275,14 @@ function MyJobs() {
       if (!row) throw new Error("Tarif tidak ditemukan");
       if (row.remaining === null || row.remaining === undefined) throw new Error("Pilih project terlebih dahulu untuk mengetahui sisa titik");
       if (row.remaining <= 0) throw new Error(`Sisa titik ${row.rate_name} sudah habis`);
+      const photoUrl = requirePhotoCheck(rateId);
       const { error } = await supabase.from("job_logs").insert({
         employee_id: effectiveEmpId,
         project_id: projectId || null,
         rate_id: rateId,
         qty: row.remaining,
         note: note || null,
+        photo_url: photoUrl,
         status: "pending",
       });
       if (error) throw error;
@@ -249,6 +290,7 @@ function MyJobs() {
     onSuccess: (_d, rateId) => {
       toast.success("Semua titik berhasil diklaim");
       setQtyMap((m) => ({ ...m, [rateId]: "" }));
+      setPhotoMap((m) => { const n = { ...m }; delete n[rateId]; return n; });
       qc.invalidateQueries({ queryKey: ["my-logs"] });
       qc.invalidateQueries({ queryKey: ["available-projects"] });
       qc.invalidateQueries({ queryKey: ["project-rate-availability"] });
@@ -261,17 +303,21 @@ function MyJobs() {
       if (!effectiveEmpId) throw new Error("Pilih karyawan terlebih dahulu");
       const rows = rateRows.filter((r) => r.remaining !== null && r.remaining !== undefined && r.remaining > 0);
       if (!rows.length) throw new Error("Tidak ada titik tersisa untuk diklaim");
+      const missing = rows.filter((r) => r.require_photo && !photoMap[r.rate_id]);
+      if (missing.length) throw new Error(`Wajib upload foto hasil garapan untuk ${missing.map((r) => r.rate_name).join(", ")}`);
       const inserts = rows.map((r) => ({
         employee_id: effectiveEmpId,
         project_id: projectId || null,
         rate_id: r.rate_id,
         qty: r.remaining!,
         note: note || null,
+        photo_url: photoMap[r.rate_id]?.url ?? null,
         status: "pending" as const,
       }));
       const { error } = await supabase.from("job_logs").insert(inserts);
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success("Seluruh pekerjaan berhasil diklaim");
       setQtyMap({});
