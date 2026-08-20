@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check, X, SlidersHorizontal, Wrench, Sun } from "lucide-react";
+import { Check, X, SlidersHorizontal, Wrench, Sun, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -186,7 +186,7 @@ function ApprovalsPage() {
           {/* Desktop table */}
           <div className="hidden md:block">
             <Table>
-              <TableHeader><TableRow><TableHead>Tanggal</TableHead><TableHead>Karyawan</TableHead><TableHead>Jenis</TableHead><TableHead>Project / Order</TableHead><TableHead>Tarif</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Upah</TableHead><TableHead>Catatan</TableHead><TableHead className="text-right">Aksi</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Tanggal</TableHead><TableHead>Karyawan</TableHead><TableHead>Jenis</TableHead><TableHead>Project / Order</TableHead><TableHead>Tarif</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Upah</TableHead><TableHead>Catatan</TableHead><TableHead>Foto</TableHead><TableHead className="text-right">Aksi</TableHead></TableRow></TableHeader>
               <TableBody>
                 {logs?.map((l) => (
                   <TableRow key={l.id} className={l.is_repair ? "bg-orange-50/40" : ""}>
@@ -220,6 +220,11 @@ function ApprovalsPage() {
                     <TableCell className="text-right">{l.qty}</TableCell>
                     <TableCell className="text-right font-medium">{fmtIDR(Number(l.amount))}</TableCell>
                     <TableCell className="text-xs text-slate-500 max-w-xs truncate">{l.repair_reason || l.note || ""}</TableCell>
+                    <TableCell className="text-xs">
+                      {l.photo_url
+                        ? <a href={l.photo_url} target="_blank" rel="noreferrer" className="text-sky-700 underline inline-flex items-center gap-1"><ImageIcon className="h-3.5 w-3.5" />Lihat</a>
+                        : <span className="text-slate-400">—</span>}
+                    </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <Button size="sm" variant="ghost" title="Setuju penuh" onClick={() => decide.mutate({ id: l.id, status: "approved" })}><Check className="h-4 w-4 text-emerald-600" /></Button>
                       <Button size="sm" variant="ghost" title="Setujui sebagian" onClick={() => openPartial(l)}><SlidersHorizontal className="h-4 w-4 text-amber-600" /></Button>
