@@ -232,7 +232,7 @@ function ApprovalsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {!logs?.length && <TableRow><TableCell colSpan={9} className="text-center py-8 text-slate-500"><Badge variant="secondary">Tidak ada antrian</Badge></TableCell></TableRow>}
+                {!logs?.length && <TableRow><TableCell colSpan={10} className="text-center py-8 text-slate-500"><Badge variant="secondary">Tidak ada antrian</Badge></TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
