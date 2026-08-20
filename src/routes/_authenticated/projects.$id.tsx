@@ -64,7 +64,7 @@ function ProjectDetail() {
       const { error } = await supabase.rpc("link_project_to_order", {
         _project_id: id,
         _order_id: orderId,
-      });
+      } as { _project_id: string; _order_id: string });
       if (error) throw error;
     },
     onSuccess: () => {
