@@ -125,13 +125,17 @@ function MyJobs() {
 
   const selectedProject = projects?.find((p) => p.id === projectId);
 
+  // Order "asli" = punya order terkait dengan nomor murni angka (RS-xx / kode berawalan huruf = ready stok)
+  const isOrderProject = (p: { parent_order_id: string | null; order_no: string | null }) =>
+    !!p.parent_order_id && /^\d+$/.test((p.order_no ?? "").trim());
+
   // Keep the picker tab in sync with the currently selected project
   useEffect(() => {
-    if (selectedProject) setProjectTab(selectedProject.parent_order_id ? "order" : "stock");
+    if (selectedProject) setProjectTab(isOrderProject(selectedProject) ? "order" : "stock");
   }, [selectedProject]);
 
-  const orderProjects = useMemo(() => (projects ?? []).filter((p) => !!p.parent_order_id), [projects]);
-  const stockProjects = useMemo(() => (projects ?? []).filter((p) => !p.parent_order_id), [projects]);
+  const orderProjects = useMemo(() => (projects ?? []).filter(isOrderProject), [projects]);
+  const stockProjects = useMemo(() => (projects ?? []).filter((p) => !isOrderProject(p)), [projects]);
 
   const filteredProjects = useMemo(() => {
     const list = projectTab === "order" ? orderProjects : stockProjects;
