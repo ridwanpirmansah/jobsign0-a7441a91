@@ -1461,6 +1461,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_owner: { Args: { _user_id: string }; Returns: boolean }
+      link_project_to_order: {
+        Args: { _order_id: string; _project_id: string }
+        Returns: undefined
+      }
       lookup_order_by_resi: { Args: { _query: string }; Returns: Json }
       mark_ready_pickup: { Args: { _order_id: string }; Returns: undefined }
       mark_ready_pickup_by_resi: { Args: { _no_resi: string }; Returns: Json }

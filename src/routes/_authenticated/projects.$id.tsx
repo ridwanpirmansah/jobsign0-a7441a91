@@ -61,10 +61,18 @@ function ProjectDetail() {
 
   const setParentOrder = useMutation({
     mutationFn: async (orderId: string | null) => {
-      const { error } = await supabase.from("projects").update({ parent_order_id: orderId }).eq("id", id);
+      const { error } = await supabase.rpc("link_project_to_order", {
+        _project_id: id,
+        _order_id: orderId,
+      } as { _project_id: string; _order_id: string });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Keterkaitan order diperbarui"); qc.invalidateQueries({ queryKey: ["project", id] }); },
+    onSuccess: () => {
+      toast.success("Keterkaitan order diperbarui");
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["order-items"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 

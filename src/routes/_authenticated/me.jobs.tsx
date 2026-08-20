@@ -125,13 +125,17 @@ function MyJobs() {
 
   const selectedProject = projects?.find((p) => p.id === projectId);
 
+  // Order "asli" = punya order terkait dengan nomor murni angka (RS-xx / kode berawalan huruf = ready stok)
+  const isOrderProject = (p: { parent_order_id: string | null; order_no: string | null }) =>
+    !!p.parent_order_id && /^\d+$/.test((p.order_no ?? "").trim());
+
   // Keep the picker tab in sync with the currently selected project
   useEffect(() => {
-    if (selectedProject) setProjectTab(selectedProject.parent_order_id ? "order" : "stock");
+    if (selectedProject) setProjectTab(isOrderProject(selectedProject) ? "order" : "stock");
   }, [selectedProject]);
 
-  const orderProjects = useMemo(() => (projects ?? []).filter((p) => !!p.parent_order_id), [projects]);
-  const stockProjects = useMemo(() => (projects ?? []).filter((p) => !p.parent_order_id), [projects]);
+  const orderProjects = useMemo(() => (projects ?? []).filter(isOrderProject), [projects]);
+  const stockProjects = useMemo(() => (projects ?? []).filter((p) => !isOrderProject(p)), [projects]);
 
   const filteredProjects = useMemo(() => {
     const list = projectTab === "order" ? orderProjects : stockProjects;
@@ -396,7 +400,7 @@ function MyJobs() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-xs font-semibold text-sky-700">{selectedProject.code}</span>
-                          {selectedProject.parent_order_id ? (
+                          {isOrderProject(selectedProject) ? (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-200">
                               Order {selectedProject.order_no ?? ""}
                             </span>
@@ -502,7 +506,7 @@ function MyJobs() {
                                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${c.chip}`}>
                                   {p.code}
                                 </span>
-                                {p.parent_order_id ? (
+                                {isOrderProject(p) ? (
                                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-200">
                                     Order {p.order_no ?? ""}
                                   </span>
