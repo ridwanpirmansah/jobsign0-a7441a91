@@ -506,7 +506,7 @@ function MyJobs() {
                                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${c.chip}`}>
                                   {p.code}
                                 </span>
-                                {p.parent_order_id ? (
+                                {isOrderProject(p) ? (
                                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-200">
                                     Order {p.order_no ?? ""}
                                   </span>
