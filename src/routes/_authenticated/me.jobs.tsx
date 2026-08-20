@@ -400,7 +400,7 @@ function MyJobs() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-xs font-semibold text-sky-700">{selectedProject.code}</span>
-                          {selectedProject.parent_order_id ? (
+                          {isOrderProject(selectedProject) ? (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-200">
                               Order {selectedProject.order_no ?? ""}
                             </span>
