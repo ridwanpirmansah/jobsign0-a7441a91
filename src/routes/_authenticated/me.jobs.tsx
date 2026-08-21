@@ -66,7 +66,7 @@ function MyJobs() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_available_projects");
       if (error) throw error;
-      return (data ?? []) as Array<{ id: string; code: string; title: string; status: string; total_points: number; claimed_points: number; remaining_points: number; parent_order_id: string | null; order_no: string | null }>;
+      return (data ?? []) as Array<{ id: string; code: string; title: string; status: string; total_points: number; claimed_points: number; remaining_points: number; parent_order_id: string | null; order_no: string | null; order_status: string | null }>;
     },
   });
 
