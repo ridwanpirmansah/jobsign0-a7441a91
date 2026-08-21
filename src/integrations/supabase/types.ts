@@ -1416,6 +1416,7 @@ export type Database = {
           code: string
           id: string
           order_no: string
+          order_status: string
           parent_order_id: string
           remaining_points: number
           status: Database["public"]["Enums"]["project_status"]
