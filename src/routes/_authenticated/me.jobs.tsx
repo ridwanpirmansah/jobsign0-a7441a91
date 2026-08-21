@@ -126,9 +126,10 @@ function MyJobs() {
 
   const selectedProject = projects?.find((p) => p.id === projectId);
 
-  // Order "asli" = punya order terkait dengan nomor murni angka (RS-xx / kode berawalan huruf = ready stok)
-  const isOrderProject = (p: { parent_order_id: string | null; order_no: string | null }) =>
-    !!p.parent_order_id && /^\d+$/.test((p.order_no ?? "").trim());
+  // Order aktif = project terikat ke order dengan status active/draft; ready_stock & return = Ready Stok
+  const isOrderProject = (p: { parent_order_id: string | null; order_status?: string | null }) =>
+    !!p.parent_order_id && !["ready_stock", "return"].includes((p.order_status ?? "").trim());
+
 
   // Keep the picker tab in sync with the currently selected project
   useEffect(() => {
