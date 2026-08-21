@@ -695,16 +695,16 @@ function MyJobs() {
                       </div>
                     )}
 
-                    <div className="mt-2 flex items-center justify-between">
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="text-xs text-slate-500">
                         Upah: <span className="font-semibold text-slate-900">{fmtIDR(preview)}</span>
                         {minApplied && <span className="ml-1 text-amber-600">(min)</span>}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 justify-end">
                         {r.require_photo && (
                           <>
                             <input
-                              id={`photo-${r.rate_id}`}
+                              id={`photo-cam-${r.rate_id}`}
                               type="file"
                               accept="image/*"
                               capture="environment"
@@ -715,18 +715,50 @@ function MyJobs() {
                                 e.target.value = "";
                               }}
                             />
-                            <Button
-                              type="button" size="sm" variant="outline"
-                              className="border-sky-400 text-sky-700 hover:bg-sky-50"
-                              disabled={uploadingRate === r.rate_id}
-                              onClick={() => document.getElementById(`photo-${r.rate_id}`)?.click()}
-                              title="Upload foto hasil garapan"
-                            >
-                              {uploadingRate === r.rate_id
-                                ? <Loader2 className="h-4 w-4 animate-spin" />
-                                : <Camera className="h-4 w-4" />}
-                              <span className="ml-1">{photoMap[r.rate_id] ? "Ganti Foto" : "Foto"}</span>
-                            </Button>
+                            <input
+                              id={`photo-file-${r.rate_id}`}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) void handlePhotoPick(r.rate_id, f);
+                                e.target.value = "";
+                              }}
+                            />
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button" size="sm" variant="outline"
+                                  className="border-sky-400 text-sky-700 hover:bg-sky-50"
+                                  disabled={uploadingRate === r.rate_id}
+                                  title="Upload foto hasil garapan"
+                                >
+                                  {uploadingRate === r.rate_id
+                                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                                    : <Camera className="h-4 w-4" />}
+                                  <span className="ml-1">{photoMap[r.rate_id] ? "Ganti Foto" : "Foto"}</span>
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-2" align="end">
+                                <div className="flex flex-col gap-1 min-w-[10rem]">
+                                  <button
+                                    type="button"
+                                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-100 text-left"
+                                    onClick={() => document.getElementById(`photo-cam-${r.rate_id}`)?.click()}
+                                  >
+                                    <Camera className="h-4 w-4 text-sky-600" /> Kamera
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-100 text-left"
+                                    onClick={() => document.getElementById(`photo-file-${r.rate_id}`)?.click()}
+                                  >
+                                    <ImageIcon className="h-4 w-4 text-emerald-600" /> Galeri
+                                  </button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </>
                         )}
                         {hasRemaining && (
