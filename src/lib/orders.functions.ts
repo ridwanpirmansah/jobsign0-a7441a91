@@ -15,7 +15,7 @@ export const listOrders = createServerFn({ method: "GET" })
       .select(`*, order_items!order_items_order_id_fkey(
         id, position, kind, text_neon, manual_name, titik, item_hpp, manual_price,
         source_ready_stock_order_id, source_draft_order_id, project_id,
-        projects:project_id(project_code)
+        projects:project_id(code)
       )`)
       .order("co_date", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })

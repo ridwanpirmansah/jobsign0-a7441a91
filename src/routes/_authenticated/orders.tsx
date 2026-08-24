@@ -976,7 +976,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                           <span className="text-xs text-muted-foreground">{moreLabel}</span>
                           {(() => {
                             const firstIt = its[0];
-                            const code = firstIt && (Array.isArray(firstIt.projects) ? firstIt.projects[0]?.project_code : firstIt.projects?.project_code);
+                            const code = firstIt && (Array.isArray(firstIt.projects) ? firstIt.projects[0]?.code : firstIt.projects?.code);
                             return code ? (
                               <div className="mt-0.5">
                                 <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border border-primary/60 text-primary bg-primary/10">
@@ -1014,7 +1014,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                           <TableCell className="text-xs">
                             <div>{it.text_neon || it.manual_name || "-"}</div>
                             {(() => {
-                              const code = it.projects && (Array.isArray(it.projects) ? it.projects[0]?.project_code : it.projects?.project_code);
+                              const code = it.projects && (Array.isArray(it.projects) ? it.projects[0]?.code : it.projects?.code);
                               return code ? (
                                 <div className="mt-0.5">
                                   <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border border-primary/60 text-primary bg-primary/10">
