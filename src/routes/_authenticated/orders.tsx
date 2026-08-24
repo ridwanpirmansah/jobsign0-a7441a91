@@ -974,6 +974,17 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                             {firstText}
                           </button>
                           <span className="text-xs text-muted-foreground">{moreLabel}</span>
+                          {(() => {
+                            const firstIt = its[0];
+                            const code = firstIt && (Array.isArray(firstIt.projects) ? firstIt.projects[0]?.project_code : firstIt.projects?.project_code);
+                            return code ? (
+                              <div className="mt-0.5">
+                                <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border border-primary/60 text-primary bg-primary/10">
+                                  {code}
+                                </span>
+                              </div>
+                            ) : null;
+                          })()}
                           {isReady && o.status === "return" && (
                             <div className="mt-0.5">
                               <span className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">Produk Retur</span>
