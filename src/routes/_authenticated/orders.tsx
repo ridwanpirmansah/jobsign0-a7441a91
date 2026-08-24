@@ -1011,7 +1011,19 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                           <TableCell colSpan={5} className="text-xs pl-8">
                             <span className="text-muted-foreground">#{it.position} · {it.kind === "custom" ? "Custom" : it.kind === "ready_stock_ref" ? "Ready Stock (ref)" : it.kind === "draft_ref" ? "Draft (ref)" : "Ready Stock (manual)"}</span>
                           </TableCell>
-                          <TableCell className="text-xs">{it.text_neon || it.manual_name || "-"}</TableCell>
+                          <TableCell className="text-xs">
+                            <div>{it.text_neon || it.manual_name || "-"}</div>
+                            {(() => {
+                              const code = it.projects && (Array.isArray(it.projects) ? it.projects[0]?.project_code : it.projects?.project_code);
+                              return code ? (
+                                <div className="mt-0.5">
+                                  <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border border-primary/60 text-primary bg-primary/10">
+                                    {code}
+                                  </span>
+                                </div>
+                              ) : null;
+                            })()}
+                          </TableCell>
                           <TableCell className="text-right text-xs">{it.titik ?? 0}</TableCell>
                           <TableCell className="text-right text-xs">{rp(Number(it.item_hpp ?? 0))}</TableCell>
                           <TableCell className="text-right text-xs">{it.kind === "ready_stock_manual" ? rp(Number(it.manual_price ?? 0)) : "-"}</TableCell>
