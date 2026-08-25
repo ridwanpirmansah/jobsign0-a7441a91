@@ -1425,6 +1425,23 @@ export type Database = {
         }[]
       }
       get_daily_attendance_token: { Args: { _date?: string }; Returns: string }
+      get_order_history: {
+        Args: { _limit?: number }
+        Returns: {
+          co_date: string
+          ekspedisi: string
+          kota: string
+          no_resi: string
+          order_id: string
+          order_no: string
+          order_status: string
+          picked_up_at: string
+          projects: Json
+          ready_pickup_at: string
+          text_neon: string
+          username: string
+        }[]
+      }
       get_permanent_attendance_token: { Args: never; Returns: string }
       get_project_detail_for_worker: {
         Args: { _project_id: string }
