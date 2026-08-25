@@ -447,40 +447,116 @@ function StatusPage() {
 
       <ResiPreviewDialog payload={previewPayload} onClose={() => setPreviewPayload(null)} />
 
-      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Riwayat Pesanan</DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground">Pesanan yang sudah dikirim / selesai.</p>
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-            {(() => {
-              const done = (rows ?? []).filter((r) => !!r.picked_up_at || r.current_step === "shipping");
-              if (done.length === 0) return <div className="py-8 text-center text-sm text-slate-500">Belum ada riwayat.</div>;
-              return done
-                .sort((a, b) => String(b.picked_up_at ?? b.co_date ?? "").localeCompare(String(a.picked_up_at ?? a.co_date ?? "")))
-                .map((r) => (
-                  <button
-                    key={r.project_id}
-                    type="button"
-                    onClick={() => { setHistoryOpen(false); setSelectedId(r.project_id); }}
-                    className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold text-slate-900">{r.project_title}</div>
-                      <div className="truncate font-mono text-[10px] text-slate-400">#{r.project_code}{r.order_no ? ` · Order ${r.order_no}` : ""}</div>
-                      {r.no_resi && <div className="truncate font-mono text-[10px] text-slate-500">📦 {r.no_resi}</div>}
-                    </div>
-                    <Badge className="shrink-0 gap-1 border-transparent bg-green-600 text-white">
-                      <Truck className="h-3 w-3" /> Dikirim
-                    </Badge>
-                  </button>
-                ));
-            })()}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <HistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        onOpenDetail={(pid) => { setHistoryOpen(false); setSelectedId(pid); }}
+      />
     </div>
+  );
+}
+
+type HistoryProject = { id: string; code: string; title: string; status: string };
+type HistoryRow = {
+  order_id: string; order_no: string; no_resi: string | null; ekspedisi: string | null;
+  username: string | null; kota: string | null; text_neon: string | null; co_date: string | null;
+  ready_pickup_at: string | null; picked_up_at: string | null; order_status: string;
+  projects: HistoryProject[];
+};
+
+function HistoryDialog({ open, onOpenChange, onOpenDetail }: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onOpenDetail: (projectId: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const { data, isLoading } = useQuery({
+    queryKey: ["order-history"],
+    enabled: open,
+    staleTime: 30000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_order_history" as never, { _limit: 500 } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as HistoryRow[];
+    },
+  });
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return data ?? [];
+    return (data ?? []).filter((r) =>
+      [r.order_no, r.no_resi, r.username, r.kota, r.text_neon, r.ekspedisi]
+        .some((v) => String(v ?? "").toLowerCase().includes(needle))
+      || r.projects.some((p) => p.code.toLowerCase().includes(needle) || p.title.toLowerCase().includes(needle))
+    );
+  }, [data, q]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Riwayat Pesanan</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          Riwayat permanen semua pesanan yang sudah dikirim / selesai — tidak akan hilang.
+        </p>
+        <Input
+          placeholder="Cari no order / resi / customer / project..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <div className="max-h-[55vh] space-y-2 overflow-y-auto">
+          {isLoading ? (
+            <div className="py-8 text-center text-sm text-slate-500">Memuat riwayat…</div>
+          ) : filtered.length === 0 ? (
+            <div className="py-8 text-center text-sm text-slate-500">
+              {q ? "Tidak ditemukan." : "Belum ada riwayat."}
+            </div>
+          ) : (
+            filtered.map((r) => {
+              const firstProject = r.projects[0];
+              return (
+                <button
+                  key={r.order_id}
+                  type="button"
+                  onClick={() => firstProject && onOpenDetail(firstProject.id)}
+                  className="flex w-full items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono text-xs font-semibold text-slate-700 truncate">#{r.order_no}</span>
+                      {r.username && (
+                        <span className="text-xs text-slate-500 truncate" title={r.username}>👤 {shortAddress(r.username)}</span>
+                      )}
+                    </div>
+                    {r.text_neon && <div className="truncate text-sm font-semibold text-slate-900">{r.text_neon}</div>}
+                    {r.projects.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {r.projects.map((p) => (
+                          <span key={p.id} className="rounded border border-primary/40 bg-primary/5 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary">
+                            #{p.code}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-slate-500">
+                      {r.no_resi && <span className="font-mono truncate">📦 {r.no_resi}</span>}
+                      {r.ekspedisi && <span className="truncate">🚛 {r.ekspedisi}</span>}
+                      {r.picked_up_at && (
+                        <span>Dikirim {format(new Date(r.picked_up_at), "dd MMM yyyy HH:mm", { locale: idLocale })}</span>
+                      )}
+                    </div>
+                  </div>
+                  <Badge className={`shrink-0 gap-1 border-transparent ${r.picked_up_at ? "bg-green-600" : "bg-slate-500"} text-white`}>
+                    <Truck className="h-3 w-3" /> {r.picked_up_at ? "Dikirim" : "Selesai"}
+                  </Badge>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
