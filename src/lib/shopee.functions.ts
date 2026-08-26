@@ -22,6 +22,7 @@ export const getShopeeStatus = createServerFn({ method: "GET" })
     return {
       partner_id: s.partner_id ?? "",
       has_partner_key: !!s.partner_key,
+      redirect_url: s.redirect_url ?? "",
       shop_id: s.shop_id,
       connected: !!s.shop_id && !!s.refresh_token,
       connected_at: s.connected_at,
