@@ -79,15 +79,12 @@ export const saveShopeeSettings = createServerFn({ method: "POST" })
 
 export const getShopeeAuthUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ origin: z.string().url().max(300) }).parse(d),
-  )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ context }) => {
     const isOwner = await requireAdminOrOwner(context);
     if (!isOwner) throw new Error("Forbidden: hanya owner");
     const { buildAuthUrl } = await import("./shopee.server");
     try {
-      return { ok: true as const, url: await buildAuthUrl(data.origin), error: null as string | null };
+      return { ok: true as const, url: await buildAuthUrl(), error: null as string | null };
     } catch (e: any) {
       return { ok: false as const, url: null, error: String(e?.message ?? e) };
     }
