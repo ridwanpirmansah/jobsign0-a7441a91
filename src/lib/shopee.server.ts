@@ -62,13 +62,15 @@ function sign(partnerKey: string, base: string) {
 }
 
 /** URL consent untuk otorisasi toko. */
-export async function buildAuthUrl(origin: string): Promise<string> {
+export async function buildAuthUrl(origin?: string): Promise<string> {
   const s = await loadSettings();
   const { partnerId, partnerKey } = credentials(s);
   const path = "/api/v2/shop/auth_partner";
   const ts = Math.floor(Date.now() / 1000);
   const signature = sign(partnerKey, `${partnerId}${path}${ts}`);
-  const redirect = `${origin.replace(/\/$/, "")}${SHOPEE_CALLBACK_PATH}`;
+  const base = isValidRedirectUrl(s.redirect_url ?? "") ? s.redirect_url! : (origin ?? "");
+  if (!base) throw new Error("Redirect URL belum diatur. Isi Redirect URL di pengaturan Shopee.");
+  const redirect = buildCallbackUrl(base);
   const qs = new URLSearchParams({
     partner_id: partnerId,
     timestamp: String(ts),
