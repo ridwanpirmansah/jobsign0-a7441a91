@@ -212,13 +212,25 @@ function ShopeePage() {
         <CardHeader>
           <CardTitle>Kredensial Shopee Open Platform</CardTitle>
           <CardDescription>
-            Daftar di open.shopee.com → buat App → salin Partner ID & Partner Key. Isi <b>Redirect URL</b> di App
-            Shopee dengan alamat berikut:
+            Daftar di open.shopee.com → buat App → salin Partner ID & Partner Key. Atur Redirect URL dengan domain
+            publik yang terdaftar di Shopee Developer Console. Callback URL yang akan digunakan:
             <code className="block mt-2 p-2 rounded bg-muted text-xs break-all">{callbackUrl}</code>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Label htmlFor="sh-redirect">Redirect URL</Label>
+              <Input
+                id="sh-redirect"
+                value={redirectUrl}
+                onChange={(e) => setRedirectUrl(e.target.value)}
+                placeholder="https://job.lintangsemesta.com"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Wajib diawali http:// atau https://. Kosongkan untuk menggunakan domain halaman ini.
+              </p>
+            </div>
             <div>
               <Label>Partner ID</Label>
               <Input
