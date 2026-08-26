@@ -37,9 +37,18 @@ export const getShopeeStatus = createServerFn({ method: "GET" })
     };
   });
 
+const redirectUrlSchema = z
+  .string()
+  .trim()
+  .max(300)
+  .refine((v) => v === "" || /^https?:\/\//i.test(v), {
+    message: "Redirect URL harus diawali http:// atau https://",
+  });
+
 const credsSchema = z.object({
   partner_id: z.string().trim().min(1).max(64).regex(/^\d+$/, "Partner ID harus angka"),
   partner_key: z.string().trim().max(256).optional(),
+  redirect_url: redirectUrlSchema.optional(),
   lookback_days: z.number().int().min(1).max(90).default(7),
   enabled: z.boolean().default(false),
 });
@@ -57,6 +66,9 @@ export const saveShopeeSettings = createServerFn({ method: "POST" })
       enabled: data.enabled,
     };
     if (data.partner_key && data.partner_key.length > 0) patch.partner_key = data.partner_key;
+    if (data.redirect_url !== undefined) {
+      patch.redirect_url = data.redirect_url.trim() === "" ? null : data.redirect_url.trim();
+    }
     const { error } = await supabaseAdmin
       .from("shopee_settings")
       .update(patch as any)
