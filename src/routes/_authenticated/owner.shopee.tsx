@@ -56,6 +56,7 @@ function ShopeePage() {
 
   const [partnerId, setPartnerId] = useState("");
   const [partnerKey, setPartnerKey] = useState("");
+  const [redirectUrl, setRedirectUrl] = useState("");
   const [days, setDays] = useState(7);
   const [enabled, setEnabled] = useState(false);
   const [rows, setRows] = useState<any[] | null>(null);
@@ -64,6 +65,7 @@ function ShopeePage() {
   useEffect(() => {
     if (!status) return;
     setPartnerId(status.partner_id ?? "");
+    setRedirectUrl(status.redirect_url ?? "");
     setDays(status.lookback_days ?? 7);
     setEnabled(!!status.enabled);
   }, [status]);
