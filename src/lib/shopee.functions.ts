@@ -22,6 +22,7 @@ export const getShopeeStatus = createServerFn({ method: "GET" })
     return {
       partner_id: s.partner_id ?? "",
       has_partner_key: !!s.partner_key,
+      redirect_url: s.redirect_url ?? "",
       shop_id: s.shop_id,
       connected: !!s.shop_id && !!s.refresh_token,
       connected_at: s.connected_at,
@@ -36,9 +37,18 @@ export const getShopeeStatus = createServerFn({ method: "GET" })
     };
   });
 
+const redirectUrlSchema = z
+  .string()
+  .trim()
+  .max(300)
+  .refine((v) => v === "" || /^https?:\/\//i.test(v), {
+    message: "Redirect URL harus diawali http:// atau https://",
+  });
+
 const credsSchema = z.object({
   partner_id: z.string().trim().min(1).max(64).regex(/^\d+$/, "Partner ID harus angka"),
   partner_key: z.string().trim().max(256).optional(),
+  redirect_url: redirectUrlSchema.optional(),
   lookback_days: z.number().int().min(1).max(90).default(7),
   enabled: z.boolean().default(false),
 });
@@ -56,6 +66,9 @@ export const saveShopeeSettings = createServerFn({ method: "POST" })
       enabled: data.enabled,
     };
     if (data.partner_key && data.partner_key.length > 0) patch.partner_key = data.partner_key;
+    if (data.redirect_url !== undefined) {
+      patch.redirect_url = data.redirect_url.trim() === "" ? null : data.redirect_url.trim();
+    }
     const { error } = await supabaseAdmin
       .from("shopee_settings")
       .update(patch as any)
@@ -66,15 +79,12 @@ export const saveShopeeSettings = createServerFn({ method: "POST" })
 
 export const getShopeeAuthUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ origin: z.string().url().max(300) }).parse(d),
-  )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ context }) => {
     const isOwner = await requireAdminOrOwner(context);
     if (!isOwner) throw new Error("Forbidden: hanya owner");
     const { buildAuthUrl } = await import("./shopee.server");
     try {
-      return { ok: true as const, url: await buildAuthUrl(data.origin), error: null as string | null };
+      return { ok: true as const, url: await buildAuthUrl(), error: null as string | null };
     } catch (e: any) {
       return { ok: false as const, url: null, error: String(e?.message ?? e) };
     }

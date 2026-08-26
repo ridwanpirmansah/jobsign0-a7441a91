@@ -16,6 +16,7 @@ export type ShopeeSettings = {
   id: number;
   partner_id: string | null;
   partner_key: string | null;
+  redirect_url: string | null;
   shop_id: string | null;
   access_token: string | null;
   refresh_token: string | null;
@@ -24,6 +25,15 @@ export type ShopeeSettings = {
   enabled: boolean;
   lookback_days: number;
 };
+
+function isValidRedirectUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url.trim());
+}
+
+export function buildCallbackUrl(base: string): string {
+  const normalized = base.replace(/\/+$/, "").trim();
+  return `${normalized}${SHOPEE_CALLBACK_PATH}`;
+}
 
 export async function loadSettings(): Promise<ShopeeSettings> {
   const { data, error } = await supabaseAdmin
@@ -52,13 +62,15 @@ function sign(partnerKey: string, base: string) {
 }
 
 /** URL consent untuk otorisasi toko. */
-export async function buildAuthUrl(origin: string): Promise<string> {
+export async function buildAuthUrl(origin?: string): Promise<string> {
   const s = await loadSettings();
   const { partnerId, partnerKey } = credentials(s);
   const path = "/api/v2/shop/auth_partner";
   const ts = Math.floor(Date.now() / 1000);
   const signature = sign(partnerKey, `${partnerId}${path}${ts}`);
-  const redirect = `${origin.replace(/\/$/, "")}${SHOPEE_CALLBACK_PATH}`;
+  const base = isValidRedirectUrl(s.redirect_url ?? "") ? s.redirect_url! : (origin ?? "");
+  if (!base) throw new Error("Redirect URL belum diatur. Isi Redirect URL di pengaturan Shopee.");
+  const redirect = buildCallbackUrl(base);
   const qs = new URLSearchParams({
     partner_id: partnerId,
     timestamp: String(ts),

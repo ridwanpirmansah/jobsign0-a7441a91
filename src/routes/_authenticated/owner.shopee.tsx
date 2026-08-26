@@ -56,6 +56,7 @@ function ShopeePage() {
 
   const [partnerId, setPartnerId] = useState("");
   const [partnerKey, setPartnerKey] = useState("");
+  const [redirectUrl, setRedirectUrl] = useState("");
   const [days, setDays] = useState(7);
   const [enabled, setEnabled] = useState(false);
   const [rows, setRows] = useState<any[] | null>(null);
@@ -64,6 +65,7 @@ function ShopeePage() {
   useEffect(() => {
     if (!status) return;
     setPartnerId(status.partner_id ?? "");
+    setRedirectUrl(status.redirect_url ?? "");
     setDays(status.lookback_days ?? 7);
     setEnabled(!!status.enabled);
   }, [status]);
@@ -83,6 +85,7 @@ function ShopeePage() {
         data: {
           partner_id: partnerId.trim(),
           partner_key: partnerKey.trim() || undefined,
+          redirect_url: redirectUrl.trim(),
           lookback_days: days,
           enabled,
         },
@@ -96,7 +99,7 @@ function ShopeePage() {
   });
 
   const connectMut = useMutation({
-    mutationFn: () => authUrlFn({ data: { origin: window.location.origin } }),
+    mutationFn: () => authUrlFn(),
     onSuccess: (r: any) => {
       if (!r?.ok || !r.url) {
         toast.error(r?.error ?? "Gagal membuat link otorisasi");
@@ -164,8 +167,14 @@ function ShopeePage() {
 
   if (isLoading) return <div className="p-4">Memuat...</div>;
 
-  const callbackUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/api/public/shopee/callback` : "";
+  const normalizedRedirect = redirectUrl.trim().replace(/\/+$/, "");
+  const callbackBase =
+    typeof window !== "undefined"
+      ? (normalizedRedirect && /^https?:\/\//i.test(normalizedRedirect)
+          ? normalizedRedirect
+          : window.location.origin)
+      : "";
+  const callbackUrl = callbackBase ? `${callbackBase}/api/public/shopee/callback` : "";
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -203,13 +212,25 @@ function ShopeePage() {
         <CardHeader>
           <CardTitle>Kredensial Shopee Open Platform</CardTitle>
           <CardDescription>
-            Daftar di open.shopee.com → buat App → salin Partner ID & Partner Key. Isi <b>Redirect URL</b> di App
-            Shopee dengan alamat berikut:
+            Daftar di open.shopee.com → buat App → salin Partner ID & Partner Key. Atur Redirect URL dengan domain
+            publik yang terdaftar di Shopee Developer Console. Callback URL yang akan digunakan:
             <code className="block mt-2 p-2 rounded bg-muted text-xs break-all">{callbackUrl}</code>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Label htmlFor="sh-redirect">Redirect URL</Label>
+              <Input
+                id="sh-redirect"
+                value={redirectUrl}
+                onChange={(e) => setRedirectUrl(e.target.value)}
+                placeholder="https://job.lintangsemesta.com"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Wajib diawali http:// atau https://. Kosongkan untuk menggunakan domain halaman ini.
+              </p>
+            </div>
             <div>
               <Label>Partner ID</Label>
               <Input

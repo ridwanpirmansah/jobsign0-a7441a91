@@ -1138,6 +1138,7 @@ export type Database = {
           lookback_days: number
           partner_id: string | null
           partner_key: string | null
+          redirect_url: string | null
           refresh_token: string | null
           shop_id: string | null
           token_expires_at: string | null
@@ -1158,6 +1159,7 @@ export type Database = {
           lookback_days?: number
           partner_id?: string | null
           partner_key?: string | null
+          redirect_url?: string | null
           refresh_token?: string | null
           shop_id?: string | null
           token_expires_at?: string | null
@@ -1178,6 +1180,7 @@ export type Database = {
           lookback_days?: number
           partner_id?: string | null
           partner_key?: string | null
+          redirect_url?: string | null
           refresh_token?: string | null
           shop_id?: string | null
           token_expires_at?: string | null
