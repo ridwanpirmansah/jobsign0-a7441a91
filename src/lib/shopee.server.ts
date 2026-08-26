@@ -16,6 +16,7 @@ export type ShopeeSettings = {
   id: number;
   partner_id: string | null;
   partner_key: string | null;
+  redirect_url: string | null;
   shop_id: string | null;
   access_token: string | null;
   refresh_token: string | null;
@@ -24,6 +25,15 @@ export type ShopeeSettings = {
   enabled: boolean;
   lookback_days: number;
 };
+
+function isValidRedirectUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url.trim());
+}
+
+export function buildCallbackUrl(base: string): string {
+  const normalized = base.replace(/\/+$/, "").trim();
+  return `${normalized}${SHOPEE_CALLBACK_PATH}`;
+}
 
 export async function loadSettings(): Promise<ShopeeSettings> {
   const { data, error } = await supabaseAdmin
