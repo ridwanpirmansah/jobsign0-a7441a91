@@ -167,8 +167,14 @@ function ShopeePage() {
 
   if (isLoading) return <div className="p-4">Memuat...</div>;
 
-  const callbackUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/api/public/shopee/callback` : "";
+  const normalizedRedirect = redirectUrl.trim().replace(/\/+$/, "");
+  const callbackBase =
+    typeof window !== "undefined"
+      ? (normalizedRedirect && /^https?:\/\//i.test(normalizedRedirect)
+          ? normalizedRedirect
+          : window.location.origin)
+      : "";
+  const callbackUrl = callbackBase ? `${callbackBase}/api/public/shopee/callback` : "";
 
   return (
     <div className="space-y-6 max-w-5xl">
