@@ -85,6 +85,7 @@ function ShopeePage() {
         data: {
           partner_id: partnerId.trim(),
           partner_key: partnerKey.trim() || undefined,
+          redirect_url: redirectUrl.trim(),
           lookback_days: days,
           enabled,
         },
@@ -98,7 +99,7 @@ function ShopeePage() {
   });
 
   const connectMut = useMutation({
-    mutationFn: () => authUrlFn({ data: { origin: window.location.origin } }),
+    mutationFn: () => authUrlFn(),
     onSuccess: (r: any) => {
       if (!r?.ok || !r.url) {
         toast.error(r?.error ?? "Gagal membuat link otorisasi");
