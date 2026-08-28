@@ -493,7 +493,10 @@ function HistoryDialog({ open, onOpenChange, onOpenDetail }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent
+        className="w-[calc(100vw-0.75rem)] max-w-none p-3 sm:max-w-lg sm:p-6"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Riwayat Pesanan</DialogTitle>
         </DialogHeader>
@@ -504,8 +507,10 @@ function HistoryDialog({ open, onOpenChange, onOpenDetail }: {
           placeholder="Cari no order / resi / customer / project..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          autoFocus={false}
+          inputMode="search"
         />
-        <div className="max-h-[55vh] space-y-2 overflow-y-auto">
+        <div className="max-h-[70vh] space-y-2 overflow-y-auto">
           {isLoading ? (
             <div className="py-8 text-center text-sm text-slate-500">Memuat riwayat…</div>
           ) : filtered.length === 0 ? (
