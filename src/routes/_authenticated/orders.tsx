@@ -1146,6 +1146,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               </TableBody>
             </Table>
           )}
+          </div>
           {filtered.length > 0 && (
             <div className="pt-3">
               <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} label="order" />
