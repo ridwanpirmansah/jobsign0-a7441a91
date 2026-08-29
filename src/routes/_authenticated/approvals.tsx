@@ -323,6 +323,32 @@ function ApprovalsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={approveAllOpen} onOpenChange={(o) => { if (!approveAll.isPending) setApproveAllOpen(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Setujui Semua Job Log?</DialogTitle>
+            <DialogDescription>
+              Anda akan menyetujui <b>{logs?.length ?? 0}</b> job log sekaligus dengan total upah{" "}
+              <b>{fmtIDR((logs ?? []).reduce((s, l) => s + Number(l.amount), 0))}</b>. Tindakan ini tidak bisa dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApproveAllOpen(false)} disabled={approveAll.isPending}>Batal</Button>
+            <Button
+              className="bg-emerald-500 hover:bg-emerald-600 text-white"
+              disabled={countdown > 0 || approveAll.isPending}
+              onClick={() => approveAll.mutate((logs ?? []).map((l) => l.id))}
+            >
+              {approveAll.isPending
+                ? "Memproses…"
+                : countdown > 0
+                ? `Ya, Setujui Semua (${countdown})`
+                : "Ya, Setujui Semua"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
