@@ -168,7 +168,14 @@ function ApprovalsPage() {
     <div className="space-y-6 max-w-7xl">
       <div><h1 className="text-2xl font-bold text-slate-900">Approval Job Log</h1><p className="text-sm text-slate-500">Tinjau laporan garapan & klaim reparasi karyawan</p></div>
       <Card>
-        <CardHeader><CardTitle className="text-base">Antrian ({logs?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap space-y-0">
+          <CardTitle className="text-base">Antrian ({logs?.length ?? 0})</CardTitle>
+          {!!logs?.length && (
+            <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white" onClick={() => setApproveAllOpen(true)}>
+              <CheckCheck className="h-4 w-4 mr-1.5" /> Setujui Semua
+            </Button>
+          )}
+        </CardHeader>
         <CardContent className="p-0">
           {/* Mobile cards */}
           <div className="md:hidden space-y-3 p-3">
