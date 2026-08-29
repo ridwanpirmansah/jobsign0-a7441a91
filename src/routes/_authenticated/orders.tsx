@@ -918,7 +918,116 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             <span className="text-sm text-muted-foreground ml-auto">{filtered.length} order</span>
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto px-3 pb-3 sm:p-6 sm:pt-0">
+        <CardContent className="px-3 pb-3 sm:p-6 sm:pt-0 sm:overflow-x-auto">
+          {/* ===== Mobile: tampilan kartu (clean, tanpa scroll horizontal) ===== */}
+          {ordersQ.isLoading ? <div className="sm:hidden py-6 text-center text-muted-foreground text-sm">Memuat...</div> : (
+          <div className="sm:hidden space-y-3">
+            {paged.map((o: any) => {
+              const its = (o.order_items ?? []) as any[];
+              const isExp = !!expanded[o.id];
+              const firstText = its.length ? (its[0].text_neon || its[0].manual_name || "Item") : (o.text_neon || "-");
+              const moreLabel = its.length > 1 ? ` +${its.length - 1} lainnya` : "";
+              const firstIt = its[0];
+              const code = firstIt && (Array.isArray(firstIt.projects) ? firstIt.projects[0]?.code : firstIt.projects?.code);
+              const d = o.co_date ? new Date(o.co_date) : null;
+              const day = d && !isNaN(d.getTime()) ? format(d, "dd") : "--";
+              const mon = d && !isNaN(d.getTime()) ? format(d, "MMM", { locale: idLocale }) : "";
+              const yr = d && !isNaN(d.getTime()) ? format(d, "yyyy") : "";
+              return (
+                <div key={o.id} className="rounded-xl border bg-card p-3 shadow-sm">
+                  <div className="flex items-stretch gap-3">
+                    <div className="flex flex-col items-center justify-center shrink-0 w-14 rounded-lg bg-muted/60 border py-2">
+                      <span className="text-[10px] uppercase font-semibold text-primary tracking-wide">{mon}</span>
+                      <span className="text-2xl font-black leading-none">{day}</span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">{yr}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs font-semibold truncate">{o.order_no}</span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Badge variant={o.status === "active" ? "default" : o.status === "return" ? "destructive" : "secondary"} className="text-[10px]">
+                            {STATUS_LABEL[(o.status as OrderStatus) ?? "active"] ?? o.status ?? "Aktif"}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px]">{o.source}</Badge>
+                        </div>
+                      </div>
+                      <div className="mt-1 text-xs min-w-0">
+                        <div className="truncate font-medium" title={o.username ?? ""}>{o.username ?? "-"}</div>
+                        <div className="truncate text-muted-foreground" title={o.kota ?? ""}>{o.kota ?? ""}</div>
+                      </div>
+                      <div className="mt-1.5">
+                        <button type="button" onClick={() => openEdit(o)} className={`text-left text-sm hover:underline leading-snug ${its.length ? "text-primary" : "text-muted-foreground italic"}`}>
+                          {firstText}
+                        </button>
+                        <span className="text-xs text-muted-foreground">{moreLabel}</span>
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
+                          {code && (
+                            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border border-primary/60 text-primary bg-primary/10">{code}</span>
+                          )}
+                          {isReady && o.status === "return" && (
+                            <span className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">Produk Retur</span>
+                          )}
+                          {!its.length && <span className="text-[10px] text-muted-foreground">riwayat produk (sudah dipindah)</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 grid grid-cols-2 gap-1.5 text-[11px]">
+                    <div className="rounded-md bg-muted/50 px-2 py-1.5 flex items-center justify-between gap-1">
+                      <span className="text-muted-foreground">Titik</span><span className="font-bold">{o.titik}</span>
+                    </div>
+                    <div className="rounded-md bg-muted/50 px-2 py-1.5 flex items-center justify-between gap-1">
+                      <span className="text-muted-foreground">HPP</span><span className="font-bold">{rp(Number(o.hpp))}</span>
+                    </div>
+                    <div className="rounded-md bg-muted/50 px-2 py-1.5 flex items-center justify-between gap-1">
+                      <span className="text-muted-foreground">Payment</span><span className="font-bold">{rp(Number(o.payment) + Number(o.split))}</span>
+                    </div>
+                    <div className={`rounded-md px-2 py-1.5 flex items-center justify-between gap-1 ${Number(o.profit) >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                      <span>Profit</span><span className="font-bold">{rp(Number(o.profit))}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 pt-2 border-t border-dashed flex items-center justify-end gap-1">
+                    {its.length > 1 && (
+                      <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => setExpanded((e) => ({ ...e, [o.id]: !e[o.id] }))}>
+                        {isExp ? <ChevronDown className="h-4 w-4 mr-1"/> : <ChevronRight className="h-4 w-4 mr-1"/>}
+                        {its.length} item
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" title="Duplikat" onClick={() => openDuplicate(o)}><Copy className="h-4 w-4"/></Button>
+                    <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => openEdit(o)}><Pencil className="h-4 w-4"/></Button>
+                    <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => { if (confirm(`Hapus ${o.order_no}?`)) delMut.mutate(o.id); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                  </div>
+
+                  {isExp && its.length > 1 && (
+                    <div className="mt-2 space-y-1.5">
+                      {its.map((it: any) => {
+                        const itCode = it.projects && (Array.isArray(it.projects) ? it.projects[0]?.code : it.projects?.code);
+                        return (
+                          <div key={it.id} className="rounded-lg bg-muted/30 border px-2.5 py-2 text-xs">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-muted-foreground">#{it.position} · {it.kind === "custom" ? "Custom" : it.kind === "ready_stock_ref" ? "Ready Stock (ref)" : it.kind === "draft_ref" ? "Draft (ref)" : "Ready Stock (manual)"}</span>
+                              <span className="font-semibold shrink-0">HPP {rp(Number(it.item_hpp ?? 0))}</span>
+                            </div>
+                            <div className="mt-1 font-medium">{it.text_neon || it.manual_name || "-"}</div>
+                            {itCode && (
+                              <span className="mt-1 inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border border-primary/60 text-primary bg-primary/10">{itCode}</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {filtered.length === 0 && <div className="text-center text-muted-foreground py-8 text-sm">Belum ada order</div>}
+          </div>
+          )}
+
+          {/* ===== Desktop: tabel penuh ===== */}
+          <div className="hidden sm:block">
           {ordersQ.isLoading ? <div>Memuat...</div> : (
             <Table>
               <TableHeader>
