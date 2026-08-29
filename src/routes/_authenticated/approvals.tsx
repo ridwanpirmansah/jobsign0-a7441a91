@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, isStaff } from "@/hooks/useCurrentUser";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check, X, SlidersHorizontal, Wrench, Sun, Image as ImageIcon } from "lucide-react";
+import { Check, CheckCheck, X, SlidersHorizontal, Wrench, Sun, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -54,6 +54,47 @@ function ApprovalsPage() {
   const [partialLog, setPartialLog] = useState<JobLogRow | null>(null);
   const [partialQty, setPartialQty] = useState("");
   const [partialAmount, setPartialAmount] = useState("");
+  const [approveAllOpen, setApproveAllOpen] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (approveAllOpen) {
+      setCountdown(5);
+      timerRef.current = setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            timerRef.current = null;
+            return 0;
+          }
+          return c - 1;
+        });
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [approveAllOpen]);
+
+  const approveAll = useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) {
+        const { error } = await supabase.rpc("approve_job_log", { _id: id, _status: "approved" });
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, ids) => {
+      toast.success(`${ids.length} job log disetujui`);
+      qc.invalidateQueries({ queryKey: ["pending-logs"] });
+      setApproveAllOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const { data: logs } = useQuery({
     queryKey: ["pending-logs"],
@@ -127,7 +168,14 @@ function ApprovalsPage() {
     <div className="space-y-6 max-w-7xl">
       <div><h1 className="text-2xl font-bold text-slate-900">Approval Job Log</h1><p className="text-sm text-slate-500">Tinjau laporan garapan & klaim reparasi karyawan</p></div>
       <Card>
-        <CardHeader><CardTitle className="text-base">Antrian ({logs?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap space-y-0">
+          <CardTitle className="text-base">Antrian ({logs?.length ?? 0})</CardTitle>
+          {!!logs?.length && (
+            <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white" onClick={() => setApproveAllOpen(true)}>
+              <CheckCheck className="h-4 w-4 mr-1.5" /> Setujui Semua
+            </Button>
+          )}
+        </CardHeader>
         <CardContent className="p-0">
           {/* Mobile cards */}
           <div className="md:hidden space-y-3 p-3">
@@ -271,6 +319,32 @@ function ApprovalsPage() {
             <Button variant="outline" onClick={() => setPartialOpen(false)}>Batal</Button>
             <Button className="bg-emerald-500 hover:bg-emerald-600 text-white" onClick={submitPartial} disabled={decide.isPending}>
               <Check className="h-4 w-4 mr-1" /> Setujui Sebagian
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={approveAllOpen} onOpenChange={(o) => { if (!approveAll.isPending) setApproveAllOpen(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Setujui Semua Job Log?</DialogTitle>
+            <DialogDescription>
+              Anda akan menyetujui <b>{logs?.length ?? 0}</b> job log sekaligus dengan total upah{" "}
+              <b>{fmtIDR((logs ?? []).reduce((s, l) => s + Number(l.amount), 0))}</b>. Tindakan ini tidak bisa dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApproveAllOpen(false)} disabled={approveAll.isPending}>Batal</Button>
+            <Button
+              className="bg-emerald-500 hover:bg-emerald-600 text-white"
+              disabled={countdown > 0 || approveAll.isPending}
+              onClick={() => approveAll.mutate((logs ?? []).map((l) => l.id))}
+            >
+              {approveAll.isPending
+                ? "Memproses…"
+                : countdown > 0
+                ? `Ya, Setujui Semua (${countdown})`
+                : "Ya, Setujui Semua"}
             </Button>
           </DialogFooter>
         </DialogContent>
