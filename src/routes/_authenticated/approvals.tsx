@@ -54,6 +54,47 @@ function ApprovalsPage() {
   const [partialLog, setPartialLog] = useState<JobLogRow | null>(null);
   const [partialQty, setPartialQty] = useState("");
   const [partialAmount, setPartialAmount] = useState("");
+  const [approveAllOpen, setApproveAllOpen] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (approveAllOpen) {
+      setCountdown(5);
+      timerRef.current = setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            timerRef.current = null;
+            return 0;
+          }
+          return c - 1;
+        });
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [approveAllOpen]);
+
+  const approveAll = useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) {
+        const { error } = await supabase.rpc("approve_job_log", { _id: id, _status: "approved" });
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, ids) => {
+      toast.success(`${ids.length} job log disetujui`);
+      qc.invalidateQueries({ queryKey: ["pending-logs"] });
+      setApproveAllOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const { data: logs } = useQuery({
     queryKey: ["pending-logs"],
