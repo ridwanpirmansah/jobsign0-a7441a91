@@ -332,6 +332,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [header, setHeader] = useState<HeaderForm>(emptyHeader());
   const [items, setItems] = useState<ItemForm[]>([]);
+  const [shopeeLabelLoading, setShopeeLabelLoading] = useState(false);
+
   const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
