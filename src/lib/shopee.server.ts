@@ -335,7 +335,7 @@ function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order
   return {
     order_sn: String(d?.order_sn ?? ""),
     status: String(d?.order_status ?? ""),
-    buyer: String(d?.buyer_username ?? addr?.name ?? ""),
+    buyer: unmask(d?.buyer_username) || unmask(addr?.name),
     kota,
     product,
     paket,
