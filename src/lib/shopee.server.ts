@@ -421,6 +421,8 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
       no_resi: p.no_resi || null,
       ekspedisi: p.ekspedisi || null,
       deadline: p.deadline,
+      notes,
+
 
     } as any)
     .select("id")
