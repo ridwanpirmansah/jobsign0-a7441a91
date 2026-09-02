@@ -892,8 +892,18 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
   );
 }
 
-function ResiPreviewDialog({ payload, onClose }: { payload: ResiPayload | null; onClose: () => void }) {
+function ResiPreviewDialog({
+  payload,
+  onClose,
+}: {
+  payload: (ResiPayload & { order_id?: string; is_shopee?: boolean }) | null;
+  onClose: () => void;
+}) {
   const [barcodeUrl, setBarcodeUrl] = useState<string | null>(null);
+  const [shopeeUrl, setShopeeUrl] = useState<string | null>(null);
+  const [shopeeErr, setShopeeErr] = useState<string | null>(null);
+  const [loadingShopee, setLoadingShopee] = useState(false);
+
   useEffect(() => {
     if (payload?.no_resi) {
       setBarcodeUrl(generateBarcodeDataUrl(payload.no_resi));
@@ -902,10 +912,57 @@ function ResiPreviewDialog({ payload, onClose }: { payload: ResiPayload | null; 
     }
   }, [payload]);
 
+  useEffect(() => {
+    let revoke: string | null = null;
+    setShopeeUrl(null);
+    setShopeeErr(null);
+    if (payload?.is_shopee && payload.order_id) {
+      setLoadingShopee(true);
+      import("@/lib/shopee-label")
+        .then((m) => m.fetchShopeeLabelUrl(payload.order_id!))
+        .then((url) => {
+          revoke = url;
+          setShopeeUrl(url);
+        })
+        .catch((e: any) => setShopeeErr(e?.message ?? "Gagal mengambil resi Shopee"))
+        .finally(() => setLoadingShopee(false));
+    }
+    return () => {
+      if (revoke) URL.revokeObjectURL(revoke);
+    };
+  }, [payload?.order_id, payload?.is_shopee]);
+
   if (!payload) return null;
   const tgl = payload.co_date
     ? new Date(payload.co_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
     : "-";
+
+  if (payload.is_shopee) {
+    return (
+      <Dialog open onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resi Shopee</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {loadingShopee && <p className="text-sm text-muted-foreground">Mengambil resi dari Shopee...</p>}
+            {shopeeErr && <p className="text-sm text-destructive">{shopeeErr}</p>}
+            {shopeeUrl && (
+              <>
+                <iframe src={shopeeUrl} title="Resi Shopee" className="h-[60vh] w-full rounded-lg border" />
+                <Button asChild className="w-full gap-2">
+                  <a href={shopeeUrl} download={`resi-shopee-${payload.no_resi || payload.order_no || "label"}.pdf`}>
+                    <Download className="h-4 w-4" /> Download Resi Shopee
+                  </a>
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
 
   return (
     <Dialog open={!!payload} onOpenChange={(o) => !o && onClose()}>
