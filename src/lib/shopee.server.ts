@@ -177,6 +177,58 @@ async function shopGet(path: string, params: Record<string, string>) {
   return json;
 }
 
+/** Panggilan API level toko dengan method POST (body JSON). */
+async function shopPost(path: string, body: Record<string, unknown>, raw = false) {
+  let s = await loadSettings();
+  s = await refreshIfNeeded(s);
+  const { partnerId, partnerKey } = credentials(s);
+  const ts = Math.floor(Date.now() / 1000);
+  const signature = sign(
+    partnerKey,
+    `${partnerId}${path}${ts}${s.access_token}${s.shop_id}`,
+  );
+  const qs = new URLSearchParams({
+    partner_id: partnerId,
+    timestamp: String(ts),
+    access_token: s.access_token!,
+    shop_id: s.shop_id!,
+    sign: signature,
+  });
+  const res = await fetch(`${apiBase()}${path}?${qs.toString()}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (raw) {
+    const ct = res.headers.get("content-type") ?? "";
+    if (res.ok && !ct.includes("application/json")) {
+      return { __binary: new Uint8Array(await res.arrayBuffer()) };
+    }
+    const j: any = await res.json().catch(() => ({}));
+    throw new Error(
+      `Shopee API error [${res.status}] ${j?.error ?? ""}: ${j?.message ?? "tidak diketahui"}`,
+    );
+  }
+  const json: any = await res.json().catch(() => ({}));
+  if (!res.ok || (json?.error && json.error !== "")) {
+    throw new Error(
+      `Shopee API error [${res.status}] ${json?.error ?? ""}: ${json?.message ?? "tidak diketahui"}`,
+    );
+  }
+  return json;
+}
+
+/** Buang teks yang di-mask Shopee (contoh: "****", "*a*"). */
+function unmask(v: unknown): string {
+  const s = String(v ?? "").trim();
+  if (!s) return "";
+  if (/^[\s*]+$/.test(s)) return "";
+  const stars = (s.match(/\*/g) ?? []).length;
+  if (stars > 0 && stars >= s.replace(/\s/g, "").length / 2) return "";
+  return s.replace(/\*+/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
+
 export type ShopeeOrderPreview = {
   order_sn: string;
   status: string;
