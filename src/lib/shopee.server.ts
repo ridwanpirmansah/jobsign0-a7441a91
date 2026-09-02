@@ -268,7 +268,13 @@ function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order
   const product = items.map((i) => i?.item_name).filter(Boolean).join(" | ") || "(tanpa nama produk)";
   const paket = items.map((i) => i?.model_name).filter(Boolean).join(" | ") || "";
   const addr = d?.recipient_address ?? {};
-  const kota = String(addr?.city ?? addr?.district ?? "").replace(/^KOTA\s+/i, "").trim();
+  // Alamat lengkap pembeli (fallback: susun dari bagian alamat)
+  const kota =
+    String(addr?.full_address ?? "").trim() ||
+    [addr?.district, addr?.city, addr?.state, addr?.zipcode]
+      .map((v: any) => String(v ?? "").trim())
+      .filter(Boolean)
+      .join(", ");
   // Penghasilan Akhir (escrow) bila tersedia, jika tidak fallback ke total pembayaran pembeli
   const escrow = Number(d?.__escrow_amount ?? 0);
   const total = escrow > 0 ? escrow : Number(d?.total_amount ?? 0);
@@ -368,8 +374,37 @@ export type ShopeeSyncResult = {
   message: string;
 };
 
+/** Pastikan nama ekspedisi dari Shopee ada & aktif di master ekspedisi. */
+async function ensureCarrier(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  const { data: existing } = await supabaseAdmin
+    .from("shipping_carriers")
+    .select("id, active")
+    .ilike("name", trimmed)
+    .maybeSingle();
+  if (existing) {
+    if (!(existing as any).active) {
+      await supabaseAdmin.from("shipping_carriers").update({ active: true }).eq("id", (existing as any).id);
+    }
+    return;
+  }
+  const { data: maxRow } = await supabaseAdmin
+    .from("shipping_carriers")
+    .select("sort_order")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  await supabaseAdmin.from("shipping_carriers").insert({
+    name: trimmed,
+    active: true,
+    sort_order: ((maxRow as any)?.sort_order ?? 0) + 1,
+  } as any);
+}
+
 async function importDetail(d: any, result: ShopeeSyncResult) {
   const p = mapDetail(d);
+  if (p.ekspedisi) await ensureCarrier(p.ekspedisi);
   if (!p.order_sn) {
     result.skipped++;
     return;
