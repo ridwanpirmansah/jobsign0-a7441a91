@@ -320,13 +320,14 @@ function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order
   const product = items.map((i) => i?.item_name).filter(Boolean).join(" | ") || "(tanpa nama produk)";
   const paket = items.map((i) => i?.model_name).filter(Boolean).join(" | ") || "";
   const addr = d?.recipient_address ?? {};
-  // Alamat lengkap pembeli (fallback: susun dari bagian alamat)
-  const kota =
-    String(addr?.full_address ?? "").trim() ||
-    [addr?.district, addr?.city, addr?.state, addr?.zipcode]
-      .map((v: any) => String(v ?? "").trim())
-      .filter(Boolean)
-      .join(", ");
+  // Shopee menyensor sebagian data penerima ("****"). Bersihkan dulu, lalu
+  // susun dari bagian alamat yang tidak disensor.
+  const parts = [addr?.district, addr?.city, addr?.state, addr?.zipcode]
+    .map((v: any) => unmask(v))
+    .filter(Boolean);
+  const full = unmask(addr?.full_address);
+  const kota = full || parts.join(", ");
+
   // Penghasilan Akhir (escrow) bila tersedia, jika tidak fallback ke total pembayaran pembeli
   const escrow = Number(d?.__escrow_amount ?? 0);
   const total = escrow > 0 ? escrow : Number(d?.total_amount ?? 0);
