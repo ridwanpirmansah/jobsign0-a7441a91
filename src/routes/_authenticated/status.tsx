@@ -208,7 +208,7 @@ function StatusPage() {
   const openPreview = async (orderId: string, fallback: Partial<ResiPayload> & { no_resi: string }) => {
     const { data, error } = await supabase
       .from("orders")
-      .select("no_resi, ekspedisi, co_date, kota, text_neon, username, phone, order_no")
+      .select("no_resi, ekspedisi, co_date, kota, text_neon, username, phone, order_no, source")
       .eq("id", orderId)
       .single();
     if (error) {
@@ -224,7 +224,10 @@ function StatusPage() {
       username: data.username ?? fallback.username ?? null,
       phone: data.phone ?? fallback.phone ?? null,
       order_no: data.order_no ?? fallback.order_no ?? null,
+      order_id: orderId,
+      is_shopee: (data as any).source === "shopee",
     });
+
   };
 
   return (
