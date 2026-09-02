@@ -141,3 +141,18 @@ export const disconnectShopee = createServerFn({ method: "POST" })
     await disconnectShop();
     return { ok: true };
   });
+
+/** PDF resi resmi Shopee untuk order yang diimport dari Shopee. */
+export const getShopeeLabel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { fetchShopeeLabelBase64, findShopeeOrderSn } = await import("./shopee.server");
+    try {
+      const sn = await findShopeeOrderSn(data.order_id);
+      if (!sn) return { ok: false as const, pdf: null, error: "Order ini bukan hasil import Shopee" };
+      return { ok: true as const, pdf: await fetchShopeeLabelBase64(sn), error: null as string | null };
+    } catch (e: any) {
+      return { ok: false as const, pdf: null, error: String(e?.message ?? e) };
+    }
+  });
