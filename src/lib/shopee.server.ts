@@ -420,7 +420,8 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
       payment: p.total,
       no_resi: p.no_resi || null,
       ekspedisi: p.ekspedisi || null,
-      notes,
+      deadline: p.deadline,
+
     } as any)
     .select("id")
     .single();
