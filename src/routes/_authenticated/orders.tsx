@@ -756,7 +756,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               <div><Label>Split (Rp)</Label><NumericInput value={header.split} onChange={(v) => setHeader((f) => ({ ...f, split: v }))}/></div>
               <div>
                 <Label className="flex items-center gap-1"><Truck className="h-3.5 w-3.5"/> No Resi</Label>
-                <Input placeholder="Nomor resi pengiriman" value={header.no_resi} onChange={(e) => setHeader((f) => ({ ...f, no_resi: e.target.value }))}/>
+                <Input
+                  placeholder="Nomor resi pengiriman"
+                  value={header.no_resi}
+                  readOnly={header.source === "shopee"}
+                  onChange={(e) => setHeader((f) => ({ ...f, no_resi: e.target.value }))}
+                />
+                {header.source === "shopee" && (
+                  <p className="text-xs text-muted-foreground mt-1">Resi mengikuti Shopee (tidak bisa diubah manual).</p>
+                )}
+
               </div>
               <div>
                 <Label>Ekspedisi</Label>
