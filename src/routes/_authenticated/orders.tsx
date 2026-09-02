@@ -332,6 +332,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [header, setHeader] = useState<HeaderForm>(emptyHeader());
   const [items, setItems] = useState<ItemForm[]>([]);
+  const [shopeeLabelLoading, setShopeeLabelLoading] = useState(false);
+
   const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -754,7 +756,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               <div><Label>Split (Rp)</Label><NumericInput value={header.split} onChange={(v) => setHeader((f) => ({ ...f, split: v }))}/></div>
               <div>
                 <Label className="flex items-center gap-1"><Truck className="h-3.5 w-3.5"/> No Resi</Label>
-                <Input placeholder="Nomor resi pengiriman" value={header.no_resi} onChange={(e) => setHeader((f) => ({ ...f, no_resi: e.target.value }))}/>
+                <Input
+                  placeholder="Nomor resi pengiriman"
+                  value={header.no_resi}
+                  readOnly={header.source === "shopee"}
+                  onChange={(e) => setHeader((f) => ({ ...f, no_resi: e.target.value }))}
+                />
+                {header.source === "shopee" && (
+                  <p className="text-xs text-muted-foreground mt-1">Resi mengikuti Shopee (tidak bisa diubah manual).</p>
+                )}
+
               </div>
               <div>
                 <Label>Ekspedisi</Label>
@@ -775,21 +786,37 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     </Button>
                   )}
                   <Button
-                    type="button" size="icon" variant="outline" title="Print Resi PDF"
-                    disabled={!header.no_resi}
-                    onClick={() => printResiPdf({
-                      no_resi: header.no_resi,
-                      ekspedisi: header.ekspedisi,
-                      co_date: header.co_date,
-                      kota: header.kota,
-                      text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
-                      username: header.username,
-                      phone: header.phone,
-                      order_no: header.order_no,
-                    })}
+                    type="button" size="icon" variant="outline"
+                    title={header.source === "shopee" ? "Buka Resi Shopee (PDF)" : "Print Resi PDF"}
+                    disabled={header.source === "shopee" ? !header.id || shopeeLabelLoading : !header.no_resi}
+                    onClick={async () => {
+                      if (header.source === "shopee") {
+                        setShopeeLabelLoading(true);
+                        try {
+                          const { openShopeeLabel } = await import("@/lib/shopee-label");
+                          await openShopeeLabel(header.id!);
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Gagal mengambil resi Shopee");
+                        } finally {
+                          setShopeeLabelLoading(false);
+                        }
+                        return;
+                      }
+                      printResiPdf({
+                        no_resi: header.no_resi,
+                        ekspedisi: header.ekspedisi,
+                        co_date: header.co_date,
+                        kota: header.kota,
+                        text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
+                        username: header.username,
+                        phone: header.phone,
+                        order_no: header.order_no,
+                      });
+                    }}
                   >
                     <Printer className="h-4 w-4"/>
                   </Button>
+
                 </div>
               </div>
               {header.id && header.no_resi && (

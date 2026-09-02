@@ -87,7 +87,10 @@ function StatusPage() {
   const [scanResult, setScanResult] = useState<ScanLookup | null>(null);
   const [sortBy, setSortBy] = useState<"co_date_desc" | "co_date_asc" | "deadline_asc" | "deadline_desc" | "progress_asc" | "progress_desc">("co_date_desc");
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
-  const [previewPayload, setPreviewPayload] = useState<ResiPayload | null>(null);
+  const [previewPayload, setPreviewPayload] = useState<
+    (ResiPayload & { order_id?: string; is_shopee?: boolean }) | null
+  >(null);
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -205,7 +208,7 @@ function StatusPage() {
   const openPreview = async (orderId: string, fallback: Partial<ResiPayload> & { no_resi: string }) => {
     const { data, error } = await supabase
       .from("orders")
-      .select("no_resi, ekspedisi, co_date, kota, text_neon, username, phone, order_no")
+      .select("no_resi, ekspedisi, co_date, kota, text_neon, username, phone, order_no, source")
       .eq("id", orderId)
       .single();
     if (error) {
@@ -221,7 +224,10 @@ function StatusPage() {
       username: data.username ?? fallback.username ?? null,
       phone: data.phone ?? fallback.phone ?? null,
       order_no: data.order_no ?? fallback.order_no ?? null,
+      order_id: orderId,
+      is_shopee: (data as any).source === "shopee",
     });
+
   };
 
   return (
@@ -886,8 +892,18 @@ function DetailDialog({ projectId, onOpenChange }: { projectId: string | null; o
   );
 }
 
-function ResiPreviewDialog({ payload, onClose }: { payload: ResiPayload | null; onClose: () => void }) {
+function ResiPreviewDialog({
+  payload,
+  onClose,
+}: {
+  payload: (ResiPayload & { order_id?: string; is_shopee?: boolean }) | null;
+  onClose: () => void;
+}) {
   const [barcodeUrl, setBarcodeUrl] = useState<string | null>(null);
+  const [shopeeUrl, setShopeeUrl] = useState<string | null>(null);
+  const [shopeeErr, setShopeeErr] = useState<string | null>(null);
+  const [loadingShopee, setLoadingShopee] = useState(false);
+
   useEffect(() => {
     if (payload?.no_resi) {
       setBarcodeUrl(generateBarcodeDataUrl(payload.no_resi));
@@ -896,10 +912,57 @@ function ResiPreviewDialog({ payload, onClose }: { payload: ResiPayload | null; 
     }
   }, [payload]);
 
+  useEffect(() => {
+    let revoke: string | null = null;
+    setShopeeUrl(null);
+    setShopeeErr(null);
+    if (payload?.is_shopee && payload.order_id) {
+      setLoadingShopee(true);
+      import("@/lib/shopee-label")
+        .then((m) => m.fetchShopeeLabelUrl(payload.order_id!))
+        .then((url) => {
+          revoke = url;
+          setShopeeUrl(url);
+        })
+        .catch((e: any) => setShopeeErr(e?.message ?? "Gagal mengambil resi Shopee"))
+        .finally(() => setLoadingShopee(false));
+    }
+    return () => {
+      if (revoke) URL.revokeObjectURL(revoke);
+    };
+  }, [payload?.order_id, payload?.is_shopee]);
+
   if (!payload) return null;
   const tgl = payload.co_date
     ? new Date(payload.co_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
     : "-";
+
+  if (payload.is_shopee) {
+    return (
+      <Dialog open onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resi Shopee</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {loadingShopee && <p className="text-sm text-muted-foreground">Mengambil resi dari Shopee...</p>}
+            {shopeeErr && <p className="text-sm text-destructive">{shopeeErr}</p>}
+            {shopeeUrl && (
+              <>
+                <iframe src={shopeeUrl} title="Resi Shopee" className="h-[60vh] w-full rounded-lg border" />
+                <Button asChild className="w-full gap-2">
+                  <a href={shopeeUrl} download={`resi-shopee-${payload.no_resi || payload.order_no || "label"}.pdf`}>
+                    <Download className="h-4 w-4" /> Download Resi Shopee
+                  </a>
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
 
   return (
     <Dialog open={!!payload} onOpenChange={(o) => !o && onClose()}>

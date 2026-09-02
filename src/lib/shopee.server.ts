@@ -177,6 +177,58 @@ async function shopGet(path: string, params: Record<string, string>) {
   return json;
 }
 
+/** Panggilan API level toko dengan method POST (body JSON). */
+async function shopPost(path: string, body: Record<string, unknown>, raw = false) {
+  let s = await loadSettings();
+  s = await refreshIfNeeded(s);
+  const { partnerId, partnerKey } = credentials(s);
+  const ts = Math.floor(Date.now() / 1000);
+  const signature = sign(
+    partnerKey,
+    `${partnerId}${path}${ts}${s.access_token}${s.shop_id}`,
+  );
+  const qs = new URLSearchParams({
+    partner_id: partnerId,
+    timestamp: String(ts),
+    access_token: s.access_token!,
+    shop_id: s.shop_id!,
+    sign: signature,
+  });
+  const res = await fetch(`${apiBase()}${path}?${qs.toString()}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (raw) {
+    const ct = res.headers.get("content-type") ?? "";
+    if (res.ok && !ct.includes("application/json")) {
+      return { __binary: new Uint8Array(await res.arrayBuffer()) };
+    }
+    const j: any = await res.json().catch(() => ({}));
+    throw new Error(
+      `Shopee API error [${res.status}] ${j?.error ?? ""}: ${j?.message ?? "tidak diketahui"}`,
+    );
+  }
+  const json: any = await res.json().catch(() => ({}));
+  if (!res.ok || (json?.error && json.error !== "")) {
+    throw new Error(
+      `Shopee API error [${res.status}] ${json?.error ?? ""}: ${json?.message ?? "tidak diketahui"}`,
+    );
+  }
+  return json;
+}
+
+/** Buang teks yang di-mask Shopee (contoh: "****", "*a*"). */
+function unmask(v: unknown): string {
+  const s = String(v ?? "").trim();
+  if (!s) return "";
+  if (/^[\s*]+$/.test(s)) return "";
+  const stars = (s.match(/\*/g) ?? []).length;
+  if (stars > 0 && stars >= s.replace(/\s/g, "").length / 2) return "";
+  return s.replace(/\*+/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
+
 export type ShopeeOrderPreview = {
   order_sn: string;
   status: string;
@@ -268,13 +320,14 @@ function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order
   const product = items.map((i) => i?.item_name).filter(Boolean).join(" | ") || "(tanpa nama produk)";
   const paket = items.map((i) => i?.model_name).filter(Boolean).join(" | ") || "";
   const addr = d?.recipient_address ?? {};
-  // Alamat lengkap pembeli (fallback: susun dari bagian alamat)
-  const kota =
-    String(addr?.full_address ?? "").trim() ||
-    [addr?.district, addr?.city, addr?.state, addr?.zipcode]
-      .map((v: any) => String(v ?? "").trim())
-      .filter(Boolean)
-      .join(", ");
+  // Shopee menyensor sebagian data penerima ("****"). Bersihkan dulu, lalu
+  // susun dari bagian alamat yang tidak disensor.
+  const parts = [addr?.district, addr?.city, addr?.state, addr?.zipcode]
+    .map((v: any) => unmask(v))
+    .filter(Boolean);
+  const full = unmask(addr?.full_address);
+  const kota = full || parts.join(", ");
+
   // Penghasilan Akhir (escrow) bila tersedia, jika tidak fallback ke total pembayaran pembeli
   const escrow = Number(d?.__escrow_amount ?? 0);
   const total = escrow > 0 ? escrow : Number(d?.total_amount ?? 0);
@@ -282,7 +335,7 @@ function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order
   return {
     order_sn: String(d?.order_sn ?? ""),
     status: String(d?.order_status ?? ""),
-    buyer: String(d?.buyer_username ?? addr?.name ?? ""),
+    buyer: unmask(d?.buyer_username) || unmask(addr?.name),
     kota,
     product,
     paket,
@@ -565,4 +618,76 @@ export async function disconnectShop() {
     })
     .eq("id", 1);
   if (error) throw new Error(error.message);
+}
+
+/* ------------------------------------------------------------------ */
+/* Label / Resi resmi Shopee (Shipping Document PDF)                    */
+/* ------------------------------------------------------------------ */
+
+const DOC_TYPE = "THERMAL_AIR_WAYBILL";
+
+function b64(bytes: Uint8Array): string {
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+/** Ambil PDF resi resmi Shopee untuk satu order_sn (base64). */
+export async function fetchShopeeLabelBase64(orderSn: string): Promise<string> {
+  const sn = orderSn.trim();
+  if (!sn) throw new Error("order_sn kosong");
+
+  // 1. Minta Shopee menyiapkan dokumen
+  try {
+    await shopPost("/api/v2/logistics/create_shipping_document", {
+      shipping_document_type: DOC_TYPE,
+      order_list: [{ order_sn: sn }],
+    });
+  } catch (e: any) {
+    // Dokumen mungkin sudah pernah dibuat — lanjut cek status
+    const msg = String(e?.message ?? "");
+    if (!/already|exist|processing/i.test(msg)) {
+      // tetap lanjut, biar status yang menentukan
+    }
+  }
+
+  // 2. Tunggu sampai READY
+  let ready = false;
+  for (let i = 0; i < 10; i++) {
+    const res: any = await shopPost("/api/v2/logistics/get_shipping_document_result", {
+      shipping_document_type: DOC_TYPE,
+      order_list: [{ order_sn: sn }],
+    });
+    const r = res?.response?.result_list?.[0];
+    const st = String(r?.status ?? "").toUpperCase();
+    if (st === "READY") { ready = true; break; }
+    if (st === "FAILED") {
+      throw new Error(`Shopee gagal menyiapkan resi: ${r?.fail_message ?? r?.fail_error ?? "tidak diketahui"}`);
+    }
+    await new Promise((r2) => setTimeout(r2, 1200));
+  }
+  if (!ready) throw new Error("Resi Shopee belum siap, coba lagi beberapa saat lagi.");
+
+  // 3. Unduh PDF
+  const out: any = await shopPost(
+    "/api/v2/logistics/download_shipping_document",
+    { shipping_document_type: DOC_TYPE, order_list: [{ order_sn: sn }] },
+    true,
+  );
+  const bytes: Uint8Array | undefined = out?.__binary;
+  if (!bytes || bytes.length === 0) throw new Error("File resi Shopee kosong");
+  return b64(bytes);
+}
+
+/** Cari order_sn Shopee dari order internal. */
+export async function findShopeeOrderSn(orderId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("shopee_order_map")
+    .select("order_sn")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  return (data as any)?.order_sn ?? null;
 }
