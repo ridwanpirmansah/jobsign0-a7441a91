@@ -352,10 +352,12 @@ function ShopeePage() {
                     {r.order_sn} · {r.buyer || "-"} · {r.kota || "-"} · {r.co_date ?? "-"}
                   </p>
                   <p className="text-xs mt-1">
-                    {rupiah(r.total)}
+                    {rupiah(r.total)} <span className="text-muted-foreground">(penghasilan akhir)</span>
                     {r.ekspedisi ? ` · ${r.ekspedisi}` : ""}
                     {r.no_resi ? ` · ${r.no_resi}` : ""}
+                    {r.deadline ? ` · DL: ${r.deadline}` : ""}
                   </p>
+
                 </div>
               </div>
             ))}

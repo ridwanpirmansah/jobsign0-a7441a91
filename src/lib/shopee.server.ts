@@ -188,10 +188,14 @@ export type ShopeeOrderPreview = {
   co_date: string | null;
   no_resi: string;
   ekspedisi: string;
+  deadline: string | null;
   buyer_note: string;
   already_imported: boolean;
   order_no: string | null;
 };
+
+/** Status pesanan yang ditarik: siap kirim + sudah diproses. */
+const IMPORTABLE_STATUSES = ["READY_TO_SHIP", "PROCESSED"];
 
 /** Ambil daftar order_sn dalam rentang hari terakhir (dipecah per 15 hari). */
 async function fetchOrderSns(days: number): Promise<string[]> {
@@ -200,24 +204,26 @@ async function fetchOrderSns(days: number): Promise<string[]> {
   const start = now - Math.max(1, Math.min(days, 90)) * 24 * 3600;
   const sns: string[] = [];
 
-  for (let from = start; from < now; from += windowSec) {
-    const to = Math.min(from + windowSec - 1, now);
-    let cursor = "";
-    for (let guard = 0; guard < 20; guard++) {
-      const json = await shopGet("/api/v2/order/get_order_list", {
-        time_range_field: "create_time",
-        time_from: String(from),
-        time_to: String(to),
-        page_size: "100",
-        cursor,
-        order_status: "READY_TO_SHIP",
-        response_optional_fields: "order_status",
-      });
-      const list = json?.response?.order_list ?? [];
-      for (const o of list) if (o?.order_sn) sns.push(String(o.order_sn));
-      if (!json?.response?.more) break;
-      cursor = String(json?.response?.next_cursor ?? "");
-      if (!cursor) break;
+  for (const status of IMPORTABLE_STATUSES) {
+    for (let from = start; from < now; from += windowSec) {
+      const to = Math.min(from + windowSec - 1, now);
+      let cursor = "";
+      for (let guard = 0; guard < 20; guard++) {
+        const json = await shopGet("/api/v2/order/get_order_list", {
+          time_range_field: "create_time",
+          time_from: String(from),
+          time_to: String(to),
+          page_size: "100",
+          cursor,
+          order_status: status,
+          response_optional_fields: "order_status",
+        });
+        const list = json?.response?.order_list ?? [];
+        for (const o of list) if (o?.order_sn) sns.push(String(o.order_sn));
+        if (!json?.response?.more) break;
+        cursor = String(json?.response?.next_cursor ?? "");
+        if (!cursor) break;
+      }
     }
   }
   return Array.from(new Set(sns));
@@ -251,14 +257,22 @@ async function fetchOrderSnsAllStatus(days: number): Promise<string[]> {
   return Array.from(new Set(sns));
 }
 
+function ymd(sec: unknown): string | null {
+  const n = Number(sec ?? 0);
+  if (!n) return null;
+  return new Date(n * 1000).toISOString().slice(0, 10);
+}
+
 function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order_no"> {
   const items: any[] = d?.item_list ?? [];
   const product = items.map((i) => i?.item_name).filter(Boolean).join(" | ") || "(tanpa nama produk)";
   const paket = items.map((i) => i?.model_name).filter(Boolean).join(" | ") || "";
   const addr = d?.recipient_address ?? {};
   const kota = String(addr?.city ?? addr?.district ?? "").replace(/^KOTA\s+/i, "").trim();
-  const total = Number(d?.total_amount ?? 0);
-  const co = d?.create_time ? new Date(Number(d.create_time) * 1000) : null;
+  // Penghasilan Akhir (escrow) bila tersedia, jika tidak fallback ke total pembayaran pembeli
+  const escrow = Number(d?.__escrow_amount ?? 0);
+  const total = escrow > 0 ? escrow : Number(d?.total_amount ?? 0);
+  const pkg = d?.package_list?.[0] ?? {};
   return {
     order_sn: String(d?.order_sn ?? ""),
     status: String(d?.order_status ?? ""),
@@ -267,11 +281,36 @@ function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order
     product,
     paket,
     total,
-    co_date: co ? co.toISOString().slice(0, 10) : null,
-    no_resi: String(d?.package_list?.[0]?.tracking_number ?? d?.tracking_number ?? ""),
-    ekspedisi: String(d?.shipping_carrier ?? ""),
+    co_date: ymd(d?.create_time),
+    no_resi: String(d?.__tracking_number ?? pkg?.tracking_number ?? d?.tracking_number ?? ""),
+    ekspedisi: String(
+      pkg?.shipping_carrier ?? d?.shipping_carrier ?? "",
+    ),
+    deadline: ymd(d?.ship_by_date ?? pkg?.ship_by_date),
     buyer_note: String(d?.message_to_seller ?? ""),
   };
+}
+
+/** Penghasilan Akhir per pesanan (escrow). Gagal = 0 (fallback ke total). */
+async function fetchEscrowAmount(orderSn: string): Promise<number> {
+  try {
+    const json = await shopGet("/api/v2/payment/get_escrow_detail", { order_sn: orderSn });
+    const inc = json?.response?.order_income ?? {};
+    const val = Number(inc?.escrow_amount ?? json?.response?.escrow_amount ?? 0);
+    return Number.isFinite(val) ? val : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** No resi dari logistik bila detail pesanan belum menyertakannya. */
+async function fetchTrackingNumber(orderSn: string): Promise<string> {
+  try {
+    const json = await shopGet("/api/v2/logistics/get_tracking_number", { order_sn: orderSn });
+    return String(json?.response?.tracking_number ?? "");
+  } catch {
+    return "";
+  }
 }
 
 async function fetchDetails(sns: string[]) {
@@ -281,12 +320,21 @@ async function fetchDetails(sns: string[]) {
     const json = await shopGet("/api/v2/order/get_order_detail", {
       order_sn_list: chunk.join(","),
       response_optional_fields:
-        "buyer_username,recipient_address,item_list,total_amount,order_status,message_to_seller,package_list,shipping_carrier,create_time",
+        "buyer_username,recipient_address,item_list,total_amount,order_status,message_to_seller,package_list,shipping_carrier,create_time,ship_by_date",
     });
     out.push(...(json?.response?.order_list ?? []));
   }
+  // lengkapi Penghasilan Akhir + no resi
+  for (const d of out) {
+    const sn = String(d?.order_sn ?? "");
+    if (!sn) continue;
+    d.__escrow_amount = await fetchEscrowAmount(sn);
+    const existingResi = d?.package_list?.[0]?.tracking_number ?? d?.tracking_number ?? "";
+    if (!existingResi) d.__tracking_number = await fetchTrackingNumber(sn);
+  }
   return out;
 }
+
 
 export async function previewOrders(days: number): Promise<ShopeeOrderPreview[]> {
   const sns = await fetchOrderSns(days);
@@ -338,6 +386,9 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
     const patch: Record<string, any> = {};
     if (p.no_resi) patch.no_resi = p.no_resi;
     if (p.ekspedisi) patch.ekspedisi = p.ekspedisi;
+    if (p.deadline) patch.deadline = p.deadline;
+    if (p.total > 0) patch.payment = p.total;
+
     if (Object.keys(patch).length > 0) {
       const { error } = await supabaseAdmin.from("orders").update(patch as any).eq("id", existing.order_id);
       if (error) {
@@ -369,7 +420,10 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
       payment: p.total,
       no_resi: p.no_resi || null,
       ekspedisi: p.ekspedisi || null,
+      deadline: p.deadline,
       notes,
+
+
     } as any)
     .select("id")
     .single();
