@@ -775,21 +775,37 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     </Button>
                   )}
                   <Button
-                    type="button" size="icon" variant="outline" title="Print Resi PDF"
-                    disabled={!header.no_resi}
-                    onClick={() => printResiPdf({
-                      no_resi: header.no_resi,
-                      ekspedisi: header.ekspedisi,
-                      co_date: header.co_date,
-                      kota: header.kota,
-                      text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
-                      username: header.username,
-                      phone: header.phone,
-                      order_no: header.order_no,
-                    })}
+                    type="button" size="icon" variant="outline"
+                    title={header.source === "shopee" ? "Buka Resi Shopee (PDF)" : "Print Resi PDF"}
+                    disabled={header.source === "shopee" ? !header.id || shopeeLabelLoading : !header.no_resi}
+                    onClick={async () => {
+                      if (header.source === "shopee") {
+                        setShopeeLabelLoading(true);
+                        try {
+                          const { openShopeeLabel } = await import("@/lib/shopee-label");
+                          await openShopeeLabel(header.id!);
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Gagal mengambil resi Shopee");
+                        } finally {
+                          setShopeeLabelLoading(false);
+                        }
+                        return;
+                      }
+                      printResiPdf({
+                        no_resi: header.no_resi,
+                        ekspedisi: header.ekspedisi,
+                        co_date: header.co_date,
+                        kota: header.kota,
+                        text_neon: items.map((i) => i.kind === "custom" ? i.text_neon : (i.manual_name || "Ready Stock")).filter(Boolean).join(", "),
+                        username: header.username,
+                        phone: header.phone,
+                        order_no: header.order_no,
+                      });
+                    }}
                   >
                     <Printer className="h-4 w-4"/>
                   </Button>
+
                 </div>
               </div>
               {header.id && header.no_resi && (
