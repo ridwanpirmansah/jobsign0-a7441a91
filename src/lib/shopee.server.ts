@@ -619,3 +619,75 @@ export async function disconnectShop() {
     .eq("id", 1);
   if (error) throw new Error(error.message);
 }
+
+/* ------------------------------------------------------------------ */
+/* Label / Resi resmi Shopee (Shipping Document PDF)                    */
+/* ------------------------------------------------------------------ */
+
+const DOC_TYPE = "THERMAL_AIR_WAYBILL";
+
+function b64(bytes: Uint8Array): string {
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+/** Ambil PDF resi resmi Shopee untuk satu order_sn (base64). */
+export async function fetchShopeeLabelBase64(orderSn: string): Promise<string> {
+  const sn = orderSn.trim();
+  if (!sn) throw new Error("order_sn kosong");
+
+  // 1. Minta Shopee menyiapkan dokumen
+  try {
+    await shopPost("/api/v2/logistics/create_shipping_document", {
+      shipping_document_type: DOC_TYPE,
+      order_list: [{ order_sn: sn }],
+    });
+  } catch (e: any) {
+    // Dokumen mungkin sudah pernah dibuat — lanjut cek status
+    const msg = String(e?.message ?? "");
+    if (!/already|exist|processing/i.test(msg)) {
+      // tetap lanjut, biar status yang menentukan
+    }
+  }
+
+  // 2. Tunggu sampai READY
+  let ready = false;
+  for (let i = 0; i < 10; i++) {
+    const res: any = await shopPost("/api/v2/logistics/get_shipping_document_result", {
+      shipping_document_type: DOC_TYPE,
+      order_list: [{ order_sn: sn }],
+    });
+    const r = res?.response?.result_list?.[0];
+    const st = String(r?.status ?? "").toUpperCase();
+    if (st === "READY") { ready = true; break; }
+    if (st === "FAILED") {
+      throw new Error(`Shopee gagal menyiapkan resi: ${r?.fail_message ?? r?.fail_error ?? "tidak diketahui"}`);
+    }
+    await new Promise((r2) => setTimeout(r2, 1200));
+  }
+  if (!ready) throw new Error("Resi Shopee belum siap, coba lagi beberapa saat lagi.");
+
+  // 3. Unduh PDF
+  const out: any = await shopPost(
+    "/api/v2/logistics/download_shipping_document",
+    { shipping_document_type: DOC_TYPE, order_list: [{ order_sn: sn }] },
+    true,
+  );
+  const bytes: Uint8Array | undefined = out?.__binary;
+  if (!bytes || bytes.length === 0) throw new Error("File resi Shopee kosong");
+  return b64(bytes);
+}
+
+/** Cari order_sn Shopee dari order internal. */
+export async function findShopeeOrderSn(orderId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("shopee_order_map")
+    .select("order_sn")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  return (data as any)?.order_sn ?? null;
+}
