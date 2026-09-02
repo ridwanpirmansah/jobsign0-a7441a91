@@ -87,7 +87,10 @@ function StatusPage() {
   const [scanResult, setScanResult] = useState<ScanLookup | null>(null);
   const [sortBy, setSortBy] = useState<"co_date_desc" | "co_date_asc" | "deadline_asc" | "deadline_desc" | "progress_asc" | "progress_desc">("co_date_desc");
   const [stepFilter, setStepFilter] = useState<Step | "all">("all");
-  const [previewPayload, setPreviewPayload] = useState<ResiPayload | null>(null);
+  const [previewPayload, setPreviewPayload] = useState<
+    (ResiPayload & { order_id?: string; is_shopee?: boolean }) | null
+  >(null);
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
