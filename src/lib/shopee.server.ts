@@ -551,7 +551,7 @@ export async function importSelected(orderSns: string[]): Promise<ShopeeSyncResu
   const details = await fetchDetails(orderSns);
   for (const d of details) await importDetail(d, result);
   result.ok = true;
-  result.message = `${result.inserted} order baru, ${result.updated} diperbarui, ${result.skipped} dilewati.`;
+  result.message = `${result.inserted} order baru, ${result.updated} diperbarui, ${result.skipped} dilewati.${result.errors.length ? ` ${result.errors.length} resi belum berhasil diimpor; jalankan sync ulang.` : " Semua PDF resi tersedia di webapp."}`;
   await persistStatus("ok", result);
   return result;
 }
@@ -582,7 +582,7 @@ export async function runShopeeSync(force = false): Promise<ShopeeSyncResult> {
     const details = await fetchDetails(sns);
     for (const d of details) await importDetail(d, result);
     result.ok = true;
-    result.message = `${result.inserted} order baru, ${result.updated} diperbarui, ${result.skipped} dilewati.`;
+    result.message = `${result.inserted} order baru, ${result.updated} diperbarui, ${result.skipped} dilewati.${result.errors.length ? ` ${result.errors.length} resi belum berhasil diimpor; sync berikutnya akan mencoba lagi.` : " Semua PDF resi tersedia di webapp."}`;
     await persistStatus("ok", result);
   } catch (e: any) {
     result.message = e?.message ?? "Sync gagal";
