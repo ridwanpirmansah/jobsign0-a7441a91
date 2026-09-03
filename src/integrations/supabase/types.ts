@@ -699,6 +699,7 @@ export type Database = {
           project_id: string | null
           ready_pickup_at: string | null
           repair_cost: number
+          shopee_label_pdf: string | null
           socket_dc: number
           solder_cost: number
           source: Database["public"]["Enums"]["order_source"]
@@ -749,6 +750,7 @@ export type Database = {
           project_id?: string | null
           ready_pickup_at?: string | null
           repair_cost?: number
+          shopee_label_pdf?: string | null
           socket_dc?: number
           solder_cost?: number
           source?: Database["public"]["Enums"]["order_source"]
@@ -799,6 +801,7 @@ export type Database = {
           project_id?: string | null
           ready_pickup_at?: string | null
           repair_cost?: number
+          shopee_label_pdf?: string | null
           socket_dc?: number
           solder_cost?: number
           source?: Database["public"]["Enums"]["order_source"]

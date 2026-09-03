@@ -146,12 +146,37 @@ export const disconnectShopee = createServerFn({ method: "POST" })
 export const getShopeeLabel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { fetchShopeeLabelBase64, findShopeeOrderSn } = await import("./shopee.server");
     try {
+      // Pakai salinan PDF yang sudah diimport ke database bila ada.
+      const { data: orderRow } = await context.supabase
+        .from("orders")
+        .select("shopee_label_pdf")
+        .eq("id", data.order_id)
+        .maybeSingle();
+      const cached = (orderRow as any)?.shopee_label_pdf as string | null | undefined;
+      if (cached) return { ok: true as const, pdf: cached, error: null as string | null };
+
       const sn = await findShopeeOrderSn(data.order_id);
       if (!sn) return { ok: false as const, pdf: null, error: "Order ini bukan hasil import Shopee" };
-      return { ok: true as const, pdf: await fetchShopeeLabelBase64(sn), error: null as string | null };
+      const pdf = await fetchShopeeLabelBase64(sn);
+
+      // Simpan salinan ke database agar preview/print berikutnya tidak memanggil server Shopee lagi.
+      const { error: upErr } = await context.supabase
+        .from("orders")
+        .update({ shopee_label_pdf: pdf } as any)
+        .eq("id", data.order_id);
+      if (upErr) {
+        // RLS bisa menolak update dari sebagian role; coba lewat admin agar cache tetap tersimpan.
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          await supabaseAdmin.from("orders").update({ shopee_label_pdf: pdf } as any).eq("id", data.order_id);
+        } catch {
+          /* cache gagal disimpan — label tetap dikembalikan */
+        }
+      }
+      return { ok: true as const, pdf, error: null as string | null };
     } catch (e: any) {
       return { ok: false as const, pdf: null, error: String(e?.message ?? e) };
     }
