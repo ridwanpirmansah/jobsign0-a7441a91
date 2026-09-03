@@ -489,6 +489,7 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
       .from("shopee_order_map")
       .update({ shopee_status: p.status, raw: d })
       .eq("id", existing.id);
+    await importShopeeShippingAssets(p.order_sn, existing.order_id, p.status, result);
     result.updated++;
     return;
   }
@@ -532,6 +533,7 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
     } as any,
     { onConflict: "order_sn" },
   );
+  await importShopeeShippingAssets(p.order_sn, created.id, p.status, result);
   result.inserted++;
 }
 
@@ -626,6 +628,8 @@ export async function disconnectShop() {
 
 const DOC_TYPE = "THERMAL_AIR_WAYBILL";
 
+type PackageInfo = { package_number?: string; tracking_number?: string };
+
 function b64(bytes: Uint8Array): string {
   let bin = "";
   const chunk = 0x8000;
@@ -638,8 +642,8 @@ function b64(bytes: Uint8Array): string {
 /** Info paket (package_number & tracking_number) untuk order_sn. */
 async function fetchPackageInfo(
   orderSn: string,
-): Promise<{ package_number?: string; tracking_number?: string }> {
-  const info: { package_number?: string; tracking_number?: string } = {};
+): Promise<PackageInfo> {
+  const info: PackageInfo = {};
   try {
     const json = await shopGet("/api/v2/order/get_order_detail", {
       order_sn_list: orderSn,
@@ -662,6 +666,122 @@ function orderItem(sn: string, info: { package_number?: string }) {
   const item: Record<string, unknown> = { order_sn: sn };
   if (info.package_number) item.package_number = info.package_number;
   return item;
+}
+
+function requiredFields(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  return value === true ? ["required"] : [];
+}
+
+function firstNumber(source: any, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = Number(source?.[key]);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return null;
+}
+
+/**
+ * Atur pengiriman untuk pesanan READY_TO_SHIP yang belum mempunyai resi.
+ * Parameter pickup/dropoff selalu dipilih dari opsi yang dikembalikan Shopee,
+ * sehingga panggilan ini tetap valid untuk kurir yang berbeda-beda.
+ */
+async function ensureShipmentArranged(orderSn: string, info: PackageInfo): Promise<PackageInfo> {
+  if (info.tracking_number) return info;
+
+  const params: Record<string, string> = { order_sn: orderSn };
+  if (info.package_number) params.package_number = info.package_number;
+  const json = await shopGet("/api/v2/logistics/get_shipping_parameter", params);
+  const response = json?.response ?? {};
+  const needed = response?.info_needed ?? {};
+  const body: Record<string, unknown> = { order_sn: orderSn };
+  if (info.package_number) body.package_number = info.package_number;
+
+  const pickupFields = requiredFields(needed?.pickup);
+  const dropoffFields = requiredFields(needed?.dropoff);
+  const nonIntegratedFields = requiredFields(needed?.non_integrated);
+
+  if (pickupFields.length > 0) {
+    const address = response?.pickup?.address_list?.[0];
+    const slot = address?.time_slot_list?.[0];
+    const addressId = firstNumber(address, ["address_id"]);
+    const pickupTimeId = firstNumber(slot, ["pickup_time_id", "time_slot_id"]);
+    if (!addressId || !pickupTimeId) {
+      throw new Error("Shopee belum menyediakan alamat atau jadwal pickup yang dapat dipilih");
+    }
+    body.pickup = { address_id: addressId, pickup_time_id: pickupTimeId };
+  } else if (dropoffFields.length > 0) {
+    const branch = response?.dropoff?.branch_list?.[0];
+    const branchId = firstNumber(branch, ["branch_id"]);
+    const slug = String(response?.dropoff?.slug ?? branch?.slug ?? "").trim();
+    const dropoff: Record<string, unknown> = {};
+    if (branchId) dropoff.branch_id = branchId;
+    if (slug) dropoff.slug = slug;
+    if (dropoffFields.includes("sender_real_name")) {
+      const sender = String(response?.dropoff?.sender_real_name ?? "").trim();
+      if (!sender) throw new Error("Shopee meminta nama pengirim untuk dropoff");
+      dropoff.sender_real_name = sender;
+    }
+    if (!branchId && !slug && dropoffFields.some((field) => field !== "sender_real_name")) {
+      throw new Error("Shopee belum menyediakan cabang dropoff yang dapat dipilih");
+    }
+    body.dropoff = dropoff;
+  } else if (nonIntegratedFields.length > 0) {
+    if (!info.tracking_number) {
+      throw new Error("Kurir non-integrasi membutuhkan nomor resi dari Shopee terlebih dahulu");
+    }
+    body.non_integrated = { tracking_number: info.tracking_number };
+  } else {
+    // Sebagian kanal tidak meminta parameter tambahan.
+  }
+
+  try {
+    await shopPost("/api/v2/logistics/ship_order", body);
+  } catch (error: any) {
+    const message = String(error?.message ?? "");
+    if (!/already|duplicate|processed|shipped|arranged|not_ready_to_ship/i.test(message)) throw error;
+  }
+
+  let refreshed = info;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    refreshed = await fetchPackageInfo(orderSn);
+    if (refreshed.tracking_number) return refreshed;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  return refreshed;
+}
+
+/** Impor resi dan PDF pada saat sinkronisasi; preview tidak pernah memanggil Shopee. */
+async function importShopeeShippingAssets(
+  orderSn: string,
+  orderId: string,
+  status: string,
+  result: ShopeeSyncResult,
+) {
+  const { data: order, error: readError } = await supabaseAdmin
+    .from("orders")
+    .select("shopee_label_pdf, no_resi")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (readError) {
+    result.errors.push(`${orderSn}: gagal membaca resi tersimpan (${readError.message})`);
+    return;
+  }
+  if ((order as any)?.shopee_label_pdf) return;
+
+  try {
+    let info = await fetchPackageInfo(orderSn);
+    if (!info.tracking_number && status.toUpperCase() === "READY_TO_SHIP") {
+      info = await ensureShipmentArranged(orderSn, info);
+    }
+    const pdf = await fetchShopeeLabelBase64(orderSn);
+    const patch: Record<string, unknown> = { shopee_label_pdf: pdf };
+    if (info.tracking_number) patch.no_resi = info.tracking_number;
+    const { error } = await supabaseAdmin.from("orders").update(patch as any).eq("id", orderId);
+    if (error) throw new Error(error.message);
+  } catch (error: any) {
+    result.errors.push(`${orderSn}: order masuk, tetapi PDF resi belum terimpor (${String(error?.message ?? error)})`);
+  }
 }
 
 /** Minta Shopee membuat dokumen resi. */
