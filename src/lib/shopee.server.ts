@@ -635,52 +635,109 @@ function b64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
+/** Info paket (package_number & tracking_number) untuk order_sn. */
+async function fetchPackageInfo(
+  orderSn: string,
+): Promise<{ package_number?: string; tracking_number?: string }> {
+  const info: { package_number?: string; tracking_number?: string } = {};
+  try {
+    const json = await shopGet("/api/v2/order/get_order_detail", {
+      order_sn_list: orderSn,
+      response_optional_fields: "package_list",
+    });
+    const pkg = json?.response?.order_list?.[0]?.package_list?.[0];
+    if (pkg?.package_number) info.package_number = String(pkg.package_number);
+    if (pkg?.tracking_number) info.tracking_number = String(pkg.tracking_number);
+  } catch {
+    /* abaikan */
+  }
+  if (!info.tracking_number) {
+    const tn = await fetchTrackingNumber(orderSn);
+    if (tn) info.tracking_number = tn;
+  }
+  return info;
+}
+
+function orderItem(sn: string, info: { package_number?: string }) {
+  const item: Record<string, unknown> = { order_sn: sn };
+  if (info.package_number) item.package_number = info.package_number;
+  return item;
+}
+
+/** Minta Shopee membuat dokumen resi. */
+async function createShippingDocument(
+  sn: string,
+  info: { package_number?: string; tracking_number?: string },
+) {
+  const item: Record<string, unknown> = {
+    ...orderItem(sn, info),
+    shipping_document_type: DOC_TYPE,
+  };
+  if (info.tracking_number) item.tracking_number = info.tracking_number;
+  try {
+    await shopPost("/api/v2/logistics/create_shipping_document", { order_list: [item] });
+  } catch (e: any) {
+    const msg = String(e?.message ?? "");
+    // Dokumen sudah pernah dibuat → aman dilanjutkan.
+    if (!/already|exist|created|processing|duplicate/i.test(msg)) throw e;
+  }
+}
+
+/** Tunggu dokumen siap diunduh. */
+async function waitDocumentReady(sn: string, info: { package_number?: string }) {
+  for (let i = 0; i < 12; i++) {
+    const res: any = await shopPost("/api/v2/logistics/get_shipping_document_result", {
+      shipping_document_type: DOC_TYPE,
+      order_list: [orderItem(sn, info)],
+    });
+    const r = res?.response?.result_list?.[0];
+    const st = String(r?.status ?? "").toUpperCase();
+    if (st === "READY") return true;
+    if (st === "FAILED") {
+      throw new Error(
+        `Shopee gagal menyiapkan resi: ${r?.fail_message ?? r?.fail_error ?? "tidak diketahui"}`,
+      );
+    }
+    await new Promise((r2) => setTimeout(r2, 1200));
+  }
+  return false;
+}
+
 /** Ambil PDF resi resmi Shopee untuk satu order_sn (base64). */
 export async function fetchShopeeLabelBase64(orderSn: string): Promise<string> {
   const sn = orderSn.trim();
   if (!sn) throw new Error("order_sn kosong");
 
-  // 1. Minta Shopee menyiapkan dokumen
-  try {
-    await shopPost("/api/v2/logistics/create_shipping_document", {
-      shipping_document_type: DOC_TYPE,
-      order_list: [{ order_sn: sn }],
-    });
-  } catch (e: any) {
-    // Dokumen mungkin sudah pernah dibuat — lanjut cek status
-    const msg = String(e?.message ?? "");
-    if (!/already|exist|processing/i.test(msg)) {
-      // tetap lanjut, biar status yang menentukan
+  const info = await fetchPackageInfo(sn);
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await createShippingDocument(sn, info);
+    const ready = await waitDocumentReady(sn, info);
+    if (!ready) {
+      if (attempt === 0) continue;
+      throw new Error("Resi Shopee belum siap, coba lagi beberapa saat lagi.");
+    }
+    try {
+      const out: any = await shopPost(
+        "/api/v2/logistics/download_shipping_document",
+        { shipping_document_type: DOC_TYPE, order_list: [orderItem(sn, info)] },
+        true,
+      );
+      const bytes: Uint8Array | undefined = out?.__binary;
+      if (!bytes || bytes.length === 0) throw new Error("File resi Shopee kosong");
+      return b64(bytes);
+    } catch (e: any) {
+      const msg = String(e?.message ?? "");
+      // Dokumen belum benar-benar dibuat → ulangi sekali dari awal.
+      if (attempt === 0 && /should_print_first|should print|not_ready|no_shipping_document/i.test(msg)) {
+        continue;
+      }
+      throw e;
     }
   }
-
-  // 2. Tunggu sampai READY
-  let ready = false;
-  for (let i = 0; i < 10; i++) {
-    const res: any = await shopPost("/api/v2/logistics/get_shipping_document_result", {
-      shipping_document_type: DOC_TYPE,
-      order_list: [{ order_sn: sn }],
-    });
-    const r = res?.response?.result_list?.[0];
-    const st = String(r?.status ?? "").toUpperCase();
-    if (st === "READY") { ready = true; break; }
-    if (st === "FAILED") {
-      throw new Error(`Shopee gagal menyiapkan resi: ${r?.fail_message ?? r?.fail_error ?? "tidak diketahui"}`);
-    }
-    await new Promise((r2) => setTimeout(r2, 1200));
-  }
-  if (!ready) throw new Error("Resi Shopee belum siap, coba lagi beberapa saat lagi.");
-
-  // 3. Unduh PDF
-  const out: any = await shopPost(
-    "/api/v2/logistics/download_shipping_document",
-    { shipping_document_type: DOC_TYPE, order_list: [{ order_sn: sn }] },
-    true,
-  );
-  const bytes: Uint8Array | undefined = out?.__binary;
-  if (!bytes || bytes.length === 0) throw new Error("File resi Shopee kosong");
-  return b64(bytes);
+  throw new Error("Gagal mengunduh resi Shopee, coba lagi.");
 }
+
 
 /** Cari order_sn Shopee dari order internal. */
 export async function findShopeeOrderSn(orderId: string): Promise<string | null> {
