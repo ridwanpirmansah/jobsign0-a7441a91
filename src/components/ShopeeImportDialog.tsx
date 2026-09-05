@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -71,23 +71,31 @@ export function ShopeeImportDialog({
     [picked],
   );
 
-  const handleOpen = async (v: boolean) => {
-    onOpenChange(v);
-    if (v) {
-      setConnected(null);
-      try {
-        const s: any = await statusFn();
-        setConnected(!!s?.connected);
-        if (s?.connected) previewMut.mutate();
-      } catch (e: any) {
-        setConnected(false);
-        toast.error(e?.message ?? "Gagal memeriksa status Shopee");
+  const refreshOrders = async () => {
+    setConnected(null);
+    try {
+      const status: any = await statusFn();
+      const isConnected = !!status?.connected;
+      setConnected(isConnected);
+      if (!isConnected) {
+        toast.error("Toko Shopee belum terhubung");
+        return;
       }
+      previewMut.mutate();
+    } catch (e: any) {
+      setConnected(false);
+      toast.error(e?.message ?? "Gagal memeriksa status Shopee");
     }
   };
 
+  useEffect(() => {
+    if (open) void refreshOrders();
+    // Hanya dijalankan ketika dialog dibuka; nilai hari dimuat ulang lewat tombol.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   return (
-    <Dialog open={open} onOpenChange={handleOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 w-[calc(100vw-0.75rem)]"
         onOpenAutoFocus={(e) => e.preventDefault()}
@@ -126,8 +134,8 @@ export function ShopeeImportDialog({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => previewMut.mutate()}
-            disabled={previewMut.isPending || connected !== true}
+            onClick={() => void refreshOrders()}
+            disabled={previewMut.isPending}
           >
             <RefreshCw className={`h-4 w-4 mr-1 ${previewMut.isPending ? "animate-spin" : ""}`} />
             {previewMut.isPending ? "Memuat..." : "Muat Ulang"}
