@@ -35,6 +35,7 @@ import { id as idLocale } from "date-fns/locale";
 import { generateResiNumber, printResiPdf } from "@/lib/resi-pdf";
 import { WorkflowTabs } from "@/components/WorkflowTabs";
 import { TablePagination } from "@/components/TablePagination";
+import { ShopeeImportDialog } from "@/components/ShopeeImportDialog";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: () => <OrdersPage mode="orders" />,
@@ -327,6 +328,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   }, [pricesQ.data]);
 
   const [open, setOpen] = useState(false);
+  const [shopeeOpen, setShopeeOpen] = useState(false);
   const [filter, setFilter] = useState("");
   const [srcFilter, setSrcFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -711,6 +713,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               : "Semua orderan ditampilkan disini"}
           </p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {!isReady && !isDraft && (
+            <Button
+              variant="outline"
+              className="border-orange-300 text-orange-700 hover:bg-orange-50"
+              onClick={() => setShopeeOpen(true)}
+            >
+              <ShoppingBag className="h-4 w-4 mr-1 text-orange-500" /> Import Shopee
+            </Button>
+          )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button
@@ -930,7 +942,19 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
+      <ShopeeImportDialog
+        open={shopeeOpen}
+        onOpenChange={setShopeeOpen}
+        onImported={() => {
+          qc.invalidateQueries({ queryKey: ["orders"] });
+          qc.invalidateQueries({ queryKey: ["draft-available"] });
+          qc.invalidateQueries({ queryKey: ["rs-available"] });
+        }}
+      />
       </div>
+
+
 
 
       <Card>
