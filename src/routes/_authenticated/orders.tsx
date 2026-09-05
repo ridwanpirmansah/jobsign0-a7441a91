@@ -712,6 +712,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
               : "Semua orderan ditampilkan disini"}
           </p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {!isReady && !isDraft && (
+            <Button
+              variant="outline"
+              className="border-orange-300 text-orange-700 hover:bg-orange-50"
+              onClick={() => setShopeeOpen(true)}
+            >
+              <ShoppingBag className="h-4 w-4 mr-1 text-orange-500" /> Import Shopee
+            </Button>
+          )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button
