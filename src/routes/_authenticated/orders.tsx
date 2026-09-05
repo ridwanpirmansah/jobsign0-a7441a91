@@ -952,6 +952,9 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
           qc.invalidateQueries({ queryKey: ["rs-available"] });
         }}
       />
+      </div>
+
+
 
 
       <Card>
