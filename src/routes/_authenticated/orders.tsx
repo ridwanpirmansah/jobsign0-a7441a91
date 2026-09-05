@@ -942,7 +942,16 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
+      <ShopeeImportDialog
+        open={shopeeOpen}
+        onOpenChange={setShopeeOpen}
+        onImported={() => {
+          qc.invalidateQueries({ queryKey: ["orders"] });
+          qc.invalidateQueries({ queryKey: ["draft-available"] });
+          qc.invalidateQueries({ queryKey: ["rs-available"] });
+        }}
+      />
 
 
       <Card>
