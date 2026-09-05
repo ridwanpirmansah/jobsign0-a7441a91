@@ -328,6 +328,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   }, [pricesQ.data]);
 
   const [open, setOpen] = useState(false);
+  const [shopeeOpen, setShopeeOpen] = useState(false);
   const [filter, setFilter] = useState("");
   const [srcFilter, setSrcFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
