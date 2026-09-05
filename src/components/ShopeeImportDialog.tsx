@@ -73,13 +73,15 @@ export function ShopeeImportDialog({
 
   const handleOpen = async (v: boolean) => {
     onOpenChange(v);
-    if (v && connected === null) {
+    if (v) {
+      setConnected(null);
       try {
         const s: any = await statusFn();
         setConnected(!!s?.connected);
         if (s?.connected) previewMut.mutate();
-      } catch {
+      } catch (e: any) {
         setConnected(false);
+        toast.error(e?.message ?? "Gagal memeriksa status Shopee");
       }
     }
   };
