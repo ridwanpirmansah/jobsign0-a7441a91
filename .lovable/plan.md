@@ -49,6 +49,16 @@ Tujuan: webapp tetap berjalan penuh meski akun Lovable turun ke Free / Cloud dih
 - Anda tetap bisa meminta saya bantu menulis kode, tapi saya tidak bisa langsung menyentuh deployment baru; saya akan memberikan instruksi atau patch yang Anda/team terapkan di repo tersebut.
 - Jika ingin tetap memakai editor Lovable untuk mengedit visual, solusinya adalah membuat project Lovable baru sebagai "prototype editor", lalu hasilnya disalin ke repo production sendiri.
 
+## Preview Seperti di Lovable
+- Editor visual + preview instan seperti di Lovable tidak tersedia di luar Lovable.
+- Pengganti yang mirip: Vercel otomatis membuat **preview deployment** untuk setiap branch/pull request, jadi setiap perubahan bisa dicek dulu di URL sementara sebelum digabung ke production. Hasilnya setara untuk kebutuhan "coba dulu sebelum live".
+
+## Deployment Vercel yang Sudah Ada (newjobsign.vercel.app) — Data Tidak Tampil
+- Gejala "beberapa data tidak tampil" hampir pasti karena environment variable belum diisi di dashboard Vercel: minimal `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY` (untuk browser), plus `SUPABASE_URL` dan `SUPABASE_PUBLISHABLE_KEY` (untuk server function). Tanpa itu, halaman render tapi query data gagal.
+- Perlu diperiksa juga: `SUPABASE_SERVICE_ROLE_KEY` **tidak tersedia** di Lovable Cloud, jadi semua kode yang memakai `supabaseAdmin` (import Shopee, sinkronisasi, dsb.) tidak bisa berfungsi di Vercel selama backend masih Lovable Cloud — ini alasan kuat untuk pindah database dulu (langkah 2), baru arahkan Vercel ke database baru.
+- Langkah pemeriksaan yang akan saya lakukan saat eksekusi: audit semua pemakaian env dan `supabaseAdmin` di kode, buat daftar env yang wajib diisi di Vercel, dan uji ulang halaman yang datanya kosong.
+
+
 
 ## Technical Details
 - Migrasi DB: `supabase/migrations/*.sql` dijalankan berurutan via `supabase db push` atau SQL editor.
