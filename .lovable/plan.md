@@ -43,6 +43,13 @@ Tujuan: webapp tetap berjalan penuh meski akun Lovable turun ke Free / Cloud dih
 - Selama masih memakai editor Lovable, Cloud tidak bisa dilepas dari project ini; migrasi berarti project berjalan di repo GitHub + hosting sendiri, dan perubahan selanjutnya dilakukan di repo tersebut.
 - Biaya perkiraan: Supabase Cloud gratis (batas 500 MB database), Cloudflare Workers gratis untuk trafik kecil-menengah, VPS opsional mulai ±$5/bulan bila ingin self-host penuh.
 
+## Upgrade Fitur Setelah Cloud Sendiri
+- Bisa. Setelah migrasi selesai, semua perubahan fitur dilakukan langsung di repository GitHub (kode tetap milik Anda).
+- Cara kerjanya: edit kode di lokal/IDE atau GitHub Codespaces → commit → push → CI/CD deploy otomatis ke hosting yang dipilih (Cloudflare Workers / VPS).
+- Anda tetap bisa meminta saya bantu menulis kode, tapi saya tidak bisa langsung menyentuh deployment baru; saya akan memberikan instruksi atau patch yang Anda/team terapkan di repo tersebut.
+- Jika ingin tetap memakai editor Lovable untuk mengedit visual, solusinya adalah membuat project Lovable baru sebagai "prototype editor", lalu hasilnya disalin ke repo production sendiri.
+
+
 ## Technical Details
 - Migrasi DB: `supabase/migrations/*.sql` dijalankan berurutan via `supabase db push` atau SQL editor.
 - Ekspor data: `pg_dump`-style `COPY` per tabel via tool SQL, atau perluas `/owner/backup` agar mencakup semua tabel.
