@@ -60,29 +60,26 @@ Di Google Cloud Console, tambahkan authorized redirect URI:
 
 ## 4. Isi environment variable di Vercel
 
-Buka **Project Settings -> Environment Variables** di Vercel, tambahkan untuk
-scope **Production** dan **Preview**:
+Alamat dan kunci publik Supabase Anda (`https://nphecqbddkawstxehbyv.supabase.co`)
+sudah ditulis langsung di berkas `.env.production` dalam repo, jadi **tidak perlu
+diisi lagi** di Vercel.
+
+Yang masih WAJIB diisi di **Project Settings -> Environment Variables**
+(scope **Production** dan **Preview**), karena bersifat rahasia:
 
 | Nama | Isi |
 | --- | --- |
-| `SUPABASE_URL` | Project URL Supabase Anda |
-| `SUPABASE_PUBLISHABLE_KEY` | anon / publishable key |
-| `SUPABASE_PROJECT_ID` | project reference id |
-| `SUPABASE_SERVICE_ROLE_KEY` | service_role key |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role key dari Supabase Anda |
 | `SHOPEE_PARTNER_ID` | Partner ID Shopee Open Platform |
 | `SHOPEE_PARTNER_KEY` | Partner Key Shopee Open Platform |
 | `GOOGLE_DRIVE_API_KEY` | API key Google Drive (foto garapan) |
 
-Variabel `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, dan
-`VITE_SUPABASE_PROJECT_ID` **tidak perlu diisi manual** — berkas
-`.env.production` sudah menyalinnya otomatis dari tiga variabel `SUPABASE_*`
-di atas saat build production.
-
-Kalau ingin mengisi manual pun boleh; nilai dari dashboard Vercel selalu menang
-atas isi berkas `.env` di repo.
+Nilai dari dashboard Vercel selalu menang atas isi berkas di repo, jadi Anda
+tetap bisa menimpanya kapan saja.
 
 Setelah menambah/mengubah variabel, jalankan **Redeploy** (build ulang wajib,
 karena nilai `VITE_*` ditanam saat build).
+
 
 ## 5. Integrasi Shopee
 
