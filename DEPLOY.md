@@ -53,10 +53,17 @@ Di Google Cloud Console, tambahkan authorized redirect URI:
 
 ## 3. Pindahkan data lama (opsional)
 
-- Ekspor lewat menu **Backup** di webapp (halaman `/owner/backup`), lalu impor
-  hasilnya ke Supabase baru.
-- Urutan impor yang aman: `profiles`, `user_roles`, `employees`, `customers`,
-  `projects`, `orders`, `order_items`, sisanya.
+- Ekspor lewat menu **Backup Semua (.zip)** di webapp lama (halaman
+  `/owner/backup`), lalu gunakan **Restore Semua (.zip)** di webapp baru.
+- Restore Semua otomatis memproses tabel sesuai urutan relasi, menyesuaikan
+  backup versi lama, dan menyambungkan kembali Order–Project.
+- Akun login lama tidak ikut dipindahkan karena terikat ke sistem autentikasi
+  lama. Seluruh data karyawan tetap dipulihkan tanpa akun. Minta karyawan
+  registrasi di webapp baru, lalu owner menghubungkan akun baru mereka dari
+  halaman **Karyawan**.
+- Hindari restore CSV satu per satu untuk pemindahan lengkap; tabel seperti
+  absensi dan riwayat pengiriman membutuhkan data induk yang dipulihkan lebih
+  dahulu.
 
 ## 4. Isi environment variable di Vercel
 

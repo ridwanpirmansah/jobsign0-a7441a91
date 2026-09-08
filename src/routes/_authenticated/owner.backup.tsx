@@ -122,6 +122,8 @@ function BackupPage() {
     try {
       const zip = await JSZip.loadAsync(file);
       let total = 0;
+      let restoredTables = 0;
+      const sourceRows = new Map<string, any[]>();
       // Restore in declared order to respect FK dependencies.
       for (const t of BACKUP_TABLES) {
         const entry = zip.file(`${t.name}.csv`);
@@ -129,10 +131,18 @@ function BackupPage() {
         const text = await entry.async("string");
         const rows = parseCsv(text);
         if (rows.length === 0) continue;
-        const res = await restoreFn({ data: { table: t.name, rows, mode } });
+        sourceRows.set(t.name, rows);
+        const res = await restoreFn({ data: { table: t.name, rows, mode, phase: "initial" } });
         total += res.inserted;
+        restoredTables += 1;
       }
-      toast.success(`Restore selesai: ${total} baris`);
+
+      const orders = sourceRows.get("orders") ?? [];
+      if (orders.length > 0 && sourceRows.has("projects")) {
+        await restoreFn({ data: { table: "orders", rows: orders, mode: "upsert", phase: "relink" } });
+      }
+
+      toast.success(`Restore selesai: ${total} baris dari ${restoredTables} tabel. Hubungkan akun karyawan secara manual.`);
       qc.invalidateQueries({ queryKey: ["backup-tables"] });
     } catch (e: any) {
       toast.error(e.message);
@@ -156,7 +166,8 @@ function BackupPage() {
           Restore mode <b>Upsert</b> memperbarui/menambahkan baris tanpa menghapus data lain.
           Mode <b>Replace</b> menghapus seluruh isi tabel terlebih dahulu — pastikan file backup lengkap
           sebelum menggunakan mode ini. Restore semua (.zip) mengikuti urutan tabel untuk menjaga
-          relasi antar data.
+          relasi antar data. Akun login lama tidak ikut dipindahkan; data karyawan tetap dipulihkan
+          tanpa akun dan dapat dihubungkan manual setelah karyawan mendaftar kembali.
         </AlertDescription>
       </Alert>
 
@@ -165,6 +176,9 @@ function BackupPage() {
           <CardTitle className="flex items-center gap-2">
             <FileArchive className="h-5 w-5" /> Backup / Restore Semua Tabel
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Gunakan Restore Semua untuk memindahkan database lengkap. Data induk dan turunannya akan diproses dalam urutan yang aman.
+          </p>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button onClick={backupAll} disabled={busy !== null}>
