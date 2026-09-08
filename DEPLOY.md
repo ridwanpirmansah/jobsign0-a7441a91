@@ -67,19 +67,24 @@ Di Google Cloud Console, tambahkan authorized redirect URI:
 
 ## 4. Isi environment variable di Vercel
 
-Alamat dan kunci publik Supabase Anda (`https://nphecqbddkawstxehbyv.supabase.co`)
-sudah ditulis langsung di berkas `.env.production` dalam repo, jadi **tidak perlu
-diisi lagi** di Vercel.
-
-Yang masih WAJIB diisi di **Project Settings -> Environment Variables**
-(scope **Production** dan **Preview**), karena bersifat rahasia:
+Berkas `.env.production` di repo sengaja DIKOSONGKAN, karena berkas itu juga
+ikut terbaca saat publikasi di Lovable dan membuat webapp Lovable menunjuk ke
+Supabase pribadi. Jadi semua nilai diisi di **Project Settings -> Environment
+Variables** Vercel (scope **Production** dan **Preview**):
 
 | Nama | Isi |
 | --- | --- |
-| `SUPABASE_SERVICE_ROLE_KEY` | service_role key dari Supabase Anda |
+| `VITE_SUPABASE_URL` | `https://nphecqbddkawstxehbyv.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | publishable key Supabase Anda |
+| `VITE_SUPABASE_PROJECT_ID` | `nphecqbddkawstxehbyv` |
+| `SUPABASE_URL` | sama dengan `VITE_SUPABASE_URL` |
+| `SUPABASE_PUBLISHABLE_KEY` | sama dengan publishable key |
+| `SUPABASE_PROJECT_ID` | `nphecqbddkawstxehbyv` |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role key dari Supabase Anda (rahasia) |
 | `SHOPEE_PARTNER_ID` | Partner ID Shopee Open Platform |
 | `SHOPEE_PARTNER_KEY` | Partner Key Shopee Open Platform |
 | `GOOGLE_DRIVE_API_KEY` | API key Google Drive (foto garapan) |
+
 
 Nilai dari dashboard Vercel selalu menang atas isi berkas di repo, jadi Anda
 tetap bisa menimpanya kapan saja.
