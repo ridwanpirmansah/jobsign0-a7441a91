@@ -12,11 +12,16 @@ hosting.
 ## 1. Siapkan project Supabase sendiri
 
 1. Buat project baru di https://supabase.com (paket gratis cukup untuk memulai).
-2. Buka **SQL Editor**, lalu jalankan semua berkas di folder `supabase/migrations/`
-   **berurutan sesuai nama berkas** (nama berkas diawali tanggal, jadi urutkan
-   dari yang paling lama).
+2. Buka berkas **`supabase/all_migrations.sql`**, salin **seluruh isinya**,
+   tempel ke **SQL Editor**, lalu klik **Run** sekali. Berkas ini adalah
+   gabungan semua migrasi (81 berkas) yang sudah diurutkan otomatis.
    Ini akan membuat seluruh tabel, aturan akses (RLS), fungsi, dan trigger
    persis seperti yang berjalan sekarang.
+   - Kalau muncul error di tengah jalan, perbaiki lalu jalankan ulang hanya
+     bagian yang gagal (setiap berkas migrasi diberi penanda komentar
+     `-- FILE: ...` agar mudah dicari).
+   - Bila nanti ada migrasi baru dari Lovable, jalankan hanya berkas migrasi
+     baru tersebut — `all_migrations.sql` tidak perlu dijalankan ulang.
 3. Catat tiga nilai dari **Project Settings -> API**:
    - Project URL (`https://xxxx.supabase.co`)
    - Project reference id (`xxxx`)
@@ -78,6 +83,10 @@ karena nilai `VITE_*` ditanam saat build).
 - Sinkronisasi otomatis: tambahkan Vercel Cron yang memanggil
   `POST /api/public/hooks/sync-shopee` setiap jam, dengan header
   `apikey: <SUPABASE_PUBLISHABLE_KEY>`.
+- Penutupan project otomatis 48 jam setelah pickup: tambahkan juga Vercel Cron
+  yang memanggil `POST /api/public/hooks/sync-projects` setiap jam dengan
+  header yang sama. (Penjadwal bawaan database sengaja dinonaktifkan di
+  `all_migrations.sql` karena menunjuk alamat Lovable.)
 
 ## 6. Verifikasi
 
