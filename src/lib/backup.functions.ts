@@ -16,8 +16,8 @@ export const BACKUP_TABLES: { name: string; label: string; onConflict: string }[
   { name: "job_logs", label: "Log Garapan", onConflict: "id" },
   { name: "expenses", label: "Pengeluaran", onConflict: "id" },
   { name: "cashbon", label: "Cashbon", onConflict: "id" },
-  { name: "employee_consumption", label: "Konsumsi Karyawan", onConflict: "id" },
   { name: "payrolls", label: "Payroll", onConflict: "id" },
+  { name: "employee_consumption", label: "Konsumsi Karyawan", onConflict: "id" },
   { name: "attendances", label: "Absensi", onConflict: "id" },
   { name: "attendance_settings", label: "Setelan Absensi", onConflict: "id" },
   { name: "shipment_events", label: "Riwayat Kirim", onConflict: "id" },
@@ -126,9 +126,16 @@ export const backupTable = createServerFn({ method: "POST" })
     return { table: data.table, rows };
   });
 
+type RestoreTableInput = {
+  table: string;
+  rows: any[];
+  mode?: "upsert" | "replace";
+  phase?: RestorePhase;
+};
+
 export const restoreTable = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { table: string; rows: any[]; mode?: "upsert" | "replace" }) =>
+  .inputValidator((d: RestoreTableInput) =>
     z.object({
       table: z.enum(TABLE_NAMES as [string, ...string[]]),
       rows: z.array(z.record(z.any())),
