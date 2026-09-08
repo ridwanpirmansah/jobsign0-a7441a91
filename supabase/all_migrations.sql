@@ -2,12 +2,17 @@
 -- GABUNGAN SELURUH MIGRASI (urut tanggal)
 -- Salin seluruh isi berkas ini ke SQL Editor Supabase, lalu Run sekali.
 -- Dibuat otomatis dari folder supabase/migrations/ (jangan diedit manual).
+--
+-- CATATAN: bagian penjadwal otomatis (pg_cron) sengaja dinonaktifkan di
+-- berkas ini karena menunjuk alamat Lovable. Di Vercel, gunakan Vercel Cron
+-- sebagai gantinya (lihat DEPLOY.md bagian Integrasi Shopee).
 -- ============================================================
 
 
 -- ------------------------------------------------------------
 -- FILE: 20260616062104_6a3a74d0-9060-4e1b-a5b1-c412c82f2f53.sql
 -- ------------------------------------------------------------
+
 
 -- ==========================================
 -- ENUMS
@@ -371,6 +376,7 @@ CREATE POLICY "staff manage payroll" ON public.payrolls FOR ALL USING (public.ha
 -- FILE: 20260616062132_12835de2-7624-470b-ae34-7dde253bfdf1.sql
 -- ------------------------------------------------------------
 
+
 -- helper role checkers: only authenticated callers (used by RLS)
 REVOKE ALL ON FUNCTION public.has_role(uuid, public.app_role) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.is_staff(uuid)                  FROM PUBLIC, anon;
@@ -386,6 +392,7 @@ REVOKE ALL ON FUNCTION public.update_updated_at_column() FROM PUBLIC, anon, auth
 -- ------------------------------------------------------------
 -- FILE: 20260616063510_156593ed-dd1f-47b7-9b89-11dc5b7291b6.sql
 -- ------------------------------------------------------------
+
 
 -- ============ DROP OLD ============
 DROP TABLE IF EXISTS public.payrolls CASCADE;
@@ -727,6 +734,7 @@ CREATE POLICY "owner delete payroll" ON public.payrolls FOR DELETE TO authentica
 -- FILE: 20260616063540_4f1c9663-37e6-4fbb-aff3-8690eb4ba7cc.sql
 -- ------------------------------------------------------------
 
+
 REVOKE ALL ON FUNCTION public.has_role(uuid, public.app_role) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated, service_role;
 
@@ -746,17 +754,20 @@ GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;
 -- ------------------------------------------------------------
 -- FILE: 20260616070624_b0495f72-9475-465f-b3ec-dc5582fc638c.sql
 -- ------------------------------------------------------------
+
 TRUNCATE TABLE public.payrolls, public.attendances, public.job_logs, public.project_assignments, public.projects, public.customers, public.job_rates, public.employees, public.user_roles, public.profiles RESTART IDENTITY CASCADE;
 DELETE FROM auth.users;
 
 -- ------------------------------------------------------------
 -- FILE: 20260616074701_57922524-24b0-49f4-9875-a05c6da4e318.sql
 -- ------------------------------------------------------------
+
 CREATE POLICY "karyawan read active projects" ON public.projects FOR SELECT TO authenticated USING (status IN ('draft','active'));
 
 -- ------------------------------------------------------------
 -- FILE: 20260616075112_d95b5f18-ffaa-4cce-8648-281d3824b13b.sql
 -- ------------------------------------------------------------
+
 
 CREATE OR REPLACE FUNCTION public.get_available_projects()
 RETURNS TABLE(id uuid, code text, title text, status project_status, total_points integer, claimed_points numeric, remaining_points numeric)
@@ -799,6 +810,7 @@ CREATE TRIGGER trg_enforce_project_point_limit
 -- ------------------------------------------------------------
 -- FILE: 20260616080535_05e475e5-93bf-4bfd-b0c6-34131c0e0af5.sql
 -- ------------------------------------------------------------
+
 
 -- Update trigger: enforce limit per (project_id, rate_id)
 CREATE OR REPLACE FUNCTION public.enforce_project_point_limit()
@@ -860,6 +872,7 @@ GRANT EXECUTE ON FUNCTION public.get_project_rate_availability(uuid) TO authenti
 -- ------------------------------------------------------------
 -- FILE: 20260616081629_ecb9b504-f9a6-4196-afe0-eef78125240b.sql
 -- ------------------------------------------------------------
+
 
 -- 1. Allow karyawan to delete their own pending logs
 CREATE POLICY "karyawan delete own pending" ON public.job_logs
@@ -972,6 +985,7 @@ GRANT EXECUTE ON FUNCTION public.attendance_check_in(text) TO authenticated;
 -- ------------------------------------------------------------
 -- FILE: 20260616083223_b9f91f0e-a3b3-4b54-b3d3-cd1b0aee733b.sql
 -- ------------------------------------------------------------
+
 DROP POLICY IF EXISTS "att insert own" ON public.attendances;
 DROP POLICY IF EXISTS "att update own today" ON public.attendances;
 -- Read-own and admin-manage policies remain. All check-in/out writes must now go through
@@ -981,6 +995,7 @@ DROP POLICY IF EXISTS "att update own today" ON public.attendances;
 -- FILE: 20260616085520_3c27a93e-4f6b-4a30-ad5a-d343bdcf2df2.sql
 -- ------------------------------------------------------------
 
+
 ALTER TABLE public.employees
   ADD COLUMN IF NOT EXISTS hourly_rate numeric NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS pay_unit text NOT NULL DEFAULT 'day' CHECK (pay_unit IN ('day','hour'));
@@ -989,6 +1004,7 @@ ALTER TABLE public.employees
 -- ------------------------------------------------------------
 -- FILE: 20260616100351_07ec5652-7813-47bd-92b6-d1aaf952a02e.sql
 -- ------------------------------------------------------------
+
 
 CREATE TABLE public.sync_settings (
   id smallint PRIMARY KEY DEFAULT 1,
@@ -1038,6 +1054,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ------------------------------------------------------------
 -- FILE: 20260616124941_84f6d577-30ea-4c91-a494-398c7ee1295a.sql
 -- ------------------------------------------------------------
+
 
 -- Source enum
 DO $$ BEGIN
@@ -1209,6 +1226,7 @@ CREATE TRIGGER trg_sync_order_project AFTER INSERT OR UPDATE OF order_no, text_n
 -- ------------------------------------------------------------
 -- FILE: 20260617052513_18f941e5-5ef1-4b30-8269-a9145f816ad4.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.attendance_check_in(_token text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1273,11 +1291,13 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260617052706_15e8d76a-6d27-4e2e-a255-0ae60e5e8d60.sql
 -- ------------------------------------------------------------
+
 DELETE FROM public.attendances WHERE date = current_date;
 
 -- ------------------------------------------------------------
 -- FILE: 20260617065723_9a20bfb0-da44-4614-b637-a74d87ef04a5.sql
 -- ------------------------------------------------------------
+
 
 ALTER TABLE public.orders 
   ADD COLUMN IF NOT EXISTS dp numeric NOT NULL DEFAULT 0,
@@ -1329,6 +1349,7 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260617073544_cff58f99-b3b6-4a70-8c77-0ee907e55a90.sql
 -- ------------------------------------------------------------
+
 
 ALTER TABLE public.orders 
   ADD COLUMN IF NOT EXISTS kabel_socket_meter numeric NOT NULL DEFAULT 1,
@@ -1392,11 +1413,13 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260622083102_7c916d22-e49a-4ee0-bd6f-c465a170a966.sql
 -- ------------------------------------------------------------
+
 -- See /tmp/all_migrations.sql — full restore
 
 -- ------------------------------------------------------------
 -- FILE: 20260622083313_a9f11d2a-1988-4588-9a85-c6282d84e10a.sql
 -- ------------------------------------------------------------
+
 -- ============ DROP OLD (no-op for a fresh DB) ============
 DROP TABLE IF EXISTS public.payrolls CASCADE;
 DROP TABLE IF EXISTS public.attendances CASCADE;
@@ -1730,6 +1753,7 @@ GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;
 -- ------------------------------------------------------------
 -- FILE: 20260622083428_a540d2a6-337b-4782-aece-f02360520084.sql
 -- ------------------------------------------------------------
+
 -- get_available_projects (for karyawan)
 CREATE OR REPLACE FUNCTION public.get_available_projects()
 RETURNS TABLE(id uuid, code text, title text, status project_status, total_points integer, claimed_points numeric, remaining_points numeric)
@@ -2040,6 +2064,7 @@ CREATE TRIGGER trg_sync_order_project AFTER INSERT OR UPDATE OF order_no, text_n
 -- FILE: 20260623080420_0887842a-839d-43ab-8234-32f1aff8d160.sql
 -- ------------------------------------------------------------
 
+
 -- 1. Revoke EXECUTE from PUBLIC/anon/authenticated on SECURITY DEFINER functions
 -- Keep authenticated EXECUTE only for functions intentionally callable by signed-in users.
 
@@ -2090,6 +2115,7 @@ CREATE POLICY "owner manage non-owner roles"
 -- ------------------------------------------------------------
 -- FILE: 20260623083512_ffe650e7-c56c-4299-882f-54ef5cc42204.sql
 -- ------------------------------------------------------------
+
 
 -- 1) orders: add status & adaptor_type
 ALTER TABLE public.orders
@@ -2196,6 +2222,7 @@ GRANT EXECUTE ON FUNCTION public.set_attendance_note(uuid, text) TO authenticate
 -- ------------------------------------------------------------
 -- FILE: 20260623085215_b0063dd9-35ed-4e32-a3dd-7f813943bb98.sql
 -- ------------------------------------------------------------
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 CREATE OR REPLACE FUNCTION public.rotate_attendance_secret()
@@ -2221,6 +2248,7 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260623090428_c3647593-e61a-481f-b9c9-43cfe3b60c73.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.get_available_projects()
 RETURNS TABLE(
   id uuid,
@@ -2273,6 +2301,7 @@ GRANT EXECUTE ON FUNCTION public.get_available_projects() TO authenticated;
 -- ------------------------------------------------------------
 -- FILE: 20260624084257_4c95bb24-3486-4431-8266-bda8044441c2.sql
 -- ------------------------------------------------------------
+
 
 -- 1) Fix attendance timezone to Asia/Jakarta (UTC+7)
 CREATE OR REPLACE FUNCTION public.attendance_check_in(_token text)
@@ -2388,6 +2417,7 @@ WHERE status = 'draft' AND project_id IS NOT NULL
 -- FILE: 20260624112555_c307cd4c-f7dd-425c-8ca2-e2296cda35ae.sql
 -- ------------------------------------------------------------
 
+
 CREATE OR REPLACE FUNCTION public.attendance_check_in(_token text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2475,6 +2505,7 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260625025518_e21cefaf-9b90-4482-a022-8169c55eac50.sql
 -- ------------------------------------------------------------
+
 
 ALTER TABLE public.attendances
   ADD COLUMN IF NOT EXISTS break_start timestamptz,
@@ -2577,6 +2608,7 @@ END $function$;
 -- FILE: 20260625031425_01265c42-74c3-4449-a7de-0ce6396025ff.sql
 -- ------------------------------------------------------------
 
+
 -- 1) Fix user_roles RLS: allow owner to manage ANY role including 'owner'
 DROP POLICY IF EXISTS "owner manage non-owner roles" ON public.user_roles;
 CREATE POLICY "owner manage all roles" ON public.user_roles
@@ -2636,6 +2668,7 @@ CREATE TRIGGER trg_cashbon_updated BEFORE UPDATE ON public.cashbon
 -- FILE: 20260626080727_aeec3596-762c-4b22-8e0b-e090bdac3754.sql
 -- ------------------------------------------------------------
 
+
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS biaya_lainnya numeric NOT NULL DEFAULT 0;
 ALTER TABLE public.orders DROP COLUMN IF EXISTS print_cost;
 ALTER TABLE public.orders DROP COLUMN IF EXISTS karet_seal;
@@ -2690,6 +2723,7 @@ UPDATE public.orders SET updated_at = updated_at WHERE id IS NOT NULL;
 -- ------------------------------------------------------------
 -- FILE: 20260626081537_24b735df-8843-46c4-80f7-e3cc763f0327.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.calc_order_costs()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2735,6 +2769,7 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260626081637_32f546e0-bae5-4287-9974-43dbaec8005d.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.orders ALTER COLUMN outdoor_cost DROP NOT NULL;
 ALTER TABLE public.orders ALTER COLUMN outdoor_cost DROP DEFAULT;
 ALTER TABLE public.orders ALTER COLUMN kabel_meter DROP NOT NULL;
@@ -2743,18 +2778,21 @@ ALTER TABLE public.orders ALTER COLUMN kabel_meter DROP DEFAULT;
 -- ------------------------------------------------------------
 -- FILE: 20260629030202_2f6398fc-4e86-4e5e-85c8-44ed79b31eb5.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_status_check;
 ALTER TABLE public.orders ADD CONSTRAINT orders_status_check CHECK (status = ANY (ARRAY['active'::text, 'return'::text, 'draft'::text, 'ready_stock'::text]));
 
 -- ------------------------------------------------------------
 -- FILE: 20260629030911_86e998c5-2dcd-47ae-a952-23aef27b1a2d.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.orders DROP CONSTRAINT orders_status_chk;
 ALTER TABLE public.orders ADD CONSTRAINT orders_status_chk CHECK (status = ANY (ARRAY['active','return','draft','ready_stock']));
 
 -- ------------------------------------------------------------
 -- FILE: 20260629031645_80807b1c-72a4-422e-b84c-b2fa5b06a95a.sql
 -- ------------------------------------------------------------
+
 
 CREATE OR REPLACE FUNCTION public.assign_order_no()
 RETURNS trigger
@@ -2792,6 +2830,7 @@ CREATE TRIGGER trg_assign_order_no
 -- ------------------------------------------------------------
 -- FILE: 20260629044349_4e3e5a4d-0f5e-410b-ac23-94041a38617a.sql
 -- ------------------------------------------------------------
+
 
 -- 1) Tambah kolom reparasi di job_logs
 ALTER TABLE public.job_logs
@@ -2965,6 +3004,7 @@ UPDATE public.orders SET updated_at = now() WHERE repair_cost = 0;
 -- FILE: 20260630073136_c83a8a56-8354-4abb-a84b-263e3585c916.sql
 -- ------------------------------------------------------------
 
+
 CREATE TYPE public.expense_category AS ENUM ('iklan','bahan_pokok','bahan_penunjang','operasional','gaji','utilitas','transportasi','lainnya');
 
 CREATE TABLE public.expenses (
@@ -3022,11 +3062,13 @@ CREATE TRIGGER trg_expenses_defaults
 -- ------------------------------------------------------------
 -- FILE: 20260630084600_e69791f7-13f2-496e-b1bc-ceb68474cb14.sql
 -- ------------------------------------------------------------
+
 ALTER TYPE public.expense_category ADD VALUE IF NOT EXISTS 'packing';
 
 -- ------------------------------------------------------------
 -- FILE: 20260701044857_b99c6413-7910-40a7-9b34-a78ae6f36c92.sql
 -- ------------------------------------------------------------
+
 
 CREATE OR REPLACE FUNCTION public.assign_order_no()
  RETURNS trigger
@@ -3074,11 +3116,13 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260702095907_4d9a60a8-b4bb-4fbd-a912-6070bd930301.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS payment_status text NOT NULL DEFAULT 'lunas' CHECK (payment_status IN ('lunas','hutang'));
 
 -- ------------------------------------------------------------
 -- FILE: 20260704040641_82a2ed64-7166-4c28-b77b-d6c4c52f486e.sql
 -- ------------------------------------------------------------
+
 
 ALTER TABLE public.attendance_settings
   ADD COLUMN IF NOT EXISTS workshop_lat double precision,
@@ -3268,6 +3312,7 @@ END $$;
 -- FILE: 20260706063835_55553a90-e2a5-4289-99ea-e238a614ea53.sql
 -- ------------------------------------------------------------
 
+
 CREATE TABLE public.employee_consumption (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   employee_id uuid NOT NULL REFERENCES public.employees(id) ON DELETE CASCADE,
@@ -3318,6 +3363,7 @@ ALTER TABLE public.payrolls
 -- ------------------------------------------------------------
 -- FILE: 20260706064920_70dc8daa-b5a7-4d57-9063-4d74b2d827c9.sql
 -- ------------------------------------------------------------
+
 
 ALTER TABLE public.employee_consumption
   ADD COLUMN IF NOT EXISTS payment_method text NOT NULL DEFAULT 'cashbon',
@@ -3377,6 +3423,7 @@ UPDATE public.employee_consumption
 -- ------------------------------------------------------------
 -- FILE: 20260707074840_3ff3c966-c57c-4a3f-ab95-ead93e21d5c3.sql
 -- ------------------------------------------------------------
+
 
 -- 1) Add parent_order_id to projects
 ALTER TABLE public.projects
@@ -3767,11 +3814,13 @@ UPDATE public.projects p
 -- ------------------------------------------------------------
 -- FILE: 20260708021741_7affb539-a058-41b2-a51e-81b4042af3c5.sql
 -- ------------------------------------------------------------
+
 ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'kurir';
 
 -- ------------------------------------------------------------
 -- FILE: 20260708021831_fe45c927-f28b-4c14-90ca-d7bc13da59b9.sql
 -- ------------------------------------------------------------
+
 
 -- 1) Fix duplicate project
 CREATE OR REPLACE FUNCTION public.sync_item_to_project()
@@ -3980,6 +4029,7 @@ END $$;
 -- FILE: 20260708025020_b5aba9e9-7c02-4a4c-8cd9-f7c3ff957362.sql
 -- ------------------------------------------------------------
 
+
 CREATE TABLE public.shipping_carriers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL UNIQUE,
@@ -4042,6 +4092,7 @@ END $$;
 -- ------------------------------------------------------------
 -- FILE: 20260710125507_bcc69551-3e6a-4c2e-8a82-ec429335afe8.sql
 -- ------------------------------------------------------------
+
 
 -- 1. Add draft_ref to enum
 ALTER TYPE public.order_item_kind ADD VALUE IF NOT EXISTS 'draft_ref';
@@ -4269,6 +4320,7 @@ END $$;
 -- FILE: 20260713090320_84baaf99-c0df-444f-8c1d-ebd29affbb15.sql
 -- ------------------------------------------------------------
 
+
 CREATE OR REPLACE FUNCTION public.close_projects_for_order(_order_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -4346,6 +4398,7 @@ END $$;
 -- ------------------------------------------------------------
 -- FILE: 20260714071602_1b67744a-a3c1-4690-9cca-a4b9763abbf4.sql
 -- ------------------------------------------------------------
+
 
 -- Remove auto-close on pickup
 CREATE OR REPLACE FUNCTION public.mark_ready_pickup(_order_id uuid)
@@ -4427,25 +4480,33 @@ BEGIN
       );
 END $function$;
 
-CREATE EXTENSION IF NOT EXISTS pg_cron;
 
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'close-projects-after-pickup-delay') THEN
-    PERFORM cron.unschedule('close-projects-after-pickup-delay');
-  END IF;
-END $$;
 
-SELECT cron.schedule(
-  'close-projects-after-pickup-delay',
-  '0 * * * *',
-  $$ SELECT public.close_projects_after_pickup_delay(); $$
-);
+-- [DINONAKTIFKAN untuk Supabase sendiri] Penjadwal pg_cron berikut menunjuk
+-- alamat Lovable / memerlukan ekstensi pg_cron & pg_net. Gunakan Vercel Cron
+-- sebagai gantinya (DEPLOY.md). Bila ingin tetap memakai pg_cron: aktifkan
+-- ekstensi pg_cron dan pg_net di Dashboard > Database > Extensions, ganti URL
+-- dan apikey di bawah dengan milik Anda, lalu hapus tanda komentar.
 
+-- CREATE EXTENSION IF NOT EXISTS pg_cron;
+--
+-- DO $$
+-- BEGIN
+--   IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'close-projects-after-pickup-delay') THEN
+--     PERFORM cron.unschedule('close-projects-after-pickup-delay');
+--   END IF;
+-- END $$;
+--
+-- SELECT cron.schedule(
+--   'close-projects-after-pickup-delay',
+--   '0 * * * *',
+--   $$ SELECT public.close_projects_after_pickup_delay(); $$
+-- );
 
 -- ------------------------------------------------------------
 -- FILE: 20260714085336_dd5854eb-8d31-44e3-a30e-1b82a4ff4144.sql
 -- ------------------------------------------------------------
+
 
 ALTER TABLE public.job_rates
   ADD COLUMN IF NOT EXISTS pricing_mode text NOT NULL DEFAULT 'per_unit',
@@ -4509,6 +4570,7 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260715083821_329bbad2-6987-4a9c-ae69-accdc5c888b6.sql
 -- ------------------------------------------------------------
+
 
 -- 1) Single-claim enforcement for area-based rates (per project)
 CREATE OR REPLACE FUNCTION public.enforce_single_area_claim()
@@ -4700,6 +4762,7 @@ GRANT EXECUTE ON FUNCTION public.get_project_detail_for_worker(uuid) TO authenti
 -- FILE: 20260715090523_f7e2b57a-cb9d-4eeb-830f-67667703347a.sql
 -- ------------------------------------------------------------
 
+
 DROP FUNCTION IF EXISTS public.get_active_pipeline();
 
 CREATE OR REPLACE FUNCTION public.get_active_pipeline()
@@ -4821,6 +4884,7 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260715133141_b5239979-ab67-42d4-85ad-9a1de7fb0b08.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.job_rates
   ADD COLUMN IF NOT EXISTS sort_order integer NOT NULL DEFAULT 0;
 
@@ -5074,6 +5138,7 @@ GRANT EXECUTE ON FUNCTION public.get_available_projects() TO authenticated;
 -- FILE: 20260716075840_3239797a-187b-4497-abc3-34f9f4d88162.sql
 -- ------------------------------------------------------------
 
+
 CREATE TABLE IF NOT EXISTS public.user_feature_permissions (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -5106,6 +5171,7 @@ CREATE TRIGGER update_user_feature_permissions_updated_at
 -- ------------------------------------------------------------
 -- FILE: 20260716082637_7b9e269d-a98c-4f9f-96ab-c48d985ab2b0.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.mark_ready_pickup_by_resi(_no_resi text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -5141,6 +5207,7 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260718063910_24ec5a95-ee87-498d-bae1-6b5d6aea0bcc.sql
 -- ------------------------------------------------------------
+
 
 -- 1) Add area_scope to job_rates
 ALTER TABLE public.job_rates
@@ -5417,6 +5484,7 @@ $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260720074433_aa1c3bc6-e010-4b36-b8d3-934ef256a894.sql
 -- ------------------------------------------------------------
+
 
 -- 1) Add deadline & packing_kayu to orders
 ALTER TABLE public.orders
@@ -5709,6 +5777,7 @@ END $function$;
 -- FILE: 20260720074804_1f84fe67-377e-4392-9fb9-39ca0a5b3273.sql
 -- ------------------------------------------------------------
 
+
 CREATE OR REPLACE FUNCTION public.get_project_detail_for_worker(_project_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -5768,6 +5837,7 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260721045016_a4983dd3-f8a1-408b-9162-5eba0df54b6b.sql
 -- ------------------------------------------------------------
+
 
 -- Fix get_project_detail_for_worker: compute use_outdoor (column doesn't exist)
 CREATE OR REPLACE FUNCTION public.get_project_detail_for_worker(_project_id uuid)
@@ -5898,6 +5968,7 @@ GRANT EXECUTE ON FUNCTION public.lookup_order_by_resi(text) TO authenticated;
 -- FILE: 20260724083705_0ee1107d-b954-45b3-8760-e31e06baccaf.sql
 -- ------------------------------------------------------------
 
+
 CREATE TABLE public.shopping_notes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   item_name text NOT NULL,
@@ -5942,6 +6013,7 @@ CREATE INDEX shopping_notes_status_idx ON public.shopping_notes(status, created_
 -- ------------------------------------------------------------
 -- FILE: 20260728025111_fc9ceae9-6e69-47c4-90f1-7b3b3c8fedd4.sql
 -- ------------------------------------------------------------
+
 CREATE TABLE public.shopee_settings (
   id smallint PRIMARY KEY DEFAULT 1,
   shop_id text,
@@ -6011,6 +6083,7 @@ CREATE TRIGGER update_shopee_order_map_updated_at
 -- ------------------------------------------------------------
 -- FILE: 20260728025148_134959b2-f36c-40c0-958c-1bcb01b7f220.sql
 -- ------------------------------------------------------------
+
 REVOKE SELECT ON public.shopee_settings FROM authenticated;
 
 GRANT SELECT (
@@ -6023,6 +6096,7 @@ GRANT SELECT (
 -- ------------------------------------------------------------
 -- FILE: 20260728030051_274926f4-8573-425d-9c41-17e92a2c8cb6.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.shopee_settings
   ADD COLUMN partner_id text,
   ADD COLUMN partner_key text;
@@ -6034,24 +6108,33 @@ GRANT SELECT (partner_id) ON public.shopee_settings TO authenticated;
 -- ------------------------------------------------------------
 -- FILE: 20260728030503_2a41175c-1fc6-47a4-9a2e-8c62649a2354.sql
 -- ------------------------------------------------------------
-select cron.schedule(
-  'shopee-hourly-sync',
-  '7 * * * *',
-  $$
-  select net.http_post(
-    url := 'https://project--2340221c-8701-4dfa-bbca-3ea03ca1e810.lovable.app/api/public/hooks/sync-shopee',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6ZWR1YWNrcXR0cnFiZ3FoaHptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMTMzNDYsImV4cCI6MjA5NzY4OTM0Nn0.N-dGb0JnhLb8ZUqjAUX72AVRoYN-lxFx_p_WE6UPCvE'
-    ),
-    body := '{}'::jsonb
-  );
-  $$
-);
+
+
+-- [DINONAKTIFKAN untuk Supabase sendiri] Penjadwal pg_cron berikut menunjuk
+-- alamat Lovable / memerlukan ekstensi pg_cron & pg_net. Gunakan Vercel Cron
+-- sebagai gantinya (DEPLOY.md). Bila ingin tetap memakai pg_cron: aktifkan
+-- ekstensi pg_cron dan pg_net di Dashboard > Database > Extensions, ganti URL
+-- dan apikey di bawah dengan milik Anda, lalu hapus tanda komentar.
+
+-- select cron.schedule(
+--   'shopee-hourly-sync',
+--   '7 * * * *',
+--   $$
+--   select net.http_post(
+--     url := 'https://project--2340221c-8701-4dfa-bbca-3ea03ca1e810.lovable.app/api/public/hooks/sync-shopee',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6ZWR1YWNrcXR0cnFiZ3FoaHptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMTMzNDYsImV4cCI6MjA5NzY4OTM0Nn0.N-dGb0JnhLb8ZUqjAUX72AVRoYN-lxFx_p_WE6UPCvE'
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $$
+-- );
 
 -- ------------------------------------------------------------
 -- FILE: 20260730042441_d6bd3bcc-e5c3-4a97-8ebd-f6df40e01fe1.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.consume_stock_source(_source_order_id uuid, _item_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -6123,6 +6206,7 @@ GRANT EXECUTE ON FUNCTION public.consume_stock_source(uuid, uuid) TO authenticat
 -- ------------------------------------------------------------
 -- FILE: 20260731071136_a7ff5e71-93c1-4389-a316-1b628c2149d6.sql
 -- ------------------------------------------------------------
+
 -- 1) Kode project mandiri
 CREATE OR REPLACE FUNCTION public.next_project_code()
 RETURNS text LANGUAGE sql VOLATILE SET search_path = public AS $$
@@ -6327,11 +6411,13 @@ END $function$;
 -- ------------------------------------------------------------
 -- FILE: 20260806062814_a34981ce-a245-4da1-ae97-b9329c9e3c93.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS phone text;
 
 -- ------------------------------------------------------------
 -- FILE: 20260810055325_f0f6ce55-90a2-4f11-bd94-90d86f9c6640.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS consumed_at timestamptz;
 
 CREATE OR REPLACE FUNCTION public.sync_order_to_project()
@@ -6489,6 +6575,7 @@ WHERE so.id = p.parent_order_id
 -- ------------------------------------------------------------
 -- FILE: 20260812082414_2d621ea6-c99e-4f49-8b35-d7931a5c393f.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.assign_order_no()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -6541,6 +6628,7 @@ END $$;
 -- ------------------------------------------------------------
 -- FILE: 20260813015935_5e78028b-5306-4a7e-b3e1-bda84410ec9d.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.detach_project_from_order()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -6595,6 +6683,7 @@ WHERE p.parent_order_id IS NOT NULL
 -- ------------------------------------------------------------
 -- FILE: 20260813020021_e7b65f2f-555a-4058-a8c4-fa03cae364d9.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.detach_project_from_order()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -6639,6 +6728,7 @@ WHERE p.parent_order_id IS NOT NULL
 -- ------------------------------------------------------------
 -- FILE: 20260813020525_81a62f91-fd29-4931-a90f-9f3be19351d4.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.get_active_pipeline()
 RETURNS TABLE(project_id uuid, project_code text, project_title text, customer_name text, total_points integer, deadline date, order_id uuid, order_no text, order_status text, co_date date, ekspedisi text, no_resi text, ready_pickup_at timestamp with time zone, picked_up_at timestamp with time zone, packing_kayu boolean, use_outdoor boolean, has_cut boolean, has_potong boolean, has_solder boolean, has_kabel boolean, has_tempel boolean, cut_qty numeric, potong_qty numeric, solder_qty numeric, kabel_qty numeric, tempel_qty numeric, current_step text)
 LANGUAGE sql
@@ -6719,6 +6809,7 @@ $fn$;
 -- ------------------------------------------------------------
 -- FILE: 20260814011646_6a20bab6-7099-46df-b22f-00167f53c084.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.get_project_detail_for_worker(_project_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -6788,6 +6879,7 @@ END $$;
 -- ------------------------------------------------------------
 -- FILE: 20260818114154_0ab83b72-f4cd-4051-8dd6-57b8a7110a87.sql
 -- ------------------------------------------------------------
+
 DROP FUNCTION IF EXISTS public.get_available_projects();
 CREATE OR REPLACE FUNCTION public.get_available_projects()
  RETURNS TABLE(id uuid, code text, title text, status project_status, total_points integer, claimed_points numeric, remaining_points numeric, parent_order_id uuid, order_no text)
@@ -6841,12 +6933,14 @@ GRANT EXECUTE ON FUNCTION public.get_available_projects() TO authenticated;
 -- ------------------------------------------------------------
 -- FILE: 20260819121935_b194b332-ee30-458d-b0b4-9268e3a11b35.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.job_rates ADD COLUMN IF NOT EXISTS require_photo boolean NOT NULL DEFAULT false;
 UPDATE public.job_rates SET require_photo = true WHERE name ILIKE '%kabel%';
 
 -- ------------------------------------------------------------
 -- FILE: 20260820015955_5454ffcf-3448-4cae-90b5-e78a47a73e00.sql
 -- ------------------------------------------------------------
+
 create or replace function public.link_project_to_order(_project_id uuid, _order_id uuid)
 returns void
 language plpgsql
@@ -6899,12 +6993,14 @@ grant execute on function public.link_project_to_order(uuid, uuid) to authentica
 -- ------------------------------------------------------------
 -- FILE: 20260820020027_0acfb159-e7c7-431b-b8bf-d021d424e674.sql
 -- ------------------------------------------------------------
+
 revoke execute on function public.link_project_to_order(uuid, uuid) from public, anon;
 grant execute on function public.link_project_to_order(uuid, uuid) to authenticated;
 
 -- ------------------------------------------------------------
 -- FILE: 20260821034000_2cf0daab-87f9-40ab-baf3-c57ec1a08422.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.detach_projects_on_order_delete()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
@@ -6967,6 +7063,7 @@ WHERE p.parent_order_id IS NOT NULL
 -- ------------------------------------------------------------
 -- FILE: 20260825120052_39b19d88-8e15-4615-bb69-82e34f129971.sql
 -- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.get_order_history(_limit int DEFAULT 500)
 RETURNS TABLE(
   order_id uuid,
@@ -7030,6 +7127,7 @@ GRANT EXECUTE ON FUNCTION public.get_order_history(int) TO authenticated;
 -- ------------------------------------------------------------
 -- FILE: 20260826114810_709b92e3-f4d9-4107-bad3-b89054c6e5b8.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.shopee_settings ADD COLUMN redirect_url text;
 
 -- Izinkan user login membaca redirect_url agar UI bisa menampilkannya.
@@ -7041,4 +7139,5 @@ GRANT ALL ON public.shopee_settings TO service_role;
 -- ------------------------------------------------------------
 -- FILE: 20260903024603_3eeeedd4-15a9-4976-9220-fef523137fc3.sql
 -- ------------------------------------------------------------
+
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS shopee_label_pdf text;
