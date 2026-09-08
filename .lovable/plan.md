@@ -1,67 +1,63 @@
-# Migrasi ke Cloud Sendiri (di luar Lovable)
+# Arahkan Deployment Vercel ke Supabase Sendiri (Lovable Tetap Utuh)
 
-Tujuan: webapp tetap berjalan penuh meski akun Lovable turun ke Free / Cloud dihentikan, dengan frontend, database, dan integrasi Shopee berjalan di infrastruktur milik sendiri.
+Tujuan: `newjobsign.vercel.app` (deploy dari GitHub) memakai database/auth Supabase milik Anda sendiri, sementara webapp di Lovable tetap memakai Lovable Cloud seperti sekarang. Satu kode, dua backend, dibedakan oleh pengaturan environment di masing-masing hosting.
 
-## Gambaran Arsitektur Saat Ini
+## Kabar baik: nyaris tanpa perubahan kode
 
-- Frontend + backend: satu aplikasi TanStack Start (React), di dalamnya ada server function dan endpoint publik (`/api/public/hooks/sync-shopee`, `/api/public/shopee/callback`).
-- Database: Lovable Cloud (Supabase). Seluruh skema tersimpan di `supabase/migrations/` (21 file) sehingga skema bisa dibangun ulang persis.
-- Secret yang dipakai: `SHOPEE_PARTNER_ID`, `SHOPEE_PARTNER_KEY`, `GOOGLE_DRIVE_API_KEY`, `LOVABLE_API_KEY` (fitur AI), `SUPABASE_PUBLISHABLE_KEY` (proteksi endpoint cron).
+Hasil pemeriksaan kode: tidak ada alamat database yang ditulis mati di dalam kode. Semua koneksi dibaca dari environment variable:
 
-## Langkah Migrasi
+- Browser: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
+- Server (server function & endpoint publik): `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
-### 1. Amankan kode dan data (sebelum memutus Lovable Cloud)
-- Hubungkan project ke GitHub (tombol GitHub di Lovable) agar seluruh kode + folder `supabase/migrations/` tersalin.
-- Ekspor semua data: gunakan fitur Backup CSV di `/owner/backup` yang sudah ada, dan/atau saya buatkan skrip ekspor SQL lengkap semua tabel lewat tool database. Ini penting karena memutus Cloud bersifat permanen dan menghapus data.
+Jadi cukup mengisi nilai berbeda di Vercel. Lovable tidak terpengaruh sama sekali.
 
-### 2. Siapkan database baru (pilih salah satu)
-- **Opsi A — Supabase Cloud (gratis, paling mudah):** buat project baru di supabase.com, terapkan semua file migrasi berurutan, lalu impor data dari hasil ekspor langkah 1.
-- **Opsi B — Self-hosted Supabase (VPS + Docker):** untuk kontrol penuh, tapi butuh perawatan server sendiri.
-- Rekomendasi: mulai dari Opsi A; pindah ke B kapan pun bisa karena formatnya sama.
+## Satu masalah yang harus dibereskan lebih dulu
 
-### 3. Deploy aplikasi
-- Deploy ke Cloudflare Workers (sesuai target template ini; ada tier gratis) atau VPS Node.js — ikuti panduan self-hosting: https://docs.lovable.dev/tips-tricks/self-hosting
-- Isi environment variable di hosting baru: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `SHOPEE_PARTNER_ID`, `SHOPEE_PARTNER_KEY`, `GOOGLE_DRIVE_API_KEY`.
-- Arahkan domain `job.lintangsemesta.com` ke hosting baru.
+File `.env` di repo berisi nilai Lovable Cloud dan ikut terbawa ke GitHub. Saat build di Vercel, nilai dari file ini bisa menimpa pengaturan yang Anda isi di dashboard Vercel, sehingga Vercel tetap menempel ke database Lovable. Ini kemungkinan besar juga penyebab data tidak tampil sekarang.
 
-### 4. Penyesuaian kode kecil (saya kerjakan di project ini sebelum pindah)
-- Ganti klien Supabase bawaan Lovable (`src/integrations/supabase/*`) agar membaca env biasa, bukan konfigurasi Lovable Cloud.
-- Fitur AI yang memakai `LOVABLE_API_KEY` tidak bisa dibawa keluar — diganti ke API key milik sendiri (misal OpenAI/Gemini) atau dimatikan.
-- Pastikan tidak ada logika lain yang bergantung pada layanan internal Lovable.
+Solusi yang saya siapkan: menambahkan file `.env.production` di repo yang membaca dari pengaturan hosting, sehingga build production (Vercel) memakai nilai Vercel dan build di Lovable tetap memakai `.env` bawaan. Perubahan ini aman untuk Lovable karena Lovable tidak memakai mode production build yang sama.
 
-### 5. Konfigurasi ulang integrasi eksternal
-- **Auth Google:** tambahkan URL domain baru di konfigurasi OAuth Supabase baru.
-- **Shopee:** ubah redirect URL OAuth ke `https://job.lintangsemesta.com/api/public/shopee/callback` di panel Shopee Open Platform, lalu hubungkan ulang toko.
-- **Cron sinkronisasi Shopee:** pasang penjadwal eksternal (cron VPS / Cloudflare Cron / layanan cron gratis) yang memanggil `/api/public/hooks/sync-shopee` setiap jam.
+## Yang perlu Anda siapkan di sisi Supabase sendiri
 
-### 6. Verifikasi sebelum memutus Lovable Cloud
-- Uji login, buat order, import Shopee, print resi, absensi, laporan di deployment baru dengan data hasil impor.
-- Setelah semua berjalan minimal beberapa hari, baru nonaktifkan/putus Lovable Cloud.
+1. Buat project baru di Supabase (paket gratis cukup untuk mulai).
+2. Jalankan seluruh berkas migrasi dari folder `supabase/migrations` (21 berkas, urut sesuai nama) di SQL Editor Supabase. Ini membangun semua tabel, aturan akses, dan fungsi persis seperti sekarang.
+3. Aktifkan login Google di Supabase baru, dan tambahkan `https://newjobsign.vercel.app` sebagai URL yang diizinkan.
+4. Salin data lama: ekspor dari menu Backup yang sudah ada di webapp, lalu impor ke Supabase baru. (Saya bisa bantu buatkan berkas SQL ekspor lengkap kalau perlu.)
 
-## Catatan Penting
-- Memutus Lovable Cloud **tidak bisa dibatalkan** dan menghapus seluruh data — urutannya harus: ekspor dulu, deployment baru berjalan, baru putus.
-- Selama masih memakai editor Lovable, Cloud tidak bisa dilepas dari project ini; migrasi berarti project berjalan di repo GitHub + hosting sendiri, dan perubahan selanjutnya dilakukan di repo tersebut.
-- Biaya perkiraan: Supabase Cloud gratis (batas 500 MB database), Cloudflare Workers gratis untuk trafik kecil-menengah, VPS opsional mulai ±$5/bulan bila ingin self-host penuh.
+## Yang perlu diisi di dashboard Vercel
 
-## Upgrade Fitur Setelah Cloud Sendiri
-- Bisa. Setelah migrasi selesai, semua perubahan fitur dilakukan langsung di repository GitHub (kode tetap milik Anda).
-- Cara kerjanya: edit kode di lokal/IDE atau GitHub Codespaces → commit → push → CI/CD deploy otomatis ke hosting yang dipilih (Cloudflare Workers / VPS).
-- Anda tetap bisa meminta saya bantu menulis kode, tapi saya tidak bisa langsung menyentuh deployment baru; saya akan memberikan instruksi atau patch yang Anda/team terapkan di repo tersebut.
-- Jika ingin tetap memakai editor Lovable untuk mengedit visual, solusinya adalah membuat project Lovable baru sebagai "prototype editor", lalu hasilnya disalin ke repo production sendiri.
+Environment variable (Production + Preview):
 
-## Preview Seperti di Lovable
-- Editor visual + preview instan seperti di Lovable tidak tersedia di luar Lovable.
-- Pengganti yang mirip: Vercel otomatis membuat **preview deployment** untuk setiap branch/pull request, jadi setiap perubahan bisa dicek dulu di URL sementara sebelum digabung ke production. Hasilnya setara untuk kebutuhan "coba dulu sebelum live".
+| Nama | Isi |
+|---|---|
+| `VITE_SUPABASE_URL` | URL project Supabase Anda |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | anon/publishable key Supabase Anda |
+| `VITE_SUPABASE_PROJECT_ID` | project ref Supabase Anda |
+| `SUPABASE_URL` | sama dengan di atas |
+| `SUPABASE_PUBLISHABLE_KEY` | sama dengan anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | service role key dari Supabase Anda |
+| `SHOPEE_PARTNER_ID`, `SHOPEE_PARTNER_KEY` | kredensial Shopee |
+| `GOOGLE_DRIVE_API_KEY` | untuk foto garapan |
 
-## Deployment Vercel yang Sudah Ada (newjobsign.vercel.app) — Data Tidak Tampil
-- Gejala "beberapa data tidak tampil" hampir pasti karena environment variable belum diisi di dashboard Vercel: minimal `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY` (untuk browser), plus `SUPABASE_URL` dan `SUPABASE_PUBLISHABLE_KEY` (untuk server function). Tanpa itu, halaman render tapi query data gagal.
-- Perlu diperiksa juga: `SUPABASE_SERVICE_ROLE_KEY` **tidak tersedia** di Lovable Cloud, jadi semua kode yang memakai `supabaseAdmin` (import Shopee, sinkronisasi, dsb.) tidak bisa berfungsi di Vercel selama backend masih Lovable Cloud — ini alasan kuat untuk pindah database dulu (langkah 2), baru arahkan Vercel ke database baru.
-- Langkah pemeriksaan yang akan saya lakukan saat eksekusi: audit semua pemakaian env dan `supabaseAdmin` di kode, buat daftar env yang wajib diisi di Vercel, dan uji ulang halaman yang datanya kosong.
+Catatan penting: `SUPABASE_SERVICE_ROLE_KEY` tidak bisa diambil dari Lovable Cloud. Fitur yang memerlukannya (import Shopee, sinkronisasi, backup) baru berjalan di Vercel setelah Anda memakai Supabase sendiri — jadi langkah ini justru memperbaikinya.
 
+## Yang saya kerjakan di project ini
 
+1. Menambah `.env.production` agar build production membaca env dari hosting, bukan dari `.env` bawaan Lovable.
+2. Menambah `vercel.json` bila diperlukan agar perintah build dan output cocok dengan Vercel.
+3. Menambah panduan singkat `DEPLOY.md` berisi daftar env dan urutan langkah, supaya bisa Anda ikuti tanpa perlu bertanya lagi.
+4. Memastikan tidak ada kode yang mengasumsikan lingkungan Lovable (pemeriksa alamat preview di penyimpanan sesi sudah otomatis nonaktif di domain non-Lovable, jadi aman).
+
+Tidak ada perubahan tampilan, fitur, maupun skema database di webapp Lovable.
+
+## Setelah itu
+
+- Shopee: ubah redirect URL di panel Shopee ke `https://newjobsign.vercel.app/api/public/shopee/callback` bila Anda ingin menghubungkan toko dari Vercel. Kalau Shopee masih dipakai dari Lovable, biarkan seperti sekarang (satu redirect URL hanya bisa satu alamat pada satu waktu).
+- Cron sinkronisasi Shopee: pasang Vercel Cron memanggil `/api/public/hooks/sync-shopee` tiap jam.
 
 ## Technical Details
-- Migrasi DB: `supabase/migrations/*.sql` dijalankan berurutan via `supabase db push` atau SQL editor.
-- Ekspor data: `pg_dump`-style `COPY` per tabel via tool SQL, atau perluas `/owner/backup` agar mencakup semua tabel.
-- File yang akan disesuaikan: `src/integrations/supabase/client.ts`, `client.server.ts`, `auth-attacher.ts`, `auth-middleware.ts`, `src/lib/sheet-sync.server.ts` (AI key), `.env` (diganti env hosting).
-- Tidak ada perubahan skema database.
+
+- `src/integrations/supabase/client.ts` membaca `import.meta.env.VITE_SUPABASE_URL` dengan fallback `process.env.SUPABASE_URL`; `client.server.ts` dan `auth-middleware.ts` membaca `process.env` — semuanya sudah portabel, tidak perlu diubah.
+- `previewAuthStorage.ts` hanya aktif pada host `*.lovable.app` / `*.lovableproject.com`; di Vercel otomatis memakai `localStorage`.
+- `vite.config.ts` memakai `@lovable.dev/vite-tanstack-config` dengan target nitro Cloudflare; perlu diverifikasi apakah Vercel build saat ini memakai preset yang benar — bila tidak, tambahkan preset/`vercel.json` yang sesuai.
+- Migrasi database: jalankan `supabase/migrations/*.sql` berurutan; tidak ada migrasi baru dalam rencana ini.
