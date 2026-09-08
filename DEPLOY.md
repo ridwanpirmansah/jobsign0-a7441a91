@@ -96,8 +96,8 @@ karena nilai `VITE_*` ditanam saat build).
   `apikey: <SUPABASE_PUBLISHABLE_KEY>`.
 - Penutupan project otomatis 48 jam setelah pickup: tambahkan juga Vercel Cron
   yang memanggil `POST /api/public/hooks/sync-projects` setiap jam dengan
-  header yang sama. (Penjadwal bawaan database sengaja dinonaktifkan di
-  `all_migrations.sql` karena menunjuk alamat Lovable.)
+  header yang sama. (Penjadwal bawaan database sengaja tidak disertakan di
+  `schema.sql` karena menunjuk alamat Lovable.)
 
 ## 6. Verifikasi
 
