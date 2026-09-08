@@ -12,16 +12,27 @@ hosting.
 ## 1. Siapkan project Supabase sendiri
 
 1. Buat project baru di https://supabase.com (paket gratis cukup untuk memulai).
-2. Buka berkas **`supabase/all_migrations.sql`**, salin **seluruh isinya**,
-   tempel ke **SQL Editor**, lalu klik **Run** sekali. Berkas ini adalah
-   gabungan semua migrasi (81 berkas) yang sudah diurutkan otomatis.
-   Ini akan membuat seluruh tabel, aturan akses (RLS), fungsi, dan trigger
-   persis seperti yang berjalan sekarang.
-   - Kalau muncul error di tengah jalan, perbaiki lalu jalankan ulang hanya
-     bagian yang gagal (setiap berkas migrasi diberi penanda komentar
-     `-- FILE: ...` agar mudah dicari).
-   - Bila nanti ada migrasi baru dari Lovable, jalankan hanya berkas migrasi
-     baru tersebut — `all_migrations.sql` tidak perlu dijalankan ulang.
+   Pastikan database masih **kosong**. Kalau sebelumnya sudah pernah mencoba
+   menjalankan berkas migrasi lama dan gagal di tengah, kosongkan dulu dengan
+   menjalankan perintah ini di SQL Editor:
+
+   ```sql
+   drop schema public cascade;
+   create schema public;
+   grant usage on schema public to anon, authenticated, service_role;
+   ```
+
+2. Buka berkas **`supabase/schema.sql`**, salin **seluruh isinya**, tempel ke
+   **SQL Editor**, lalu klik **Run** sekali. Berkas ini adalah potret struktur
+   database yang sedang berjalan sekarang (tabel, aturan akses/RLS, fungsi,
+   trigger, hak akses, dan data awal seperti master harga, ekspedisi, tarif
+   borongan, setelan absensi) — bukan tumpukan riwayat migrasi, jadi urutannya
+   sudah benar dan cukup sekali jalan.
+   - Berkas gabungan lama `supabase/all_migrations.sql` sudah dihapus karena
+     memutar ulang 81 langkah perubahan dan selalu gagal di tengah.
+   - Folder `supabase/migrations` tetap disimpan sebagai catatan riwayat. Bila
+     nanti ada migrasi baru dari Lovable, jalankan hanya berkas baru tersebut.
+
 3. Catat tiga nilai dari **Project Settings -> API**:
    - Project URL (`https://xxxx.supabase.co`)
    - Project reference id (`xxxx`)
