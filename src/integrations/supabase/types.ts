@@ -700,6 +700,7 @@ export type Database = {
           ready_pickup_at: string | null
           repair_cost: number
           shopee_label_pdf: string | null
+          shopee_shop_id: string | null
           socket_dc: number
           solder_cost: number
           source: Database["public"]["Enums"]["order_source"]
@@ -751,6 +752,7 @@ export type Database = {
           ready_pickup_at?: string | null
           repair_cost?: number
           shopee_label_pdf?: string | null
+          shopee_shop_id?: string | null
           socket_dc?: number
           solder_cost?: number
           source?: Database["public"]["Enums"]["order_source"]
@@ -802,6 +804,7 @@ export type Database = {
           ready_pickup_at?: string | null
           repair_cost?: number
           shopee_label_pdf?: string | null
+          shopee_shop_id?: string | null
           socket_dc?: number
           solder_cost?: number
           source?: Database["public"]["Enums"]["order_source"]
@@ -1186,6 +1189,45 @@ export type Database = {
           redirect_url?: string | null
           refresh_token?: string | null
           shop_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shopee_shops: {
+        Row: {
+          access_token: string | null
+          active: boolean
+          connected_at: string | null
+          created_at: string
+          id: string
+          refresh_token: string | null
+          shop_id: string
+          shop_name: string | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          active?: boolean
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          refresh_token?: string | null
+          shop_id: string
+          shop_name?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          active?: boolean
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          refresh_token?: string | null
+          shop_id?: string
+          shop_name?: string | null
           token_expires_at?: string | null
           updated_at?: string
         }
