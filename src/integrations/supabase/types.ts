@@ -1095,7 +1095,7 @@ export type Database = {
           order_id: string | null
           order_sn: string
           raw: Json | null
-          shop_id: string | null
+          shop_id: string
           shopee_status: string | null
           updated_at: string
         }
@@ -1106,7 +1106,7 @@ export type Database = {
           order_id?: string | null
           order_sn: string
           raw?: Json | null
-          shop_id?: string | null
+          shop_id?: string
           shopee_status?: string | null
           updated_at?: string
         }
@@ -1117,7 +1117,7 @@ export type Database = {
           order_id?: string | null
           order_sn?: string
           raw?: Json | null
-          shop_id?: string | null
+          shop_id?: string
           shopee_status?: string | null
           updated_at?: string
         }
