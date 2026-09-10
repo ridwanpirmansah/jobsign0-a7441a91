@@ -324,24 +324,6 @@ function ShopeePage() {
             <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
               <Save className="h-4 w-4 mr-2" /> Simpan Pengaturan
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => connectMut.mutate()}
-              disabled={connectMut.isPending || !partnerId}
-            >
-              <Link2 className="h-4 w-4 mr-2" />
-              {status?.connected ? "Hubungkan Ulang Toko" : "Hubungkan Toko Shopee"}
-            </Button>
-            {status?.connected && (
-              <Button
-                variant="ghost"
-                className="text-destructive"
-                onClick={() => disconnectMut.mutate()}
-                disabled={disconnectMut.isPending}
-              >
-                <Unplug className="h-4 w-4 mr-2" /> Putuskan
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -392,15 +374,16 @@ function ShopeePage() {
               <p className="text-sm text-muted-foreground">Tidak ada pesanan pada rentang tanggal tersebut.</p>
             )}
             {rows.map((r) => (
-              <div key={r.order_sn} className="flex gap-3 items-start rounded-lg border p-3">
+              <div key={`${r.shop_id}|${r.order_sn}`} className="flex gap-3 items-start rounded-lg border p-3">
                 <Checkbox
                   className="mt-1"
-                  checked={!!picked[r.order_sn]}
-                  onCheckedChange={(v) => setPicked((m) => ({ ...m, [r.order_sn]: !!v }))}
+                  checked={!!picked[`${r.shop_id}|${r.order_sn}`]}
+                  onCheckedChange={(v) => setPicked((m) => ({ ...m, [`${r.shop_id}|${r.order_sn}`]: !!v }))}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium truncate">{r.product}</span>
+                    <Badge className="bg-orange-500">{r.shop_name || r.shop_id}</Badge>
                     {r.already_imported && (
                       <Badge variant="secondary">Sudah diimport{r.order_no ? ` · #${r.order_no}` : ""}</Badge>
                     )}
