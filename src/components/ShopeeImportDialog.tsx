@@ -48,7 +48,7 @@ export function ShopeeImportDialog({
       }
       setRows(r.rows);
       const next: Record<string, boolean> = {};
-      for (const row of r.rows) if (!row.already_imported) next[row.order_sn] = true;
+      for (const row of r.rows) if (!row.already_imported) next[`${row.shop_id}|${row.order_sn}`] = true;
       setPicked(next);
       toast.success(`${r.rows.length} pesanan ditemukan`);
     },
@@ -56,7 +56,7 @@ export function ShopeeImportDialog({
   });
 
   const importMut = useMutation({
-    mutationFn: (order_sns: string[]) => importFn({ data: { order_sns } }),
+    mutationFn: (items: { order_sn: string; shop_id: string }[]) => importFn({ data: { items } }),
     onSuccess: (r: any) => {
       if (r.ok) toast.success(r.message);
       else toast.error(r.message || "Import gagal");
@@ -67,7 +67,13 @@ export function ShopeeImportDialog({
   });
 
   const selected = useMemo(
-    () => Object.entries(picked).filter(([, v]) => v).map(([k]) => k),
+    () =>
+      Object.entries(picked)
+        .filter(([, v]) => v)
+        .map(([k]) => {
+          const [shop_id, order_sn] = k.split("|");
+          return { order_sn, shop_id };
+        }),
     [picked],
   );
 
@@ -165,15 +171,16 @@ export function ShopeeImportDialog({
         {rows && rows.length > 0 && (
           <div className="space-y-2">
             {rows.map((r) => (
-              <div key={r.order_sn} className="flex gap-3 items-start rounded-lg border p-3">
+              <div key={`${r.shop_id}|${r.order_sn}`} className="flex gap-3 items-start rounded-lg border p-3">
                 <Checkbox
                   className="mt-1"
-                  checked={!!picked[r.order_sn]}
-                  onCheckedChange={(v) => setPicked((m) => ({ ...m, [r.order_sn]: !!v }))}
+                  checked={!!picked[`${r.shop_id}|${r.order_sn}`]}
+                  onCheckedChange={(v) => setPicked((m) => ({ ...m, [`${r.shop_id}|${r.order_sn}`]: !!v }))}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium truncate">{r.product}</span>
+                    <Badge className="bg-orange-500">{r.shop_name || r.shop_id}</Badge>
                     {r.already_imported && (
                       <Badge variant="secondary">
                         Sudah diimport{r.order_no ? ` · #${r.order_no}` : ""}

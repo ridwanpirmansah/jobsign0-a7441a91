@@ -120,20 +120,28 @@ function ShopeePage() {
       }
       setRows(r.rows);
       const next: Record<string, boolean> = {};
-      for (const row of r.rows) if (!row.already_imported) next[row.order_sn] = true;
+      for (const row of r.rows) if (!row.already_imported) next[`${row.shop_id}|${row.order_sn}`] = true;
       setPicked(next);
       toast.success(`${r.rows.length} pesanan ditemukan`);
     },
     onError: (e: any) => toast.error(e?.message ?? "Gagal ambil pesanan"),
   });
 
+  const rowKey = (r: any) => `${r.shop_id}|${r.order_sn}`;
+
   const selected = useMemo(
-    () => Object.entries(picked).filter(([, v]) => v).map(([k]) => k),
+    () =>
+      Object.entries(picked)
+        .filter(([, v]) => v)
+        .map(([k]) => {
+          const [shop_id, order_sn] = k.split("|");
+          return { order_sn, shop_id };
+        }),
     [picked],
   );
 
   const importMut = useMutation({
-    mutationFn: () => importFn({ data: { order_sns: selected } }),
+    mutationFn: () => importFn({ data: { items: selected } }),
     onSuccess: (r: any) => {
       if (r.ok) toast.success(r.message);
       else toast.error(r.message || "Import gagal");
@@ -156,7 +164,7 @@ function ShopeePage() {
   });
 
   const disconnectMut = useMutation({
-    mutationFn: () => disconnectFn(),
+    mutationFn: (shopId: string) => disconnectFn({ data: { shop_id: shopId } }),
     onSuccess: () => {
       toast.success("Toko Shopee diputuskan");
       setRows(null);
@@ -191,11 +199,10 @@ function ShopeePage() {
       <Card>
         <CardContent className="pt-6 flex flex-wrap gap-3 items-center">
           {status?.connected ? (
-            <Badge className="gap-1 bg-emerald-600"><CheckCircle2 className="h-3 w-3" /> Toko terhubung</Badge>
+            <Badge className="gap-1 bg-emerald-600"><CheckCircle2 className="h-3 w-3" /> {status?.shops?.filter((s: any) => s.connected).length ?? 0} toko terhubung</Badge>
           ) : (
             <Badge variant="secondary" className="gap-1"><AlertCircle className="h-3 w-3" /> Belum terhubung</Badge>
           )}
-          {status?.shop_id && <span className="text-sm text-muted-foreground">Shop ID: {status.shop_id}</span>}
           {status?.last_sync_at && (
             <span className="text-sm text-muted-foreground">
               Sync terakhir: {new Date(status.last_sync_at).toLocaleString("id-ID")} · +{status.last_sync_inserted} baru, ~{status.last_sync_updated} update
@@ -204,6 +211,57 @@ function ShopeePage() {
           {status?.last_sync_message && (
             <p className="w-full text-xs text-muted-foreground">{status.last_sync_message}</p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Toko terhubung */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Toko Terhubung</CardTitle>
+          <CardDescription>
+            Satu aplikasi Shopee bisa menarik pesanan dari banyak toko. Klik "Tambah Toko Shopee" lalu login dengan
+            akun toko lain untuk menambahkannya.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(status?.shops ?? []).filter((s: any) => s.connected).length === 0 && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <Plug className="h-4 w-4" /> Belum ada toko terhubung.
+            </p>
+          )}
+          {(status?.shops ?? [])
+            .filter((s: any) => s.connected)
+            .map((s: any) => (
+              <div key={s.shop_id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+                <ShoppingBag className="h-4 w-4 text-orange-500 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{s.shop_name || `Shop ${s.shop_id}`}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Shop ID: {s.shop_id}
+                    {s.connected_at ? ` · terhubung ${new Date(s.connected_at).toLocaleString("id-ID")}` : ""}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => disconnectMut.mutate(s.shop_id)}
+                  disabled={disconnectMut.isPending}
+                >
+                  <Unplug className="h-4 w-4 mr-1" /> Putuskan
+                </Button>
+              </div>
+            ))}
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              onClick={() => connectMut.mutate()}
+              disabled={connectMut.isPending || !partnerId}
+            >
+              <Link2 className="h-4 w-4 mr-2" />
+              {status?.connected ? "Tambah Toko Shopee" : "Hubungkan Toko Shopee"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -266,24 +324,6 @@ function ShopeePage() {
             <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
               <Save className="h-4 w-4 mr-2" /> Simpan Pengaturan
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => connectMut.mutate()}
-              disabled={connectMut.isPending || !partnerId}
-            >
-              <Link2 className="h-4 w-4 mr-2" />
-              {status?.connected ? "Hubungkan Ulang Toko" : "Hubungkan Toko Shopee"}
-            </Button>
-            {status?.connected && (
-              <Button
-                variant="ghost"
-                className="text-destructive"
-                onClick={() => disconnectMut.mutate()}
-                disabled={disconnectMut.isPending}
-              >
-                <Unplug className="h-4 w-4 mr-2" /> Putuskan
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -334,15 +374,16 @@ function ShopeePage() {
               <p className="text-sm text-muted-foreground">Tidak ada pesanan pada rentang tanggal tersebut.</p>
             )}
             {rows.map((r) => (
-              <div key={r.order_sn} className="flex gap-3 items-start rounded-lg border p-3">
+              <div key={`${r.shop_id}|${r.order_sn}`} className="flex gap-3 items-start rounded-lg border p-3">
                 <Checkbox
                   className="mt-1"
-                  checked={!!picked[r.order_sn]}
-                  onCheckedChange={(v) => setPicked((m) => ({ ...m, [r.order_sn]: !!v }))}
+                  checked={!!picked[`${r.shop_id}|${r.order_sn}`]}
+                  onCheckedChange={(v) => setPicked((m) => ({ ...m, [`${r.shop_id}|${r.order_sn}`]: !!v }))}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium truncate">{r.product}</span>
+                    <Badge className="bg-orange-500">{r.shop_name || r.shop_id}</Badge>
                     {r.already_imported && (
                       <Badge variant="secondary">Sudah diimport{r.order_no ? ` · #${r.order_no}` : ""}</Badge>
                     )}
