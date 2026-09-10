@@ -214,6 +214,57 @@ function ShopeePage() {
         </CardContent>
       </Card>
 
+      {/* Toko terhubung */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Toko Terhubung</CardTitle>
+          <CardDescription>
+            Satu aplikasi Shopee bisa menarik pesanan dari banyak toko. Klik "Tambah Toko Shopee" lalu login dengan
+            akun toko lain untuk menambahkannya.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(status?.shops ?? []).filter((s: any) => s.connected).length === 0 && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <Plug className="h-4 w-4" /> Belum ada toko terhubung.
+            </p>
+          )}
+          {(status?.shops ?? [])
+            .filter((s: any) => s.connected)
+            .map((s: any) => (
+              <div key={s.shop_id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+                <ShoppingBag className="h-4 w-4 text-orange-500 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{s.shop_name || `Shop ${s.shop_id}`}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Shop ID: {s.shop_id}
+                    {s.connected_at ? ` · terhubung ${new Date(s.connected_at).toLocaleString("id-ID")}` : ""}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => disconnectMut.mutate(s.shop_id)}
+                  disabled={disconnectMut.isPending}
+                >
+                  <Unplug className="h-4 w-4 mr-1" /> Putuskan
+                </Button>
+              </div>
+            ))}
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              onClick={() => connectMut.mutate()}
+              disabled={connectMut.isPending || !partnerId}
+            >
+              <Link2 className="h-4 w-4 mr-2" />
+              {status?.connected ? "Tambah Toko Shopee" : "Hubungkan Toko Shopee"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Kredensial */}
       <Card>
         <CardHeader>
