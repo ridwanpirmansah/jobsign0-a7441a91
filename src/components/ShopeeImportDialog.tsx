@@ -48,7 +48,7 @@ export function ShopeeImportDialog({
       }
       setRows(r.rows);
       const next: Record<string, boolean> = {};
-      for (const row of r.rows) if (!row.already_imported) next[row.order_sn] = true;
+      for (const row of r.rows) if (!row.already_imported) next[`${row.shop_id}|${row.order_sn}`] = true;
       setPicked(next);
       toast.success(`${r.rows.length} pesanan ditemukan`);
     },
@@ -56,7 +56,7 @@ export function ShopeeImportDialog({
   });
 
   const importMut = useMutation({
-    mutationFn: (order_sns: string[]) => importFn({ data: { order_sns } }),
+    mutationFn: (items: { order_sn: string; shop_id: string }[]) => importFn({ data: { items } }),
     onSuccess: (r: any) => {
       if (r.ok) toast.success(r.message);
       else toast.error(r.message || "Import gagal");
@@ -67,7 +67,13 @@ export function ShopeeImportDialog({
   });
 
   const selected = useMemo(
-    () => Object.entries(picked).filter(([, v]) => v).map(([k]) => k),
+    () =>
+      Object.entries(picked)
+        .filter(([, v]) => v)
+        .map(([k]) => {
+          const [shop_id, order_sn] = k.split("|");
+          return { order_sn, shop_id };
+        }),
     [picked],
   );
 
