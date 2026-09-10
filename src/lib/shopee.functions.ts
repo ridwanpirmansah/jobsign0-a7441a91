@@ -17,15 +17,24 @@ export const getShopeeStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await requireAdminOrOwner(context);
-    const { loadSettings } = await import("./shopee.server");
+    const { loadSettings, listShops } = await import("./shopee.server");
     const s = await loadSettings();
+    const shops = await listShops(false);
+    const active = shops.filter((x) => x.active && x.refresh_token);
     return {
       partner_id: s.partner_id ?? "",
       has_partner_key: !!s.partner_key,
       redirect_url: s.redirect_url ?? "",
       shop_id: s.shop_id,
-      connected: !!s.shop_id && !!s.refresh_token,
+      connected: active.length > 0,
       connected_at: s.connected_at,
+      shops: shops.map((x) => ({
+        shop_id: x.shop_id,
+        shop_name: x.shop_name ?? "",
+        active: x.active,
+        connected: x.active && !!x.refresh_token,
+        connected_at: x.connected_at,
+      })),
       enabled: s.enabled,
       lookback_days: s.lookback_days ?? 7,
       last_sync_at: (s as any).last_sync_at ?? null,
@@ -106,13 +115,23 @@ export const previewShopeeOrders = createServerFn({ method: "POST" })
 export const importShopeeOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ order_sns: z.array(z.string().trim().min(1).max(64)).min(1).max(200) }).parse(d),
+    z.object({
+      items: z
+        .array(
+          z.object({
+            order_sn: z.string().trim().min(1).max(64),
+            shop_id: z.string().trim().min(1).max(64),
+          }),
+        )
+        .min(1)
+        .max(200),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await requireAdminOrOwner(context);
     const { importSelected } = await import("./shopee.server");
     try {
-      return await importSelected(data.order_sns);
+      return await importSelected(data.items);
     } catch (e: any) {
       const msg = String(e?.message ?? e);
       return { ok: false, inserted: 0, updated: 0, skipped: 0, errors: [msg], message: msg };
@@ -134,11 +153,14 @@ export const syncShopeeNow = createServerFn({ method: "POST" })
 
 export const disconnectShopee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: unknown) =>
+    z.object({ shop_id: z.string().trim().min(1).max(64) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
     const isOwner = await requireAdminOrOwner(context);
     if (!isOwner) throw new Error("Forbidden: hanya owner");
     const { disconnectShop } = await import("./shopee.server");
-    await disconnectShop();
+    await disconnectShop(data.shop_id);
     return { ok: true };
   });
 
