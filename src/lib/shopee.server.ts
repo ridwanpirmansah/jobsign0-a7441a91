@@ -1,7 +1,7 @@
 /**
  * Shopee Open Platform API v2 integration (server-only).
- * Kredensial (partner_id / partner_key) disimpan di tabel shopee_settings
- * dan hanya dibaca dari server.
+ * Kredensial aplikasi (partner_id / partner_key) disimpan di shopee_settings;
+ * token tiap toko disimpan di shopee_shops. Semua hanya dibaca dari server.
  */
 import { createHmac } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -26,6 +26,17 @@ export type ShopeeSettings = {
   lookback_days: number;
 };
 
+export type ShopeeShop = {
+  id: string;
+  shop_id: string;
+  shop_name: string | null;
+  access_token: string | null;
+  refresh_token: string | null;
+  token_expires_at: string | null;
+  connected_at: string | null;
+  active: boolean;
+};
+
 function isValidRedirectUrl(url: string): boolean {
   return /^https?:\/\//i.test(url.trim());
 }
@@ -44,6 +55,17 @@ export async function loadSettings(): Promise<ShopeeSettings> {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Pengaturan Shopee belum tersedia");
   return data as unknown as ShopeeSettings;
+}
+
+export async function listShops(activeOnly = false): Promise<ShopeeShop[]> {
+  let q = supabaseAdmin
+    .from("shopee_shops")
+    .select("id, shop_id, shop_name, access_token, refresh_token, token_expires_at, connected_at, active")
+    .order("connected_at", { ascending: true });
+  if (activeOnly) q = q.eq("active", true);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as ShopeeShop[];
 }
 
 function credentials(s: ShopeeSettings) {
@@ -104,66 +126,96 @@ async function postPublic(path: string, body: Record<string, unknown>) {
   return json;
 }
 
-/** Tukar authorization code jadi access/refresh token. */
-export async function exchangeCode(code: string, shopId: string) {
-  const json = await postPublic("/api/v2/auth/token/get", {
-    code,
-    shop_id: Number(shopId),
-  });
-  await saveTokens(shopId, json.access_token, json.refresh_token, json.expire_in ?? 14400);
-  return json;
-}
-
-async function saveTokens(
+async function saveShopTokens(
   shopId: string,
   accessToken: string,
   refreshToken: string,
   expireInSec: number,
 ) {
-  const { error } = await supabaseAdmin
-    .from("shopee_settings")
-    .update({
+  const { error } = await supabaseAdmin.from("shopee_shops").upsert(
+    {
       shop_id: shopId,
       access_token: accessToken,
       refresh_token: refreshToken,
       token_expires_at: new Date(Date.now() + expireInSec * 1000).toISOString(),
       connected_at: new Date().toISOString(),
-    })
-    .eq("id", 1);
+      active: true,
+    } as any,
+    { onConflict: "shop_id" },
+  );
   if (error) throw new Error(error.message);
 }
 
-async function refreshIfNeeded(s: ShopeeSettings): Promise<ShopeeSettings> {
-  if (!s.shop_id || !s.refresh_token) {
-    throw new Error("Toko Shopee belum terhubung. Klik 'Hubungkan Toko Shopee' terlebih dahulu.");
+/** Tukar authorization code jadi access/refresh token untuk toko baru/lama. */
+export async function exchangeCode(code: string, shopId: string) {
+  const json = await postPublic("/api/v2/auth/token/get", {
+    code,
+    shop_id: Number(shopId),
+  });
+  await saveShopTokens(shopId, json.access_token, json.refresh_token, json.expire_in ?? 14400);
+
+  // Simpan juga di settings lama bila belum ada toko utama (kompatibilitas).
+  const s = await loadSettings();
+  if (!s.shop_id) {
+    await supabaseAdmin
+      .from("shopee_settings")
+      .update({ shop_id: shopId, connected_at: new Date().toISOString() } as any)
+      .eq("id", 1);
   }
-  const exp = s.token_expires_at ? new Date(s.token_expires_at).getTime() : 0;
+
+  // Coba ambil nama toko (best effort).
+  try {
+    const shops = await listShops();
+    const shop = shops.find((x) => x.shop_id === shopId);
+    if (shop) {
+      const info = await shopGet(shop, "/api/v2/shop/get_shop_info", {});
+      const name = String(info?.response?.shop_name ?? "").trim();
+      if (name) {
+        await supabaseAdmin.from("shopee_shops").update({ shop_name: name } as any).eq("shop_id", shopId);
+      }
+    }
+  } catch {
+    /* abaikan */
+  }
+  return json;
+}
+
+async function refreshShopIfNeeded(shop: ShopeeShop): Promise<ShopeeShop> {
+  if (!shop.shop_id || !shop.refresh_token) {
+    throw new Error(`Toko Shopee ${shop.shop_id} belum terhubung. Hubungkan ulang dari menu Integrasi Shopee.`);
+  }
+  const exp = shop.token_expires_at ? new Date(shop.token_expires_at).getTime() : 0;
   // refresh 10 menit sebelum kedaluwarsa
-  if (s.access_token && exp - Date.now() > 10 * 60 * 1000) return s;
+  if (shop.access_token && exp - Date.now() > 10 * 60 * 1000) return shop;
 
   const json = await postPublic("/api/v2/auth/access_token/get", {
-    refresh_token: s.refresh_token,
-    shop_id: Number(s.shop_id),
+    refresh_token: shop.refresh_token,
+    shop_id: Number(shop.shop_id),
   });
-  await saveTokens(s.shop_id, json.access_token, json.refresh_token, json.expire_in ?? 14400);
-  return loadSettings();
+  await saveShopTokens(shop.shop_id, json.access_token, json.refresh_token, json.expire_in ?? 14400);
+  return {
+    ...shop,
+    access_token: json.access_token,
+    refresh_token: json.refresh_token,
+    token_expires_at: new Date(Date.now() + (json.expire_in ?? 14400) * 1000).toISOString(),
+  };
 }
 
 /** Panggilan API level toko (butuh access token). */
-async function shopGet(path: string, params: Record<string, string>) {
-  let s = await loadSettings();
-  s = await refreshIfNeeded(s);
+async function shopGet(shopIn: ShopeeShop, path: string, params: Record<string, string>) {
+  const s = await loadSettings();
+  const shop = await refreshShopIfNeeded(shopIn);
   const { partnerId, partnerKey } = credentials(s);
   const ts = Math.floor(Date.now() / 1000);
   const signature = sign(
     partnerKey,
-    `${partnerId}${path}${ts}${s.access_token}${s.shop_id}`,
+    `${partnerId}${path}${ts}${shop.access_token}${shop.shop_id}`,
   );
   const qs = new URLSearchParams({
     partner_id: partnerId,
     timestamp: String(ts),
-    access_token: s.access_token!,
-    shop_id: s.shop_id!,
+    access_token: shop.access_token!,
+    shop_id: shop.shop_id!,
     sign: signature,
     ...params,
   });
@@ -178,20 +230,20 @@ async function shopGet(path: string, params: Record<string, string>) {
 }
 
 /** Panggilan API level toko dengan method POST (body JSON). */
-async function shopPost(path: string, body: Record<string, unknown>, raw = false) {
-  let s = await loadSettings();
-  s = await refreshIfNeeded(s);
+async function shopPost(shopIn: ShopeeShop, path: string, body: Record<string, unknown>, raw = false) {
+  const s = await loadSettings();
+  const shop = await refreshShopIfNeeded(shopIn);
   const { partnerId, partnerKey } = credentials(s);
   const ts = Math.floor(Date.now() / 1000);
   const signature = sign(
     partnerKey,
-    `${partnerId}${path}${ts}${s.access_token}${s.shop_id}`,
+    `${partnerId}${path}${ts}${shop.access_token}${shop.shop_id}`,
   );
   const qs = new URLSearchParams({
     partner_id: partnerId,
     timestamp: String(ts),
-    access_token: s.access_token!,
-    shop_id: s.shop_id!,
+    access_token: shop.access_token!,
+    shop_id: shop.shop_id!,
     sign: signature,
   });
   const res = await fetch(`${apiBase()}${path}?${qs.toString()}`, {
@@ -228,9 +280,14 @@ function unmask(v: unknown): string {
   return s.replace(/\*+/g, "").replace(/\s{2,}/g, " ").trim();
 }
 
+function shopLabel(shop: ShopeeShop): string {
+  return shop.shop_name?.trim() || shop.shop_id;
+}
 
 export type ShopeeOrderPreview = {
   order_sn: string;
+  shop_id: string;
+  shop_name: string;
   status: string;
   buyer: string;
   kota: string;
@@ -250,7 +307,7 @@ export type ShopeeOrderPreview = {
 const IMPORTABLE_STATUSES = ["READY_TO_SHIP", "PROCESSED"];
 
 /** Ambil daftar order_sn dalam rentang hari terakhir (dipecah per 15 hari). */
-async function fetchOrderSns(days: number): Promise<string[]> {
+async function fetchOrderSns(shop: ShopeeShop, days: number): Promise<string[]> {
   const now = Math.floor(Date.now() / 1000);
   const windowSec = 15 * 24 * 3600;
   const start = now - Math.max(1, Math.min(days, 90)) * 24 * 3600;
@@ -261,7 +318,7 @@ async function fetchOrderSns(days: number): Promise<string[]> {
       const to = Math.min(from + windowSec - 1, now);
       let cursor = "";
       for (let guard = 0; guard < 20; guard++) {
-        const json = await shopGet("/api/v2/order/get_order_list", {
+        const json = await shopGet(shop, "/api/v2/order/get_order_list", {
           time_range_field: "create_time",
           time_from: String(from),
           time_to: String(to),
@@ -282,7 +339,7 @@ async function fetchOrderSns(days: number): Promise<string[]> {
 }
 
 /** Ambil daftar order_sn semua status (dipakai untuk update tracking). */
-async function fetchOrderSnsAllStatus(days: number): Promise<string[]> {
+async function fetchOrderSnsAllStatus(shop: ShopeeShop, days: number): Promise<string[]> {
   const now = Math.floor(Date.now() / 1000);
   const windowSec = 15 * 24 * 3600;
   const start = now - Math.max(1, Math.min(days, 90)) * 24 * 3600;
@@ -291,7 +348,7 @@ async function fetchOrderSnsAllStatus(days: number): Promise<string[]> {
     const to = Math.min(from + windowSec - 1, now);
     let cursor = "";
     for (let guard = 0; guard < 20; guard++) {
-      const json = await shopGet("/api/v2/order/get_order_list", {
+      const json = await shopGet(shop, "/api/v2/order/get_order_list", {
         time_range_field: "create_time",
         time_from: String(from),
         time_to: String(to),
@@ -315,7 +372,7 @@ function ymd(sec: unknown): string | null {
   return new Date(n * 1000).toISOString().slice(0, 10);
 }
 
-function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order_no"> {
+function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order_no" | "shop_id" | "shop_name"> {
   const items: any[] = d?.item_list ?? [];
   const product = items.map((i) => i?.item_name).filter(Boolean).join(" | ") || "(tanpa nama produk)";
   const paket = items.map((i) => i?.model_name).filter(Boolean).join(" | ") || "";
@@ -351,9 +408,9 @@ function mapDetail(d: any): Omit<ShopeeOrderPreview, "already_imported" | "order
 }
 
 /** Penghasilan Akhir per pesanan (escrow). Gagal = 0 (fallback ke total). */
-async function fetchEscrowAmount(orderSn: string): Promise<number> {
+async function fetchEscrowAmount(shop: ShopeeShop, orderSn: string): Promise<number> {
   try {
-    const json = await shopGet("/api/v2/payment/get_escrow_detail", { order_sn: orderSn });
+    const json = await shopGet(shop, "/api/v2/payment/get_escrow_detail", { order_sn: orderSn });
     const inc = json?.response?.order_income ?? {};
     const val = Number(inc?.escrow_amount ?? json?.response?.escrow_amount ?? 0);
     return Number.isFinite(val) ? val : 0;
@@ -363,20 +420,20 @@ async function fetchEscrowAmount(orderSn: string): Promise<number> {
 }
 
 /** No resi dari logistik bila detail pesanan belum menyertakannya. */
-async function fetchTrackingNumber(orderSn: string): Promise<string> {
+async function fetchTrackingNumber(shop: ShopeeShop, orderSn: string): Promise<string> {
   try {
-    const json = await shopGet("/api/v2/logistics/get_tracking_number", { order_sn: orderSn });
+    const json = await shopGet(shop, "/api/v2/logistics/get_tracking_number", { order_sn: orderSn });
     return String(json?.response?.tracking_number ?? "");
   } catch {
     return "";
   }
 }
 
-async function fetchDetails(sns: string[]) {
+async function fetchDetails(shop: ShopeeShop, sns: string[]) {
   const out: any[] = [];
   for (let i = 0; i < sns.length; i += 45) {
     const chunk = sns.slice(i, i + 45);
-    const json = await shopGet("/api/v2/order/get_order_detail", {
+    const json = await shopGet(shop, "/api/v2/order/get_order_detail", {
       order_sn_list: chunk.join(","),
       response_optional_fields:
         "buyer_username,recipient_address,item_list,total_amount,order_status,message_to_seller,package_list,shipping_carrier,create_time,ship_by_date",
@@ -387,35 +444,52 @@ async function fetchDetails(sns: string[]) {
   for (const d of out) {
     const sn = String(d?.order_sn ?? "");
     if (!sn) continue;
-    d.__escrow_amount = await fetchEscrowAmount(sn);
+    d.__escrow_amount = await fetchEscrowAmount(shop, sn);
     const existingResi = d?.package_list?.[0]?.tracking_number ?? d?.tracking_number ?? "";
-    if (!existingResi) d.__tracking_number = await fetchTrackingNumber(sn);
+    if (!existingResi) d.__tracking_number = await fetchTrackingNumber(shop, sn);
   }
   return out;
 }
 
-
 export async function previewOrders(days: number): Promise<ShopeeOrderPreview[]> {
-  const sns = await fetchOrderSns(days);
-  if (sns.length === 0) return [];
-  const details = await fetchDetails(sns);
+  const shops = await listShops(true);
+  if (shops.length === 0) {
+    throw new Error("Belum ada toko Shopee terhubung. Hubungkan dulu dari menu Integrasi Shopee.");
+  }
 
-  const { data: maps } = await supabaseAdmin
-    .from("shopee_order_map")
-    .select("order_sn, order_id, orders(order_no)")
-    .in("order_sn", sns);
-  const byS = new Map<string, any>();
-  for (const m of maps ?? []) byS.set((m as any).order_sn, m);
+  const rows: ShopeeOrderPreview[] = [];
+  const errors: string[] = [];
+  for (const shop of shops) {
+    try {
+      const sns = await fetchOrderSns(shop, days);
+      if (sns.length === 0) continue;
+      const details = await fetchDetails(shop, sns);
 
-  return details.map((d) => {
-    const base = mapDetail(d);
-    const m = byS.get(base.order_sn);
-    return {
-      ...base,
-      already_imported: !!m?.order_id,
-      order_no: (m?.orders as any)?.order_no ?? null,
-    };
-  });
+      const { data: maps } = await supabaseAdmin
+        .from("shopee_order_map")
+        .select("order_sn, order_id, orders(order_no)")
+        .eq("shop_id", shop.shop_id)
+        .in("order_sn", sns);
+      const byS = new Map<string, any>();
+      for (const m of maps ?? []) byS.set((m as any).order_sn, m);
+
+      for (const d of details) {
+        const base = mapDetail(d);
+        const m = byS.get(base.order_sn);
+        rows.push({
+          ...base,
+          shop_id: shop.shop_id,
+          shop_name: shopLabel(shop),
+          already_imported: !!m?.order_id,
+          order_no: (m?.orders as any)?.order_no ?? null,
+        });
+      }
+    } catch (e: any) {
+      errors.push(`${shopLabel(shop)}: ${String(e?.message ?? e)}`);
+    }
+  }
+  if (rows.length === 0 && errors.length > 0) throw new Error(errors.join(" | "));
+  return rows;
 }
 
 export type ShopeeSyncResult = {
@@ -455,7 +529,7 @@ async function ensureCarrier(name: string) {
   } as any);
 }
 
-async function importDetail(d: any, result: ShopeeSyncResult) {
+async function importDetail(shop: ShopeeShop, d: any, result: ShopeeSyncResult) {
   const p = mapDetail(d);
   if (p.ekspedisi) await ensureCarrier(p.ekspedisi);
   if (!p.order_sn) {
@@ -467,6 +541,7 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
     .from("shopee_order_map")
     .select("id, order_id")
     .eq("order_sn", p.order_sn)
+    .eq("shop_id", shop.shop_id)
     .maybeSingle();
 
   if (existing?.order_id) {
@@ -487,14 +562,16 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
     }
     await supabaseAdmin
       .from("shopee_order_map")
-      .update({ shopee_status: p.status, raw: d })
+      .update({ shopee_status: p.status, raw: d, shop_id: shop.shop_id } as any)
       .eq("id", existing.id);
-    await importShopeeShippingAssets(p.order_sn, existing.order_id, p.status, result);
+    await importShopeeShippingAssets(shop, p.order_sn, existing.order_id, p.status, result);
     result.updated++;
     return;
   }
 
-  const notes = [p.buyer_note, `Shopee: ${p.order_sn}`].filter(Boolean).join(" | ");
+  const notes = [p.buyer_note, `Shopee: ${p.order_sn}`, `Toko: ${shopLabel(shop)}`]
+    .filter(Boolean)
+    .join(" | ");
   const { data: created, error } = await supabaseAdmin
     .from("orders")
     .insert({
@@ -511,8 +588,7 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
       ekspedisi: p.ekspedisi || null,
       deadline: p.deadline,
       notes,
-
-
+      shopee_shop_id: shop.shop_id,
     } as any)
     .select("id")
     .single();
@@ -526,14 +602,15 @@ async function importDetail(d: any, result: ShopeeSyncResult) {
   await supabaseAdmin.from("shopee_order_map").upsert(
     {
       order_sn: p.order_sn,
+      shop_id: shop.shop_id,
       order_id: created.id,
       shopee_status: p.status,
       raw: d,
       imported_at: new Date().toISOString(),
     } as any,
-    { onConflict: "order_sn" },
+    { onConflict: "order_sn,shop_id" },
   );
-  await importShopeeShippingAssets(p.order_sn, created.id, p.status, result);
+  await importShopeeShippingAssets(shop, p.order_sn, created.id, p.status, result);
   result.inserted++;
 }
 
@@ -541,22 +618,44 @@ function emptyResult(): ShopeeSyncResult {
   return { ok: false, inserted: 0, updated: 0, skipped: 0, errors: [], message: "" };
 }
 
-/** Import order_sn tertentu (dipilih manual dari preview). */
-export async function importSelected(orderSns: string[]): Promise<ShopeeSyncResult> {
+/** Import order tertentu (dipilih manual dari preview), dikelompokkan per toko. */
+export async function importSelected(
+  items: { order_sn: string; shop_id: string }[],
+): Promise<ShopeeSyncResult> {
   const result = emptyResult();
-  if (orderSns.length === 0) {
+  if (items.length === 0) {
     result.message = "Tidak ada pesanan yang dipilih";
     return result;
   }
-  const details = await fetchDetails(orderSns);
-  for (const d of details) await importDetail(d, result);
+  const shops = await listShops(true);
+  const byShop = new Map<string, { shop: ShopeeShop; sns: string[] }>();
+  for (const item of items) {
+    const shop = shops.find((s) => s.shop_id === item.shop_id);
+    if (!shop) {
+      result.errors.push(`${item.order_sn}: toko ${item.shop_id} tidak terhubung`);
+      result.skipped++;
+      continue;
+    }
+    const entry = byShop.get(shop.shop_id) ?? { shop, sns: [] };
+    entry.sns.push(item.order_sn);
+    byShop.set(shop.shop_id, entry);
+  }
+  for (const { shop, sns } of byShop.values()) {
+    try {
+      const details = await fetchDetails(shop, sns);
+      for (const d of details) await importDetail(shop, d, result);
+    } catch (e: any) {
+      result.errors.push(`${shopLabel(shop)}: ${String(e?.message ?? e)}`);
+      result.skipped += sns.length;
+    }
+  }
   result.ok = true;
-  result.message = `${result.inserted} order baru, ${result.updated} diperbarui, ${result.skipped} dilewati.${result.errors.length ? ` ${result.errors.length} resi belum berhasil diimpor; jalankan sync ulang.` : " Semua PDF resi tersedia di webapp."}`;
+  result.message = `${result.inserted} order baru, ${result.updated} diperbarui, ${result.skipped} dilewati.${result.errors.length ? ` ${result.errors.length} resi/order belum berhasil diimpor; jalankan sync ulang.` : " Semua PDF resi tersedia di webapp."}`;
   await persistStatus("ok", result);
   return result;
 }
 
-/** Sync otomatis semua pesanan pada rentang lookback. */
+/** Sync otomatis semua pesanan semua toko aktif pada rentang lookback. */
 export async function runShopeeSync(force = false): Promise<ShopeeSyncResult> {
   const result = emptyResult();
   let s: ShopeeSettings;
@@ -571,19 +670,26 @@ export async function runShopeeSync(force = false): Promise<ShopeeSyncResult> {
     return result;
   }
   try {
-    const days = s.lookback_days ?? 7;
-    const sns = await fetchOrderSnsAllStatus(days);
-    if (sns.length === 0) {
-      result.ok = true;
-      result.message = "Tidak ada pesanan pada rentang tanggal tersebut.";
-      await persistStatus("ok", result);
+    const shops = await listShops(true);
+    if (shops.length === 0) {
+      result.message = "Belum ada toko Shopee terhubung";
+      await persistStatus("error", result);
       return result;
     }
-    const details = await fetchDetails(sns);
-    for (const d of details) await importDetail(d, result);
+    const days = s.lookback_days ?? 7;
+    for (const shop of shops) {
+      try {
+        const sns = await fetchOrderSnsAllStatus(shop, days);
+        if (sns.length === 0) continue;
+        const details = await fetchDetails(shop, sns);
+        for (const d of details) await importDetail(shop, d, result);
+      } catch (e: any) {
+        result.errors.push(`${shopLabel(shop)}: ${String(e?.message ?? e)}`);
+      }
+    }
     result.ok = true;
-    result.message = `${result.inserted} order baru, ${result.updated} diperbarui, ${result.skipped} dilewati.${result.errors.length ? ` ${result.errors.length} resi belum berhasil diimpor; sync berikutnya akan mencoba lagi.` : " Semua PDF resi tersedia di webapp."}`;
-    await persistStatus("ok", result);
+    result.message = `${result.inserted} order baru, ${result.updated} diperbarui, ${result.skipped} dilewati dari ${shops.length} toko.${result.errors.length ? ` ${result.errors.length} resi/error belum berhasil; sync berikutnya akan mencoba lagi.` : " Semua PDF resi tersedia di webapp."}`;
+    await persistStatus(result.errors.length > 0 && result.inserted + result.updated === 0 ? "error" : "ok", result);
   } catch (e: any) {
     result.message = e?.message ?? "Sync gagal";
     result.errors.push(result.message);
@@ -603,23 +709,31 @@ async function persistStatus(status: "ok" | "error", r: ShopeeSyncResult) {
       last_sync_inserted: r.inserted,
       last_sync_updated: r.updated,
       last_sync_skipped: r.skipped,
-    })
+    } as any)
     .eq("id", 1);
 }
 
-export async function disconnectShop() {
+/** Putuskan satu toko (token dihapus, toko dinonaktifkan). */
+export async function disconnectShop(shopId: string) {
   const { error } = await supabaseAdmin
-    .from("shopee_settings")
+    .from("shopee_shops")
     .update({
-      shop_id: null,
       access_token: null,
       refresh_token: null,
       token_expires_at: null,
-      connected_at: null,
-      enabled: false,
-    })
-    .eq("id", 1);
+      active: false,
+    } as any)
+    .eq("shop_id", shopId);
   if (error) throw new Error(error.message);
+
+  // Bersihkan referensi lama di settings bila menunjuk toko ini.
+  const s = await loadSettings();
+  if (s.shop_id === shopId) {
+    await supabaseAdmin
+      .from("shopee_settings")
+      .update({ shop_id: null, access_token: null, refresh_token: null, token_expires_at: null } as any)
+      .eq("id", 1);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -641,11 +755,12 @@ function b64(bytes: Uint8Array): string {
 
 /** Info paket (package_number & tracking_number) untuk order_sn. */
 async function fetchPackageInfo(
+  shop: ShopeeShop,
   orderSn: string,
 ): Promise<PackageInfo> {
   const info: PackageInfo = {};
   try {
-    const json = await shopGet("/api/v2/order/get_order_detail", {
+    const json = await shopGet(shop, "/api/v2/order/get_order_detail", {
       order_sn_list: orderSn,
       response_optional_fields: "package_list",
     });
@@ -656,7 +771,7 @@ async function fetchPackageInfo(
     /* abaikan */
   }
   if (!info.tracking_number) {
-    const tn = await fetchTrackingNumber(orderSn);
+    const tn = await fetchTrackingNumber(shop, orderSn);
     if (tn) info.tracking_number = tn;
   }
   return info;
@@ -686,12 +801,12 @@ function firstNumber(source: any, keys: string[]): number | null {
  * Parameter pickup/dropoff selalu dipilih dari opsi yang dikembalikan Shopee,
  * sehingga panggilan ini tetap valid untuk kurir yang berbeda-beda.
  */
-async function ensureShipmentArranged(orderSn: string, info: PackageInfo): Promise<PackageInfo> {
+async function ensureShipmentArranged(shop: ShopeeShop, orderSn: string, info: PackageInfo): Promise<PackageInfo> {
   if (info.tracking_number) return info;
 
   const params: Record<string, string> = { order_sn: orderSn };
   if (info.package_number) params.package_number = info.package_number;
-  const json = await shopGet("/api/v2/logistics/get_shipping_parameter", params);
+  const json = await shopGet(shop, "/api/v2/logistics/get_shipping_parameter", params);
   const response = json?.response ?? {};
   const needed = response?.info_needed ?? {};
   const body: Record<string, unknown> = { order_sn: orderSn };
@@ -736,7 +851,7 @@ async function ensureShipmentArranged(orderSn: string, info: PackageInfo): Promi
   }
 
   try {
-    await shopPost("/api/v2/logistics/ship_order", body);
+    await shopPost(shop, "/api/v2/logistics/ship_order", body);
   } catch (error: any) {
     const message = String(error?.message ?? "");
     if (!/already|duplicate|processed|shipped|arranged|not_ready_to_ship/i.test(message)) throw error;
@@ -744,7 +859,7 @@ async function ensureShipmentArranged(orderSn: string, info: PackageInfo): Promi
 
   let refreshed = info;
   for (let attempt = 0; attempt < 8; attempt++) {
-    refreshed = await fetchPackageInfo(orderSn);
+    refreshed = await fetchPackageInfo(shop, orderSn);
     if (refreshed.tracking_number) return refreshed;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
@@ -753,6 +868,7 @@ async function ensureShipmentArranged(orderSn: string, info: PackageInfo): Promi
 
 /** Impor resi dan PDF pada saat sinkronisasi; preview tidak pernah memanggil Shopee. */
 async function importShopeeShippingAssets(
+  shop: ShopeeShop,
   orderSn: string,
   orderId: string,
   status: string,
@@ -770,11 +886,11 @@ async function importShopeeShippingAssets(
   if ((order as any)?.shopee_label_pdf) return;
 
   try {
-    let info = await fetchPackageInfo(orderSn);
+    let info = await fetchPackageInfo(shop, orderSn);
     if (!info.tracking_number && status.toUpperCase() === "READY_TO_SHIP") {
-      info = await ensureShipmentArranged(orderSn, info);
+      info = await ensureShipmentArranged(shop, orderSn, info);
     }
-    const pdf = await fetchShopeeLabelBase64(orderSn);
+    const pdf = await fetchShopeeLabelBase64(shop, orderSn);
     const patch: Record<string, unknown> = { shopee_label_pdf: pdf };
     if (info.tracking_number) patch.no_resi = info.tracking_number;
     const { error } = await supabaseAdmin.from("orders").update(patch as any).eq("id", orderId);
@@ -786,6 +902,7 @@ async function importShopeeShippingAssets(
 
 /** Minta Shopee membuat dokumen resi. */
 async function createShippingDocument(
+  shop: ShopeeShop,
   sn: string,
   info: { package_number?: string; tracking_number?: string },
 ) {
@@ -795,7 +912,7 @@ async function createShippingDocument(
   };
   if (info.tracking_number) item.tracking_number = info.tracking_number;
   try {
-    await shopPost("/api/v2/logistics/create_shipping_document", { order_list: [item] });
+    await shopPost(shop, "/api/v2/logistics/create_shipping_document", { order_list: [item] });
   } catch (e: any) {
     const msg = String(e?.message ?? "");
     // Dokumen sudah pernah dibuat → aman dilanjutkan.
@@ -804,9 +921,9 @@ async function createShippingDocument(
 }
 
 /** Tunggu dokumen siap diunduh. */
-async function waitDocumentReady(sn: string, info: { package_number?: string }) {
+async function waitDocumentReady(shop: ShopeeShop, sn: string, info: { package_number?: string }) {
   for (let i = 0; i < 12; i++) {
-    const res: any = await shopPost("/api/v2/logistics/get_shipping_document_result", {
+    const res: any = await shopPost(shop, "/api/v2/logistics/get_shipping_document_result", {
       shipping_document_type: DOC_TYPE,
       order_list: [orderItem(sn, info)],
     });
@@ -824,21 +941,22 @@ async function waitDocumentReady(sn: string, info: { package_number?: string }) 
 }
 
 /** Ambil PDF resi resmi Shopee untuk satu order_sn (base64). */
-export async function fetchShopeeLabelBase64(orderSn: string): Promise<string> {
+export async function fetchShopeeLabelBase64(shop: ShopeeShop, orderSn: string): Promise<string> {
   const sn = orderSn.trim();
   if (!sn) throw new Error("order_sn kosong");
 
-  const info = await fetchPackageInfo(sn);
+  const info = await fetchPackageInfo(shop, sn);
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    await createShippingDocument(sn, info);
-    const ready = await waitDocumentReady(sn, info);
+    await createShippingDocument(shop, sn, info);
+    const ready = await waitDocumentReady(shop, sn, info);
     if (!ready) {
       if (attempt === 0) continue;
       throw new Error("Resi Shopee belum siap, coba lagi beberapa saat lagi.");
     }
     try {
       const out: any = await shopPost(
+        shop,
         "/api/v2/logistics/download_shipping_document",
         { shipping_document_type: DOC_TYPE, order_list: [orderItem(sn, info)] },
         true,
@@ -857,7 +975,6 @@ export async function fetchShopeeLabelBase64(orderSn: string): Promise<string> {
   }
   throw new Error("Gagal mengunduh resi Shopee, coba lagi.");
 }
-
 
 /** Cari order_sn Shopee dari order internal. */
 export async function findShopeeOrderSn(orderId: string): Promise<string | null> {
