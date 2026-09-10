@@ -120,7 +120,7 @@ function ShopeePage() {
       }
       setRows(r.rows);
       const next: Record<string, boolean> = {};
-      for (const row of r.rows) if (!row.already_imported) next[row.order_sn] = true;
+      for (const row of r.rows) if (!row.already_imported) next[`${row.shop_id}|${row.order_sn}`] = true;
       setPicked(next);
       toast.success(`${r.rows.length} pesanan ditemukan`);
     },
@@ -199,11 +199,10 @@ function ShopeePage() {
       <Card>
         <CardContent className="pt-6 flex flex-wrap gap-3 items-center">
           {status?.connected ? (
-            <Badge className="gap-1 bg-emerald-600"><CheckCircle2 className="h-3 w-3" /> Toko terhubung</Badge>
+            <Badge className="gap-1 bg-emerald-600"><CheckCircle2 className="h-3 w-3" /> {status?.shops?.filter((s: any) => s.connected).length ?? 0} toko terhubung</Badge>
           ) : (
             <Badge variant="secondary" className="gap-1"><AlertCircle className="h-3 w-3" /> Belum terhubung</Badge>
           )}
-          {status?.shop_id && <span className="text-sm text-muted-foreground">Shop ID: {status.shop_id}</span>}
           {status?.last_sync_at && (
             <span className="text-sm text-muted-foreground">
               Sync terakhir: {new Date(status.last_sync_at).toLocaleString("id-ID")} · +{status.last_sync_inserted} baru, ~{status.last_sync_updated} update
