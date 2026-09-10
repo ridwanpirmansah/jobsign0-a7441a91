@@ -127,13 +127,21 @@ function ShopeePage() {
     onError: (e: any) => toast.error(e?.message ?? "Gagal ambil pesanan"),
   });
 
+  const rowKey = (r: any) => `${r.shop_id}|${r.order_sn}`;
+
   const selected = useMemo(
-    () => Object.entries(picked).filter(([, v]) => v).map(([k]) => k),
+    () =>
+      Object.entries(picked)
+        .filter(([, v]) => v)
+        .map(([k]) => {
+          const [shop_id, order_sn] = k.split("|");
+          return { order_sn, shop_id };
+        }),
     [picked],
   );
 
   const importMut = useMutation({
-    mutationFn: () => importFn({ data: { order_sns: selected } }),
+    mutationFn: () => importFn({ data: { items: selected } }),
     onSuccess: (r: any) => {
       if (r.ok) toast.success(r.message);
       else toast.error(r.message || "Import gagal");
@@ -156,7 +164,7 @@ function ShopeePage() {
   });
 
   const disconnectMut = useMutation({
-    mutationFn: () => disconnectFn(),
+    mutationFn: (shopId: string) => disconnectFn({ data: { shop_id: shopId } }),
     onSuccess: () => {
       toast.success("Toko Shopee diputuskan");
       setRows(null);
