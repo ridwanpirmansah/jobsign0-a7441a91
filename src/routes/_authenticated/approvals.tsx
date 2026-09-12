@@ -27,6 +27,7 @@ type JobLogRow = {
   note: string | null;
   status: string;
   project_id?: string | null;
+  source_order_id?: string | null;
   is_repair: boolean | null;
   repair_reason: string | null;
   photo_url?: string | null;
@@ -102,6 +103,20 @@ function ApprovalsPage() {
       const rows = (await supabase.from("job_logs")
         .select("*, employee:employees(full_name,employee_code,type), project:projects(code,title,parent_order_id), rate:job_rates(name,unit,rate_per_unit), order:orders!source_order_id(order_no,text_neon,outdoor_cost)")
         .eq("status", "pending").order("created_at", { ascending: false })).data as unknown as JobLogRow[] ?? [];
+
+      // Untuk reparasi tanpa tautan project langsung, ambil kode project dari order sumber
+      const repairOrderIds = [...new Set(rows.filter((r) => r.is_repair && !r.project && r.source_order_id).map((r) => r.source_order_id))] as string[];
+      const repairProjectMap = new Map<string, { code: string; title: string }>();
+      if (repairOrderIds.length) {
+        const { data: projs } = await supabase.from("projects").select("code,title,parent_order_id").in("parent_order_id", repairOrderIds);
+        (projs ?? []).forEach((p) => { if (p.parent_order_id) repairProjectMap.set(p.parent_order_id, { code: p.code, title: p.title }); });
+      }
+      rows.forEach((r) => {
+        if (r.is_repair && !r.project && r.source_order_id) {
+          const p = repairProjectMap.get(r.source_order_id);
+          if (p) r.project = p;
+        }
+      });
 
       const projectIds = [...new Set(rows.map((r) => r.project_id ?? null).filter(Boolean))] as string[];
       const parentIds = [...new Set(rows.map((r) => r.project?.parent_order_id).filter(Boolean))] as string[];
