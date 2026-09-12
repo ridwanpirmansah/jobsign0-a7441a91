@@ -312,7 +312,7 @@ function ApprovalsPage() {
               </div>
               <div>
                 <Label>Qty Disetujui</Label>
-                <Input type="number" step="0.01" min="0" value={partialQty} onChange={(e) => setPartialQty(e.target.value)} />
+                <Input type="number" step="0.01" min="0" max={Number(partialLog.qty) || 0} value={partialQty} onChange={(e) => setPartialQty(e.target.value)} />
               </div>
               <div>
                 <Label>Override Nominal Upah (opsional)</Label>
