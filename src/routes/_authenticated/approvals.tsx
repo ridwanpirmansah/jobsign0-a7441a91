@@ -196,9 +196,14 @@ function ApprovalsPage() {
                     <div className="text-xs text-slate-500">{l.qty} × {l.rate?.unit}</div>
                   </div>
                 </div>
-                {l.is_repair && l.order && (
+                {l.is_repair && (l.order || l.project) && (
                   <div className="text-xs leading-tight rounded-md bg-orange-100/60 px-2 py-1.5">
-                    <span className="text-orange-700 font-medium">Order #{l.order.order_no}</span> · <span className="text-slate-800">{l.order.text_neon}</span>
+                    {l.project && (
+                      <div><span className="font-mono text-slate-500">{l.project.code}</span> · <span className="font-medium text-slate-800">{l.project.title}</span></div>
+                    )}
+                    {l.order && (
+                      <div><span className="text-orange-700 font-medium">Order #{l.order.order_no}</span> · <span className="text-slate-800">{l.order.text_neon}</span></div>
+                    )}
                   </div>
                 )}
                 {!l.is_repair && l.project && (
