@@ -257,10 +257,11 @@ function ApprovalsPage() {
                       {l._outdoor && <span className="ml-1 inline-flex"><OutdoorBadge /></span>}
                     </TableCell>
                     <TableCell>
-                      {l.is_repair && l.order ? (
+                      {l.is_repair && (l.order || l.project) ? (
                         <div className="leading-tight">
-                          <div className="text-xs text-orange-700 font-mono">#{l.order.order_no}</div>
-                          <div className="font-medium text-slate-900">{l.order.text_neon}</div>
+                          {l.project && <div className="font-mono text-xs text-slate-500">{l.project.code}</div>}
+                          <div className="font-medium text-slate-900">{l.project?.title ?? l.order?.text_neon}</div>
+                          {l.order && <div className="text-xs text-orange-700 font-mono">#{l.order.order_no} · {l.order.text_neon}</div>}
                         </div>
                       ) : l.project ? (
                         <div className="leading-tight">
