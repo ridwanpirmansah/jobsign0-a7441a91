@@ -157,6 +157,7 @@ function ApprovalsPage() {
     if (!partialLog) return;
     const qty = Number(partialQty);
     if (!qty || qty <= 0) { toast.error("Qty harus lebih dari 0"); return; }
+    if (qty > Number(partialLog.qty)) { toast.error(`Qty tidak boleh melebihi qty awal (${partialLog.qty})`); return; }
     const amt = partialAmount.trim() === "" ? undefined : Number(partialAmount);
     if (amt !== undefined && (isNaN(amt) || amt < 0)) { toast.error("Nominal tidak valid"); return; }
     const maxAmt = Number(partialLog.amount) || 0;
