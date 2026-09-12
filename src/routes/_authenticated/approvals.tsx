@@ -316,9 +316,13 @@ function ApprovalsPage() {
               </div>
               <div>
                 <Label>Override Nominal Upah (opsional)</Label>
-                <Input type="number" step="1" min="0" placeholder="Kosongkan untuk auto" value={partialAmount} onChange={(e) => setPartialAmount(e.target.value)} />
+                <Input type="number" step="1" min="0" max={Number(partialLog.amount) || 0} placeholder="Kosongkan untuk auto" value={partialAmount} onChange={(e) => setPartialAmount(e.target.value)} />
+                <p className="text-xs mt-1 text-slate-500">Maksimal {fmtIDR(Number(partialLog.amount))} (tidak boleh melebihi upah awal).</p>
+                {partialAmount.trim() !== "" && Number(partialAmount) > Number(partialLog.amount) && (
+                  <p className="text-xs mt-1 text-rose-600">Nominal melebihi upah awal.</p>
+                )}
                 {partialAmount.trim() === "" && partialLog.rate && (
-                  <p className="text-xs mt-1 text-slate-500">Akan dihitung: {fmtIDR((Number(partialQty) || 0) * Number(partialLog.rate.rate_per_unit))}</p>
+                  <p className="text-xs mt-1 text-slate-500">Akan dihitung: {fmtIDR(Math.min((Number(partialQty) || 0) * Number(partialLog.rate.rate_per_unit), Number(partialLog.amount)))}</p>
                 )}
               </div>
             </div>
