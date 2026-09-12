@@ -157,8 +157,11 @@ function ApprovalsPage() {
     if (!partialLog) return;
     const qty = Number(partialQty);
     if (!qty || qty <= 0) { toast.error("Qty harus lebih dari 0"); return; }
+    if (qty > Number(partialLog.qty)) { toast.error(`Qty tidak boleh melebihi qty awal (${partialLog.qty})`); return; }
     const amt = partialAmount.trim() === "" ? undefined : Number(partialAmount);
     if (amt !== undefined && (isNaN(amt) || amt < 0)) { toast.error("Nominal tidak valid"); return; }
+    const maxAmt = Number(partialLog.amount) || 0;
+    if (amt !== undefined && amt > maxAmt) { toast.error(`Nominal tidak boleh melebihi upah awal (${fmtIDR(maxAmt)})`); return; }
     decide.mutate({ id: partialLog.id, status: "approved", qty, amount: amt });
   };
 
@@ -196,9 +199,14 @@ function ApprovalsPage() {
                     <div className="text-xs text-slate-500">{l.qty} × {l.rate?.unit}</div>
                   </div>
                 </div>
-                {l.is_repair && l.order && (
+                {l.is_repair && (l.order || l.project) && (
                   <div className="text-xs leading-tight rounded-md bg-orange-100/60 px-2 py-1.5">
-                    <span className="text-orange-700 font-medium">Order #{l.order.order_no}</span> · <span className="text-slate-800">{l.order.text_neon}</span>
+                    {l.project && (
+                      <div><span className="font-mono text-slate-500">{l.project.code}</span> · <span className="font-medium text-slate-800">{l.project.title}</span></div>
+                    )}
+                    {l.order && (
+                      <div><span className="text-orange-700 font-medium">Order #{l.order.order_no}</span> · <span className="text-slate-800">{l.order.text_neon}</span></div>
+                    )}
                   </div>
                 )}
                 {!l.is_repair && l.project && (
@@ -252,10 +260,11 @@ function ApprovalsPage() {
                       {l._outdoor && <span className="ml-1 inline-flex"><OutdoorBadge /></span>}
                     </TableCell>
                     <TableCell>
-                      {l.is_repair && l.order ? (
+                      {l.is_repair && (l.order || l.project) ? (
                         <div className="leading-tight">
-                          <div className="text-xs text-orange-700 font-mono">#{l.order.order_no}</div>
-                          <div className="font-medium text-slate-900">{l.order.text_neon}</div>
+                          {l.project && <div className="font-mono text-xs text-slate-500">{l.project.code}</div>}
+                          <div className="font-medium text-slate-900">{l.project?.title ?? l.order?.text_neon}</div>
+                          {l.order && <div className="text-xs text-orange-700 font-mono">#{l.order.order_no} · {l.order.text_neon}</div>}
                         </div>
                       ) : l.project ? (
                         <div className="leading-tight">
@@ -304,13 +313,17 @@ function ApprovalsPage() {
               </div>
               <div>
                 <Label>Qty Disetujui</Label>
-                <Input type="number" step="0.01" min="0" value={partialQty} onChange={(e) => setPartialQty(e.target.value)} />
+                <Input type="number" step="0.01" min="0" max={Number(partialLog.qty) || 0} value={partialQty} onChange={(e) => setPartialQty(e.target.value)} />
               </div>
               <div>
                 <Label>Override Nominal Upah (opsional)</Label>
-                <Input type="number" step="1" min="0" placeholder="Kosongkan untuk auto" value={partialAmount} onChange={(e) => setPartialAmount(e.target.value)} />
+                <Input type="number" step="1" min="0" max={Number(partialLog.amount) || 0} placeholder="Kosongkan untuk auto" value={partialAmount} onChange={(e) => setPartialAmount(e.target.value)} />
+                <p className="text-xs mt-1 text-slate-500">Maksimal {fmtIDR(Number(partialLog.amount))} (tidak boleh melebihi upah awal).</p>
+                {partialAmount.trim() !== "" && Number(partialAmount) > Number(partialLog.amount) && (
+                  <p className="text-xs mt-1 text-rose-600">Nominal melebihi upah awal.</p>
+                )}
                 {partialAmount.trim() === "" && partialLog.rate && (
-                  <p className="text-xs mt-1 text-slate-500">Akan dihitung: {fmtIDR((Number(partialQty) || 0) * Number(partialLog.rate.rate_per_unit))}</p>
+                  <p className="text-xs mt-1 text-slate-500">Akan dihitung: {fmtIDR(Math.min((Number(partialQty) || 0) * Number(partialLog.rate.rate_per_unit), Number(partialLog.amount)))}</p>
                 )}
               </div>
             </div>
