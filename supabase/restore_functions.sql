@@ -81,7 +81,7 @@ CREATE OR REPLACE FUNCTION public.restore_begin()
 RETURNS int LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $fn$
 DECLARE r record; _n int := 0;
 BEGIN
-  DELETE FROM public.restore_constraint_backup;
+  TRUNCATE TABLE public.restore_constraint_backup;
   FOR r IN
     SELECT t.relname AS tbl, c.conname, pg_get_constraintdef(c.oid) AS def
     FROM pg_constraint c
@@ -120,7 +120,7 @@ BEGIN
       _fail := _fail || format('%s.%s: %s', r.table_name, r.constraint_name, SQLERRM);
     END;
   END LOOP;
-  DELETE FROM public.restore_constraint_backup;
+  TRUNCATE TABLE public.restore_constraint_backup;
   RETURN jsonb_build_object('restored', _ok, 'failed', to_jsonb(_fail));
 END $fn$;
 
@@ -137,7 +137,7 @@ CREATE OR REPLACE FUNCTION public.restore_begin()
 RETURNS int LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $fn$
 DECLARE r record; _n int := 0;
 BEGIN
-  DELETE FROM public.restore_constraint_backup;
+  TRUNCATE TABLE public.restore_constraint_backup;
   FOR r IN
     SELECT t.relname AS tbl, c.conname, pg_get_constraintdef(c.oid) AS def
     FROM pg_constraint c
