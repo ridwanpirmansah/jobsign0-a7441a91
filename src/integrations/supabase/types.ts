@@ -1578,6 +1578,7 @@ export type Database = {
         Returns: number
       }
       restore_finish: { Args: never; Returns: Json }
+      restore_fix_auth_users: { Args: never; Returns: number }
       restore_truncate: { Args: { _table: string }; Returns: undefined }
       rotate_attendance_secret: { Args: never; Returns: string }
       set_attendance_note: {
