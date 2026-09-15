@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAppAuth } from "@/lib/app-auth";
 
 export type BackupTable = {
   key: string; // "<schema>.<table>"
@@ -59,8 +59,8 @@ async function requireOwner(ctx: any) {
 }
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin as any;
+  const { getAdminClient } = await import("@/lib/admin-client.server");
+  return getAdminClient() as any;
 }
 
 async function exportRows(db: any, cfg: BackupTable) {
@@ -84,7 +84,7 @@ async function exportRows(db: any, cfg: BackupTable) {
 }
 
 export const listBackupTables = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAppAuth])
   .handler(async ({ context }) => {
     await requireOwner(context);
     const db = await admin();
@@ -102,7 +102,7 @@ export const listBackupTables = createServerFn({ method: "GET" })
   });
 
 export const backupTable = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAppAuth])
   .inputValidator((d: { table: string }) => z.object({ table: z.enum(TABLE_KEYS) }).parse(d))
   .handler(async ({ data, context }) => {
     await requireOwner(context);
@@ -114,7 +114,7 @@ export const backupTable = createServerFn({ method: "POST" })
 
 /** Masuk mode restore: relasi antar tabel & aturan otomatis dinonaktifkan sementara. */
 export const restoreBegin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAppAuth])
   .handler(async ({ context }) => {
     await requireOwner(context);
     const db = await admin();
@@ -125,7 +125,7 @@ export const restoreBegin = createServerFn({ method: "POST" })
 
 /** Keluar dari mode restore: aturan otomatis & relasi dipasang kembali. */
 export const restoreFinish = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAppAuth])
   .handler(async ({ context }) => {
     await requireOwner(context);
     const db = await admin();
@@ -135,7 +135,7 @@ export const restoreFinish = createServerFn({ method: "POST" })
   });
 
 export const clearTable = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAppAuth])
   .inputValidator((d: { table: string }) => z.object({ table: z.enum(TABLE_KEYS) }).parse(d))
   .handler(async ({ data, context }) => {
     await requireOwner(context);
@@ -148,7 +148,7 @@ export const clearTable = createServerFn({ method: "POST" })
   });
 
 export const restoreChunk = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAppAuth])
   .inputValidator((d: { table: string; rows: any[] }) =>
     z.object({ table: z.enum(TABLE_KEYS), rows: z.array(z.record(z.any())) }).parse(d),
   )
