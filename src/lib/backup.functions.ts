@@ -142,8 +142,8 @@ export const clearTable = createServerFn({ method: "POST" })
     const cfg = findTable(data.table);
     if (cfg.schema !== "public") throw new Error("Data akun tidak dapat dikosongkan");
     const db = await admin();
-    const { error } = await db.from(cfg.name).delete().not("id", "is", null);
-    if (error && !/column .* does not exist/i.test(error.message)) throw new Error(error.message);
+    const { error } = await db.rpc("restore_truncate", { _table: cfg.name });
+    if (error) throw new Error(`${cfg.label}: ${error.message}`);
     return { table: cfg.key };
   });
 
