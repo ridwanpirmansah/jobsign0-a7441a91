@@ -84,15 +84,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["attendance_status"]
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "attendances_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       cashbon: {
         Row: {
@@ -134,15 +126,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["cashbon_status"]
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "cashbon_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       customers: {
         Row: {
@@ -229,36 +213,7 @@ export type Database = {
           payroll_id?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "employee_consumption_cashbon_id_fkey"
-            columns: ["cashbon_id"]
-            isOneToOne: false
-            referencedRelation: "cashbon"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_consumption_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_consumption_expense_id_fkey"
-            columns: ["expense_id"]
-            isOneToOne: false
-            referencedRelation: "expenses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_consumption_payroll_id_fkey"
-            columns: ["payroll_id"]
-            isOneToOne: false
-            referencedRelation: "payrolls"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       employees: {
         Row: {
@@ -303,15 +258,7 @@ export type Database = {
           type?: Database["public"]["Enums"]["employee_type"]
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "employees_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       expenses: {
         Row: {
@@ -416,36 +363,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["job_log_status"]
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "job_logs_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_logs_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_logs_rate_id_fkey"
-            columns: ["rate_id"]
-            isOneToOne: false
-            referencedRelation: "job_rates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_logs_source_order_id_fkey"
-            columns: ["source_order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       job_rates: {
         Row: {
@@ -628,36 +546,7 @@ export type Database = {
           titik?: number
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "order_items_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_items_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_items_source_draft_order_id_fkey"
-            columns: ["source_draft_order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_items_source_ready_stock_order_id_fkey"
-            columns: ["source_ready_stock_order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       orders: {
         Row: {
@@ -816,22 +705,7 @@ export type Database = {
           updated_at?: string
           username?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "orders_picked_up_by_fkey"
-            columns: ["picked_up_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       payrolls: {
         Row: {
@@ -885,15 +759,7 @@ export type Database = {
           total?: number
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "payrolls_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -941,22 +807,7 @@ export type Database = {
           id?: string
           project_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "project_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_assignments_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       projects: {
         Row: {
@@ -1001,22 +852,7 @@ export type Database = {
           total_points?: number
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "projects_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "projects_parent_order_id_fkey"
-            columns: ["parent_order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       restore_constraint_backup: {
         Row: {
@@ -1067,22 +903,7 @@ export type Database = {
           note?: string | null
           order_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "shipment_events_actor_id_fkey"
-            columns: ["actor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shipment_events_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       shipping_carriers: {
         Row: {
@@ -1145,15 +966,7 @@ export type Database = {
           shopee_status?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "shopee_order_map_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       shopee_settings: {
         Row: {
