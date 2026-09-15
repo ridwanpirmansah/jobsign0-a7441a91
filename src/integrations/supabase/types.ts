@@ -1018,6 +1018,30 @@ export type Database = {
           },
         ]
       }
+      restore_constraint_backup: {
+        Row: {
+          constraint_name: string
+          created_at: string
+          definition: string
+          id: string
+          table_name: string
+        }
+        Insert: {
+          constraint_name: string
+          created_at?: string
+          definition: string
+          id?: string
+          table_name: string
+        }
+        Update: {
+          constraint_name?: string
+          created_at?: string
+          definition?: string
+          id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       shipment_events: {
         Row: {
           actor_id: string | null
@@ -1414,6 +1438,15 @@ export type Database = {
         Args: { _lat?: number; _lng?: number; _token: string }
         Returns: Json
       }
+      backup_export: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _schema: string
+          _table: string
+        }
+        Returns: Json
+      }
       close_projects_after_pickup_delay: { Args: never; Returns: undefined }
       close_projects_for_order: {
         Args: { _order_id: string }
@@ -1539,6 +1572,12 @@ export type Database = {
       mark_ready_pickup_by_resi: { Args: { _no_resi: string }; Returns: Json }
       next_project_code: { Args: never; Returns: string }
       refresh_order_from_items: { Args: { _oid: string }; Returns: undefined }
+      restore_begin: { Args: never; Returns: number }
+      restore_bulk: {
+        Args: { _rows: Json; _schema: string; _table: string }
+        Returns: number
+      }
+      restore_finish: { Args: never; Returns: Json }
       rotate_attendance_secret: { Args: never; Returns: string }
       set_attendance_note: {
         Args: { _attendance_id: string; _note: string }

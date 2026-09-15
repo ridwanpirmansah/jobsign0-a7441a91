@@ -2,83 +2,55 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// Whitelist of tables that can be backed up/restored, with conflict target for upsert.
-export const BACKUP_TABLES: { name: string; label: string; onConflict: string }[] = [
-  { name: "customers", label: "Customer", onConflict: "id" },
-  { name: "shipping_carriers", label: "Ekspedisi", onConflict: "id" },
-  { name: "material_prices", label: "Master Harga", onConflict: "key" },
-  { name: "job_rates", label: "Tarif Borongan", onConflict: "id" },
-  { name: "employees", label: "Karyawan", onConflict: "id" },
-  { name: "orders", label: "Order", onConflict: "id" },
-  { name: "projects", label: "Project", onConflict: "id" },
-  { name: "order_items", label: "Item Order", onConflict: "id" },
-  { name: "project_assignments", label: "Penugasan Project", onConflict: "project_id,employee_id" },
-  { name: "job_logs", label: "Log Garapan", onConflict: "id" },
-  { name: "expenses", label: "Pengeluaran", onConflict: "id" },
-  { name: "cashbon", label: "Cashbon", onConflict: "id" },
-  { name: "payrolls", label: "Payroll", onConflict: "id" },
-  { name: "employee_consumption", label: "Konsumsi Karyawan", onConflict: "id" },
-  { name: "attendances", label: "Absensi", onConflict: "id" },
-  { name: "attendance_settings", label: "Setelan Absensi", onConflict: "id" },
-  { name: "shipment_events", label: "Riwayat Kirim", onConflict: "id" },
-  { name: "sync_settings", label: "Setelan Sync", onConflict: "id" },
-];
-
-const TABLE_NAMES = BACKUP_TABLES.map((t) => t.name);
-
-const ACCOUNT_TABLES = new Set(["profiles", "user_roles", "user_feature_permissions"]);
-
-const ACCOUNT_REFERENCE_COLUMNS: Record<string, string[]> = {
-  employees: ["profile_id"],
-  orders: ["created_by", "picked_up_by"],
-  job_logs: ["approved_by"],
-  expenses: ["created_by"],
-  cashbon: ["decided_by"],
-  employee_consumption: ["created_by"],
-  payrolls: ["approved_by"],
-  shipment_events: ["actor_id"],
-  shopping_notes: ["created_by", "purchased_by"],
+export type BackupTable = {
+  key: string; // "<schema>.<table>"
+  schema: "public" | "auth";
+  name: string;
+  file: string; // csv file name inside the zip (without extension)
+  label: string;
 };
 
-type RestorePhase = "initial" | "relink";
-
-function normalizeRows(table: string, rows: Record<string, any>[], phase: RestorePhase) {
-  return rows.map((source) => {
-    if (phase === "relink" && table === "orders") {
-      return { id: source.id, project_id: source.project_id ?? null };
-    }
-
-    const row = { ...source };
-    for (const column of ACCOUNT_REFERENCE_COLUMNS[table] ?? []) row[column] = null;
-
-    if (table === "orders" && phase === "initial") row.project_id = null;
-    if (table === "projects" && !row.title) {
-      row.title = row.name || row.description || row.code || "Project Lama";
-    }
-    return row;
-  });
+function t(schema: "public" | "auth", name: string, label: string): BackupTable {
+  return { key: `${schema}.${name}`, schema, name, file: schema === "auth" ? `auth_${name}` : name, label };
 }
 
-function unknownColumn(message: string) {
-  return message.match(/Could not find the ['\"]([^'\"]+)['\"] column/i)?.[1]
-    ?? message.match(/column ['\"]?([^'\" ]+)['\"]? (?:does not exist|of relation)/i)?.[1]
-    ?? null;
-}
+// Full snapshot, ordered parent -> child (FKs are dropped during restore anyway).
+export const BACKUP_TABLES: BackupTable[] = [
+  t("auth", "users", "Akun Login"),
+  t("auth", "identities", "Identitas Login"),
+  t("public", "profiles", "Profil Pengguna"),
+  t("public", "user_roles", "Peran Pengguna"),
+  t("public", "user_feature_permissions", "Izin Fitur"),
+  t("public", "customers", "Customer"),
+  t("public", "shipping_carriers", "Ekspedisi"),
+  t("public", "material_prices", "Master Harga"),
+  t("public", "job_rates", "Tarif Borongan"),
+  t("public", "employees", "Karyawan"),
+  t("public", "orders", "Order"),
+  t("public", "projects", "Project"),
+  t("public", "order_items", "Item Order"),
+  t("public", "project_assignments", "Penugasan Project"),
+  t("public", "job_logs", "Log Garapan"),
+  t("public", "expenses", "Pengeluaran"),
+  t("public", "cashbon", "Cashbon"),
+  t("public", "payrolls", "Payroll"),
+  t("public", "employee_consumption", "Konsumsi Karyawan"),
+  t("public", "attendances", "Absensi"),
+  t("public", "attendance_settings", "Setelan Absensi"),
+  t("public", "shipment_events", "Riwayat Kirim"),
+  t("public", "shopping_notes", "Catatan Belanja"),
+  t("public", "shopee_shops", "Toko Shopee"),
+  t("public", "shopee_settings", "Setelan Shopee"),
+  t("public", "shopee_order_map", "Mapping Order Shopee"),
+  t("public", "sync_settings", "Setelan Sync"),
+];
 
-async function upsertCompatibleRows(db: any, table: string, rows: Record<string, any>[], onConflict: string) {
-  let compatible = rows;
-  const ignored = new Set<string>();
+const TABLE_KEYS = BACKUP_TABLES.map((x) => x.key) as [string, ...string[]];
 
-  while (compatible.length > 0) {
-    const { error } = await db.from(table).upsert(compatible, { onConflict, ignoreDuplicates: false });
-    if (!error) return { inserted: compatible.length, ignored: [...ignored] };
-
-    const column = unknownColumn(error.message);
-    if (!column || ignored.has(column)) throw new Error(`${table}: ${error.message}`);
-    ignored.add(column);
-    compatible = compatible.map(({ [column]: _ignored, ...row }) => row);
-  }
-  return { inserted: 0, ignored: [...ignored] };
+function findTable(key: string) {
+  const cfg = BACKUP_TABLES.find((x) => x.key === key);
+  if (!cfg) throw new Error("Tabel backup tidak didukung");
+  return cfg;
 }
 
 async function requireOwner(ctx: any) {
@@ -86,93 +58,110 @@ async function requireOwner(ctx: any) {
   if (!data) throw new Error("Forbidden: hanya owner");
 }
 
+async function admin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as any;
+}
+
+async function exportRows(db: any, cfg: BackupTable) {
+  const rows: any[] = [];
+  const pageSize = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await db.rpc("backup_export", {
+      _schema: cfg.schema,
+      _table: cfg.name,
+      _offset: offset,
+      _limit: pageSize,
+    });
+    if (error) throw new Error(`${cfg.key}: ${error.message}`);
+    const chunk = (data as any[]) ?? [];
+    rows.push(...chunk);
+    if (chunk.length < pageSize) break;
+    offset += pageSize;
+  }
+  return rows;
+}
+
 export const listBackupTables = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await requireOwner(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const db = supabaseAdmin as any;
-    const result: { name: string; label: string; count: number }[] = [];
-    for (const t of BACKUP_TABLES) {
-      const { count } = await db.from(t.name).select("*", { count: "exact", head: true });
-      result.push({ name: t.name, label: t.label, count: count ?? 0 });
+    const db = await admin();
+    const result: { key: string; label: string; count: number }[] = [];
+    for (const cfg of BACKUP_TABLES) {
+      if (cfg.schema === "public") {
+        const { count } = await db.from(cfg.name).select("*", { count: "exact", head: true });
+        result.push({ key: cfg.key, label: cfg.label, count: count ?? 0 });
+      } else {
+        const rows = await exportRows(db, cfg);
+        result.push({ key: cfg.key, label: cfg.label, count: rows.length });
+      }
     }
-
     return result;
   });
 
 export const backupTable = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { table: string }) => z.object({ table: z.enum(TABLE_NAMES as [string, ...string[]]) }).parse(d))
+  .inputValidator((d: { table: string }) => z.object({ table: z.enum(TABLE_KEYS) }).parse(d))
   .handler(async ({ data, context }) => {
     await requireOwner(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const db = supabaseAdmin as any;
-    const rows: any[] = [];
-    const pageSize = 1000;
-    let from = 0;
-    while (true) {
-      const { data: chunk, error } = await db
-        .from(data.table)
-        .select("*")
-        .range(from, from + pageSize - 1);
-
-      if (error) throw new Error(error.message);
-      if (!chunk || chunk.length === 0) break;
-      rows.push(...chunk);
-      if (chunk.length < pageSize) break;
-      from += pageSize;
-    }
-    return { table: data.table, rows };
+    const cfg = findTable(data.table);
+    const db = await admin();
+    const rows = await exportRows(db, cfg);
+    return { table: cfg.key, rows };
   });
 
-type RestoreTableInput = {
-  table: string;
-  rows: any[];
-  mode?: "upsert" | "replace";
-  phase?: RestorePhase;
-};
-
-export const restoreTable = createServerFn({ method: "POST" })
+/** Masuk mode restore: relasi antar tabel & aturan otomatis dinonaktifkan sementara. */
+export const restoreBegin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: RestoreTableInput) =>
-    z.object({
-      table: z.enum(TABLE_NAMES as [string, ...string[]]),
-      rows: z.array(z.record(z.any())),
-      mode: z.enum(["upsert", "replace"]).optional(),
-      phase: z.enum(["initial", "relink"]).optional(),
-    }).parse(d),
+  .handler(async ({ context }) => {
+    await requireOwner(context);
+    const db = await admin();
+    const { data, error } = await db.rpc("restore_begin");
+    if (error) throw new Error(error.message);
+    return { dropped: (data as number) ?? 0 };
+  });
+
+/** Keluar dari mode restore: aturan otomatis & relasi dipasang kembali. */
+export const restoreFinish = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireOwner(context);
+    const db = await admin();
+    const { data, error } = await db.rpc("restore_finish");
+    if (error) throw new Error(error.message);
+    return (data as { restored: number; failed: string[] }) ?? { restored: 0, failed: [] };
+  });
+
+export const clearTable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { table: string }) => z.object({ table: z.enum(TABLE_KEYS) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireOwner(context);
+    const cfg = findTable(data.table);
+    if (cfg.schema !== "public") throw new Error("Data akun tidak dapat dikosongkan");
+    const db = await admin();
+    const { error } = await db.from(cfg.name).delete().not("id", "is", null);
+    if (error && !/column .* does not exist/i.test(error.message)) throw new Error(error.message);
+    return { table: cfg.key };
+  });
+
+export const restoreChunk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { table: string; rows: any[] }) =>
+    z.object({ table: z.enum(TABLE_KEYS), rows: z.array(z.record(z.any())) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await requireOwner(context);
-    const cfg = BACKUP_TABLES.find((t) => t.name === data.table);
-    if (!cfg) throw new Error("Tabel backup tidak didukung");
-    if (ACCOUNT_TABLES.has(data.table)) {
-      throw new Error("Data akun login tidak dipindahkan. Daftarkan akun baru, lalu hubungkan melalui halaman Karyawan.");
-    }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const db = supabaseAdmin as any;
-    const phase = data.phase ?? "initial";
-    const normalizedRows = normalizeRows(data.table, data.rows, phase);
-
-    if (data.mode === "replace" && phase === "initial") {
-      const { error: delErr } = await db.from(data.table).delete().not("id", "is", null);
-      if (delErr && !/column .* does not exist/i.test(delErr.message)) {
-        // ignore — composite key tables
-      }
-    }
-
-    if (normalizedRows.length === 0) return { table: data.table, inserted: 0, ignoredColumns: [] as string[] };
-
-    const chunkSize = 500;
-    let inserted = 0;
-    const ignoredColumns = new Set<string>();
-    for (let i = 0; i < normalizedRows.length; i += chunkSize) {
-      const chunk = normalizedRows.slice(i, i + chunkSize);
-      const result = await upsertCompatibleRows(db, data.table, chunk, cfg.onConflict);
-      inserted += result.inserted;
-      result.ignored.forEach((column) => ignoredColumns.add(column));
-    }
-
-    return { table: data.table, inserted, ignoredColumns: [...ignoredColumns] };
+    const cfg = findTable(data.table);
+    if (data.rows.length === 0) return { table: cfg.key, inserted: 0 };
+    const db = await admin();
+    const { data: n, error } = await db.rpc("restore_bulk", {
+      _schema: cfg.schema,
+      _table: cfg.name,
+      _rows: data.rows,
+    });
+    if (error) throw new Error(`${cfg.label}: ${error.message}`);
+    return { table: cfg.key, inserted: (n as number) ?? 0 };
   });
