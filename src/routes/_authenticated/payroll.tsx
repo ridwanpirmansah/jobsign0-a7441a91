@@ -56,14 +56,20 @@ function PayrollPage() {
             .eq("employee_id", e.id).eq("status", "approved").gte("log_date", from).lte("log_date", to);
           base = (logs ?? []).reduce((s, l) => s + Number(l.amount), 0);
         } else if (anyE.pay_unit === "hour") {
-          const { data: att } = await supabase.from("attendances").select("check_in,check_out")
+          const { data: att } = await supabase.from("attendances").select("check_in,check_out,break_start,break_end")
             .eq("employee_id", e.id).eq("status", "hadir").gte("date", from).lte("date", to);
-          const totalHours = (att ?? []).reduce((s, a) => {
+          const rate = Number(anyE.hourly_rate ?? 0);
+          // Sama seperti perhitungan di halaman Upah Saya: jam istirahat dipotong,
+          // dan upah dibulatkan per hari agar nominal slip gaji identik.
+          base = (att ?? []).reduce((s, a) => {
             if (!a.check_in || !a.check_out) return s;
             const diffMs = new Date(a.check_out).getTime() - new Date(a.check_in).getTime();
-            return s + Math.max(diffMs / 3_600_000, 0);
+            const breakMs = a.break_start && a.break_end
+              ? new Date(a.break_end).getTime() - new Date(a.break_start).getTime()
+              : 0;
+            const hrs = Math.max(0, (diffMs - breakMs) / 3_600_000);
+            return s + Math.round(hrs * rate);
           }, 0);
-          base = totalHours * Number(anyE.hourly_rate ?? 0);
         } else {
           const { data: att } = await supabase.from("attendances").select("status")
             .eq("employee_id", e.id).eq("status", "hadir").gte("date", from).lte("date", to);
