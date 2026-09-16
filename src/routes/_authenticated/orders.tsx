@@ -835,7 +835,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                     <Button
                       type="button" size="icon" variant="outline"
                       title="Cetak Resi Shopee ke Printer Bluetooth"
-                      disabled={!header.id || resiPreview === null && false}
+                      disabled={!header.id}
                       onClick={async () => {
                         if (!isThermalPrintSupported()) {
                           toast.error("Bluetooth cetak hanya didukung Chrome/Edge di Android — gunakan tombol buka PDF");
