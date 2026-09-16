@@ -214,10 +214,36 @@ async function printCanvas(canvas: HTMLCanvasElement, density: 1 | 2 | 3) {
 
 // ---------- Renderer resi (meniru tata letak PDF 100x100mm) ----------
 
-function pxForWidth(settings: PrinterSettings): number {
+/** Lebar total titik printer (manual bila diisi). */
+function paperPx(settings: PrinterSettings): number {
+  if (settings.paperDots) return Math.max(128, Math.min(1024, settings.paperDots));
   if (settings.widthMm === 58) return settings.dots58;
   if (settings.widthMm === 80) return settings.dots80;
   return Math.max(256, Math.min(640, Math.round(settings.widthMm * 7.2)));
+}
+
+/** Lebar area cetak isi (manual bila diisi). */
+function contentPx(settings: PrinterSettings): number {
+  const paper = paperPx(settings);
+  const content = settings.contentDots ? settings.contentDots : paper - settings.insetDots * 2;
+  return Math.max(128, Math.min(paper, content));
+}
+
+/** Tempatkan kanvas isi ke kanvas selebar kertas sesuai perataan. */
+function placeOnPaper(content: HTMLCanvasElement, settings: PrinterSettings): HTMLCanvasElement {
+  const paper = paperPx(settings);
+  if (content.width === paper) return content;
+  const canvas = document.createElement("canvas");
+  canvas.width = paper;
+  canvas.height = content.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Kanvas cetak tidak tersedia");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const gap = paper - content.width;
+  const x = settings.align === "left" ? 0 : settings.align === "right" ? gap : Math.round(gap / 2);
+  ctx.drawImage(content, x, 0);
+  return canvas;
 }
 
 function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) {
@@ -466,8 +492,8 @@ async function renderPdfUrlToCanvas(url: string, targetWidthPx: number): Promise
 /** Cetak resi manual aplikasi ke printer termal. */
 export async function printResiThermal(payload: ResiPayload): Promise<void> {
   const s = await loadPrinterSettings();
-  const canvas = await renderResiCanvas(payload, pxForWidth(s), s.insetDots);
-  await printCanvas(canvas, s.density);
+  const content = await renderResiCanvas(payload, contentPx(s), 0);
+  await printCanvas(placeOnPaper(content, s), s.density);
 }
 
 /** Cetak label Shopee (PDF tersimpan) ke printer termal. */
@@ -475,9 +501,7 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
   const { fetchShopeeLabelUrl } = await import("@/lib/shopee-label");
   const url = await fetchShopeeLabelUrl(orderId);
   try {
-    const s = await loadPrinterSettings();
-    const canvas = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
-    await printCanvas(canvas, s.density);
+    await printPdfUrlThermal(url);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -486,22 +510,20 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
 /** Cetak PDF dari object URL apa pun (mis. preview Shopee). */
 export async function printPdfUrlThermal(url: string): Promise<void> {
   const s = await loadPrinterSettings();
-  const content = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
-  const canvas = document.createElement("canvas");
-  canvas.width = pxForWidth(s);
-  canvas.height = content.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Kanvas label tidak tersedia");
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(content, s.insetDots, 0);
-  await printCanvas(canvas, s.density);
+  const content = await renderPdfUrlToCanvas(url, contentPx(s));
+  await printCanvas(placeOnPaper(content, s), s.density);
+}
+
+/** Render halaman pertama PDF jadi gambar PNG (untuk preview di ponsel). */
+export async function renderPdfUrlToImage(url: string, widthPx = 900): Promise<string> {
+  const canvas = await renderPdfUrlToCanvas(url, widthPx);
+  return canvas.toDataURL("image/png");
 }
 
 /** Halaman tes cetak. */
 export async function printTestThermal(): Promise<void> {
   const s = await loadPrinterSettings();
-  const W = pxForWidth(s);
+  const W = contentPx(s);
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = Math.round(W * 0.5);
@@ -513,8 +535,12 @@ export async function printTestThermal(): Promise<void> {
   ctx.font = `bold ${Math.round(W * 0.09)}px Arial`;
   ctx.fillText("TES CETAK", W / 2, canvas.height * 0.3);
   ctx.font = `${Math.round(W * 0.055)}px Arial`;
-  ctx.fillText(`Kertas: ${s.widthMm}mm`, W / 2, canvas.height * 0.5);
-  ctx.fillText(`Kepekatan: ${["", "Terang", "Normal", "Gelap"][s.density]}`, W / 2, canvas.height * 0.65);
+  ctx.fillText(`${paperPx(s)} titik / area ${W}`, W / 2, canvas.height * 0.5);
+  ctx.fillText(`Rata: ${s.align === "left" ? "Kiri" : s.align === "right" ? "Kanan" : "Tengah"}`, W / 2, canvas.height * 0.65);
   ctx.fillText(new Date().toLocaleString("id-ID"), W / 2, canvas.height * 0.8);
-  await printCanvas(canvas, s.density);
+  // garis batas agar mudah melihat area cetak
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, W - 2, canvas.height - 2);
+  await printCanvas(placeOnPaper(canvas, s), s.density);
 }

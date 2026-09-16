@@ -897,29 +897,38 @@ export type Database = {
       }
       printer_settings: {
         Row: {
+          align: string
+          content_dots: number
           density: number
           dots_58: number
           dots_80: number
           id: number
           inset_dots: number
+          paper_dots: number
           updated_at: string
           width_mm: number
         }
         Insert: {
+          align?: string
+          content_dots?: number
           density?: number
           dots_58?: number
           dots_80?: number
           id?: number
           inset_dots?: number
+          paper_dots?: number
           updated_at?: string
           width_mm?: number
         }
         Update: {
+          align?: string
+          content_dots?: number
           density?: number
           dots_58?: number
           dots_80?: number
           id?: number
           inset_dots?: number
+          paper_dots?: number
           updated_at?: string
           width_mm?: number
         }

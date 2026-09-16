@@ -18,6 +18,7 @@ export function ResiPreviewDialog({
 }) {
   const [barcodeUrl, setBarcodeUrl] = useState<string | null>(null);
   const [shopeeUrl, setShopeeUrl] = useState<string | null>(null);
+  const [shopeeImg, setShopeeImg] = useState<string | null>(null);
   const [shopeeErr, setShopeeErr] = useState<string | null>(null);
   const [loadingShopee, setLoadingShopee] = useState(false);
   const [printing, setPrinting] = useState(false);
@@ -33,14 +34,17 @@ export function ResiPreviewDialog({
   useEffect(() => {
     let revoke: string | null = null;
     setShopeeUrl(null);
+    setShopeeImg(null);
     setShopeeErr(null);
     if (payload?.is_shopee && payload.order_id) {
       setLoadingShopee(true);
       import("@/lib/shopee-label")
         .then((m) => m.fetchShopeeLabelUrl(payload.order_id!))
-        .then((url) => {
+        .then(async (url) => {
           revoke = url;
           setShopeeUrl(url);
+          const { renderPdfUrlToImage } = await import("@/lib/thermal-print");
+          setShopeeImg(await renderPdfUrlToImage(url, 900));
         })
         .catch((e: any) => setShopeeErr(e?.message ?? "Gagal mengambil resi Shopee"))
         .finally(() => setLoadingShopee(false));
@@ -83,7 +87,17 @@ export function ResiPreviewDialog({
             {shopeeErr && <p className="text-sm text-destructive">{shopeeErr}</p>}
             {shopeeUrl && (
               <>
-                <iframe src={shopeeUrl} title="Resi Shopee" className="h-[60vh] w-full rounded-lg border" />
+                {shopeeImg ? (
+                  <img
+                    src={shopeeImg}
+                    alt={`Resi Shopee ${payload.no_resi || payload.order_no || ""}`}
+                    className="max-h-[60vh] w-full rounded-lg border bg-white object-contain"
+                  />
+                ) : (
+                  <div className="grid h-[40vh] w-full place-items-center rounded-lg border text-sm text-muted-foreground">
+                    Menyiapkan tampilan resi...
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button asChild variant="outline" className="flex-1 gap-2">
                     <a href={shopeeUrl} download={`resi-shopee-${payload.no_resi || payload.order_no || "label"}.pdf`}>
