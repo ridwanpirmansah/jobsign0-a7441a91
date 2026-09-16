@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   UserCog, LogOut, Zap, FileSpreadsheet,
   ShoppingBag, Tags, Truck, Shield, DatabaseBackup, ListOrdered,
-  Settings, ChevronDown,
+  Settings, ChevronDown, Bluetooth,
 } from "lucide-react";
 
 import {
