@@ -201,9 +201,8 @@ function canvasToRasterCommand(canvas: HTMLCanvasElement, density: 1 | 2 | 3): U
   return result;
 }
 
-async function printCanvas(canvas: HTMLCanvasElement) {
-  const s = getPrinterSettings();
-  const payload = canvasToRasterCommand(canvas, s.density);
+async function printCanvas(canvas: HTMLCanvasElement, density: 1 | 2 | 3) {
+  const payload = canvasToRasterCommand(canvas, density);
   const conn = await connectPrinter();
   try {
     await sendChunks(conn.characteristic, payload);
@@ -468,7 +467,7 @@ async function renderPdfUrlToCanvas(url: string, targetWidthPx: number): Promise
 export async function printResiThermal(payload: ResiPayload): Promise<void> {
   const s = await loadPrinterSettings();
   const canvas = await renderResiCanvas(payload, pxForWidth(s), s.insetDots);
-  await printCanvas(canvas);
+  await printCanvas(canvas, s.density);
 }
 
 /** Cetak label Shopee (PDF tersimpan) ke printer termal. */
@@ -478,7 +477,7 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
   try {
     const s = await loadPrinterSettings();
     const canvas = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
-    await printCanvas(canvas);
+    await printCanvas(canvas, s.density);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -496,7 +495,7 @@ export async function printPdfUrlThermal(url: string): Promise<void> {
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(content, s.insetDots, 0);
-  await printCanvas(canvas);
+  await printCanvas(canvas, s.density);
 }
 
 /** Halaman tes cetak. */
@@ -517,5 +516,5 @@ export async function printTestThermal(): Promise<void> {
   ctx.fillText(`Kertas: ${s.widthMm}mm`, W / 2, canvas.height * 0.5);
   ctx.fillText(`Kepekatan: ${["", "Terang", "Normal", "Gelap"][s.density]}`, W / 2, canvas.height * 0.65);
   ctx.fillText(new Date().toLocaleString("id-ID"), W / 2, canvas.height * 0.8);
-  await printCanvas(canvas);
+  await printCanvas(canvas, s.density);
 }

@@ -69,7 +69,10 @@ export function AppSidebar() {
     grouped[entry.group].push(base);
   }
 
-  const settingsActive = settingsItems.some((i) => isActive(i.url));
+  const visibleSettingsItems = role === "admin"
+    ? settingsItems.filter((item) => item.url === "/settings/printer")
+    : settingsItems;
+  const settingsActive = visibleSettingsItems.some((i) => isActive(i.url));
   const [settingsOpen, setSettingsOpen] = useState(settingsActive);
 
   const renderItems = (items: NavItem[]) =>
@@ -104,7 +107,7 @@ export function AppSidebar() {
       <SidebarContent className="bg-slate-950">
         {GROUP_ORDER.map((g) => {
           const items = grouped[g];
-          const showSettings = g === "owner" && role === "owner";
+          const showSettings = g === "owner" && (role === "owner" || role === "admin");
           if (items.length === 0 && !showSettings) return null;
           return (
             <SidebarGroup key={g}>
@@ -132,7 +135,7 @@ export function AppSidebar() {
                       </SidebarMenuItem>
                       <CollapsibleContent>
                         <div className="ml-3 border-l border-slate-800 pl-2">
-                          <SidebarMenu>{renderItems(settingsItems)}</SidebarMenu>
+                          <SidebarMenu>{renderItems(visibleSettingsItems)}</SidebarMenu>
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
