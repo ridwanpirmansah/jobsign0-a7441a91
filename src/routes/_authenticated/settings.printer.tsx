@@ -127,8 +127,45 @@ function PrinterSettingsPage() {
               </SelectContent>
             </Select>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Lebar total printer (titik)</Label>
+              <Input
+                type="number"
+                min={128}
+                max={1024}
+                className="mt-1"
+                value={settings.paperDots}
+                onChange={(event) => update({ paperDots: Math.round(Number(event.target.value) || 0) })}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">Biasanya 384 (58 mm) atau 576 (80 mm).</p>
+            </div>
+            <div>
+              <Label>Lebar area cetak (titik)</Label>
+              <Input
+                type="number"
+                min={128}
+                max={1024}
+                className="mt-1"
+                value={settings.contentDots}
+                onChange={(event) => update({ contentDots: Math.round(Number(event.target.value) || 0) })}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">Perbesar bila sisi kiri-kanan terlalu kosong.</p>
+            </div>
+          </div>
+          <div>
+            <Label>Posisi area cetak</Label>
+            <Select value={settings.align} onValueChange={(value) => update({ align: value as PrinterSettings["align"] })}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Rata kiri</SelectItem>
+                <SelectItem value="center">Tengah</SelectItem>
+                <SelectItem value="right">Rata kanan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
-            Resi dicetak sebagai gambar tetap dengan batas aman {settings.insetDots} titik agar sisi kanan tidak terpotong.
+            Isi dicetak selebar {Math.min(settings.contentDots || settings.paperDots, settings.paperDots)} titik dari total {settings.paperDots} titik, diposisikan {settings.align === "left" ? "rata kiri" : settings.align === "right" ? "rata kanan" : "di tengah"}.
           </div>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <Button onClick={() => saveMutation.mutate()} disabled={isLoading || saveMutation.isPending}>
