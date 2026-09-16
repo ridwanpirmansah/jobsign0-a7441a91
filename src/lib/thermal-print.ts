@@ -303,7 +303,7 @@ function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElem
   ctx.fillText("PENGIRIM", pad, y);
   y += W * 0.04;
   font("bold", Math.round(9 * 2.6 * scale));
-  ctx.fillText("Fuji Electric", pad);
+  ctx.fillText("Fuji Electric", pad, y);
   ctx.textAlign = "right";
   font("normal", Math.round(8 * 2.6 * scale));
   ctx.fillText("0877-7980-3435", W - pad, y);
