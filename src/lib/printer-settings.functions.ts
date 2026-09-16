@@ -2,12 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAppAuth } from "@/lib/app-auth";
 
+export type PrintAlign = "left" | "center" | "right";
+
 export type PrinterSettings = {
   widthMm: number;
   dots58: number;
   dots80: number;
   insetDots: number;
   density: 1 | 2 | 3;
+  /** lebar total titik printer (manual) */
+  paperDots: number;
+  /** lebar area cetak isi (manual, <= paperDots) */
+  contentDots: number;
+  align: PrintAlign;
 };
 
 export const DEFAULT_PRINTER_SETTINGS: PrinterSettings = {
@@ -16,15 +23,22 @@ export const DEFAULT_PRINTER_SETTINGS: PrinterSettings = {
   dots80: 576,
   insetDots: 16,
   density: 2,
+  paperDots: 384,
+  contentDots: 360,
+  align: "center",
 };
 
 function toSettings(row: any): PrinterSettings {
+  const paperDots = Number(row?.paper_dots ?? 576);
   return {
     widthMm: Number(row?.width_mm ?? 58),
     dots58: Number(row?.dots_58 ?? 384),
     dots80: Number(row?.dots_80 ?? 576),
     insetDots: Number(row?.inset_dots ?? 16),
     density: Number(row?.density ?? 2) as 1 | 2 | 3,
+    paperDots,
+    contentDots: Math.min(paperDots, Number(row?.content_dots ?? paperDots)),
+    align: (row?.align ?? "center") as PrintAlign,
   };
 }
 
