@@ -6,3 +6,5 @@
 - [x] Verifikasi hasil restore dan kondisi build.
 - [x] Backup/restore full: sertakan akun login, kirim data bertahap (anti "Request Entity Too Large"),
       nonaktifkan relasi & aturan otomatis selama restore lalu pasang kembali.
+- [x] Rapikan raster resi Shopee dan resi bawaan untuk printer 58/80 mm.
+- [x] Jadikan pengaturan printer berlaku bersama untuk seluruh pengguna.

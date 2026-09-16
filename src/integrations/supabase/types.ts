@@ -895,6 +895,36 @@ export type Database = {
           },
         ]
       }
+      printer_settings: {
+        Row: {
+          density: number
+          dots_58: number
+          dots_80: number
+          id: number
+          inset_dots: number
+          updated_at: string
+          width_mm: number
+        }
+        Insert: {
+          density?: number
+          dots_58?: number
+          dots_80?: number
+          id?: number
+          inset_dots?: number
+          updated_at?: string
+          width_mm?: number
+        }
+        Update: {
+          density?: number
+          dots_58?: number
+          dots_80?: number
+          id?: number
+          inset_dots?: number
+          updated_at?: string
+          width_mm?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

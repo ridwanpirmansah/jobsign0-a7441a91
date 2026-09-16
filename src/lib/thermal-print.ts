@@ -3,35 +3,29 @@
  * Hanya didukung Chrome/Edge Android + printer BLE.
  */
 import { generateBarcodeDataUrl, type ResiPayload } from "@/lib/resi-pdf";
+import {
+  DEFAULT_PRINTER_SETTINGS,
+  getPrinterSettings as getSharedPrinterSettings,
+  type PrinterSettings,
+} from "@/lib/printer-settings.functions";
 
 // ---------- Pengaturan printer (per perangkat, localStorage) ----------
 
-export type PrinterSettings = {
-  /** lebar kertas dalam mm (58, 80, atau custom) */
-  widthMm: number;
-  /** kepekatan cetak: 1 terang, 2 normal, 3 gelap */
-  density: 1 | 2 | 3;
-};
+export type { PrinterSettings } from "@/lib/printer-settings.functions";
 
-const SETTINGS_KEY = "printer-settings-v1";
+let cachedSettings: PrinterSettings = DEFAULT_PRINTER_SETTINGS;
 
-export function getPrinterSettings(): PrinterSettings {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) {
-      const p = JSON.parse(raw);
-      const widthMm = Math.round(Number(p?.widthMm));
-      const density = [1, 2, 3].includes(p?.density) ? (p.density as 1 | 2 | 3) : 2;
-      if (widthMm >= 30 && widthMm <= 120) return { widthMm, density };
-    }
-  } catch {
-    /* fallback ke default */
-  }
-  return { widthMm: 58, density: 2 };
+export function setPrinterSettingsCache(settings: PrinterSettings) {
+  cachedSettings = settings;
 }
 
-export function savePrinterSettings(s: PrinterSettings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+export async function loadPrinterSettings(): Promise<PrinterSettings> {
+  try {
+    cachedSettings = await getSharedPrinterSettings();
+  } catch {
+    // Cetak tetap tersedia dengan ukuran aman jika koneksi setelan terputus.
+  }
+  return cachedSettings;
 }
 
 /** lebar kertas terpilih dlm mm; null kalau custom */
@@ -207,9 +201,8 @@ function canvasToRasterCommand(canvas: HTMLCanvasElement, density: 1 | 2 | 3): U
   return result;
 }
 
-async function printCanvas(canvas: HTMLCanvasElement) {
-  const s = getPrinterSettings();
-  const payload = canvasToRasterCommand(canvas, s.density);
+async function printCanvas(canvas: HTMLCanvasElement, density: 1 | 2 | 3) {
+  const payload = canvasToRasterCommand(canvas, density);
   const conn = await connectPrinter();
   try {
     await sendChunks(conn.characteristic, payload);
@@ -221,9 +214,10 @@ async function printCanvas(canvas: HTMLCanvasElement) {
 
 // ---------- Renderer resi (meniru tata letak PDF 100x100mm) ----------
 
-function pxForWidth(widthMm: number): number {
-  // 8 dot per mm (printer 203dpi standar)
-  return Math.round(widthMm * 8);
+function pxForWidth(settings: PrinterSettings): number {
+  if (settings.widthMm === 58) return settings.dots58;
+  if (settings.widthMm === 80) return settings.dots80;
+  return Math.max(256, Math.min(640, Math.round(settings.widthMm * 7.2)));
 }
 
 function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) {
@@ -233,7 +227,28 @@ function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number,
   ctx.stroke();
 }
 
-function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElement {
+async function loadCanvasImage(src: string): Promise<HTMLImageElement> {
+  const image = new Image();
+  image.src = src;
+  if (typeof image.decode === "function") await image.decode();
+  else await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("Barcode gagal dimuat"));
+  });
+  return image;
+}
+
+function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, startPx: number, weight = "normal") {
+  let size = startPx;
+  do {
+    ctx.font = `${weight} ${size}px Arial`;
+    if (ctx.measureText(text).width <= maxWidth) break;
+    size -= 1;
+  } while (size > 9);
+  return size;
+}
+
+async function renderResiCanvas(payload: ResiPayload, pxWidth: number, insetDots: number): Promise<HTMLCanvasElement> {
   // kanvas persegi mengikuti label 100x100mm
   const W = pxWidth;
   const H = pxWidth;
@@ -247,18 +262,18 @@ function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElem
   ctx.strokeStyle = "#000";
   ctx.textBaseline = "alphabetic";
 
-  const pad = W * 0.05;
-  const scale = W / 384; // rasio terhadap basis 58mm agar proporsi tetap
+  const pad = Math.max(insetDots, Math.round(W * 0.035));
+  const scale = W / 384;
 
   const font = (weight: string, px: number, family = "Arial") => {
     ctx.font = `${weight} ${px}px ${family}`;
   };
 
   // header
-  font("bold", Math.round(13 * 2.6 * scale));
+  font("bold", Math.round(19 * scale));
   ctx.textAlign = "left";
   ctx.fillText("FUJI ELECTRIC", pad, W * 0.075);
-  font("normal", Math.round(7 * 2.6 * scale));
+  font("normal", Math.round(10 * scale));
   ctx.textAlign = "right";
   ctx.fillText("NEON SIGN WORKSHOP", W - pad, W * 0.075);
 
@@ -266,10 +281,10 @@ function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElem
   line(ctx, pad, W * 0.105, W - pad, W * 0.105);
 
   // ekspedisi + tanggal
-  font("bold", Math.round(13 * 2.6 * scale));
+  font("bold", Math.round(18 * scale));
   ctx.textAlign = "left";
   ctx.fillText((payload.ekspedisi || "REGULER").toUpperCase(), pad, W * 0.165);
-  font("normal", Math.round(8 * 2.6 * scale));
+  font("normal", Math.round(11 * scale));
   ctx.textAlign = "right";
   const tgl = payload.co_date
     ? new Date(payload.co_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
@@ -282,15 +297,13 @@ function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElem
   line(ctx, pad, y, W - pad, y);
   y += W * 0.03;
   try {
-    const img = new Image();
-    img.src = generateBarcodeDataUrl(payload.no_resi);
-    // gambar sinkron dari canvas dataURL tersedia setelah decode; pakai draw langsung
+    const img = await loadCanvasImage(generateBarcodeDataUrl(payload.no_resi));
     ctx.drawImage(img, pad + W * 0.03, y, W - (pad + W * 0.03) * 2, W * 0.135);
   } catch {
     /* abaikan bila barcode gagal */
   }
   y += W * 0.165;
-  font("bold", Math.round(11 * 2.6 * scale), "Courier New");
+  font("bold", Math.round(15 * scale), "Courier New");
   ctx.textAlign = "center";
   ctx.fillText(payload.no_resi, W / 2, y);
   y += W * 0.03;
@@ -298,14 +311,14 @@ function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElem
 
   // PENGIRIM
   y += W * 0.05;
-  font("bold", Math.round(7 * 2.6 * scale));
+  font("bold", Math.round(9 * scale));
   ctx.textAlign = "left";
   ctx.fillText("PENGIRIM", pad, y);
   y += W * 0.04;
-  font("bold", Math.round(9 * 2.6 * scale));
+  font("bold", Math.round(13 * scale));
   ctx.fillText("Fuji Electric", pad, y);
   ctx.textAlign = "right";
-  font("normal", Math.round(8 * 2.6 * scale));
+  font("normal", Math.round(11 * scale));
   ctx.fillText("0877-7980-3435", W - pad, y);
   y += W * 0.04;
   ctx.textAlign = "left";
@@ -316,19 +329,20 @@ function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElem
 
   // PENERIMA
   y += W * 0.05;
-  font("bold", Math.round(7 * 2.6 * scale));
+  font("bold", Math.round(9 * scale));
   ctx.fillText("PENERIMA", pad, y);
   y += W * 0.04;
-  font("bold", Math.round(10 * 2.6 * scale));
-  ctx.fillText(payload.username || "-", pad, y);
+  const recipient = payload.username || "-";
+  fitText(ctx, recipient, W * 0.55, Math.round(15 * scale), "bold");
+  ctx.fillText(recipient, pad, y);
   if (payload.phone) {
     ctx.textAlign = "right";
-    font("normal", Math.round(8 * 2.6 * scale));
+    fitText(ctx, payload.phone, W * 0.32, Math.round(11 * scale));
     ctx.fillText(payload.phone, W - pad, y);
     ctx.textAlign = "left";
   }
   y += W * 0.04;
-  font("normal", Math.round(9 * 2.6 * scale));
+  font("normal", Math.round(12 * scale));
   const kotaLines = splitLines(ctx, payload.kota || "-", W - pad * 2);
   kotaLines.forEach((l) => {
     ctx.fillText(l, pad, y);
@@ -339,10 +353,10 @@ function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElem
   if (y < H - W * 0.12) {
     line(ctx, pad, y, W - pad, y);
     y += W * 0.04;
-    font("bold", Math.round(7 * 2.6 * scale));
+    font("bold", Math.round(9 * scale));
     ctx.fillText("DETAIL", pad, y);
     y += W * 0.04;
-    font("normal", Math.round(8 * 2.6 * scale));
+    font("normal", Math.round(11 * scale));
     const maxLines = Math.max(1, Math.floor((H - W * 0.06 - y) / (W * 0.038)));
     const teks = splitLines(ctx, `Neon: ${payload.text_neon || "-"}`, W - pad * 2).slice(0, maxLines);
     teks.forEach((l) => {
@@ -350,12 +364,12 @@ function renderResiCanvas(payload: ResiPayload, pxWidth: number): HTMLCanvasElem
       y += W * 0.038;
     });
     if (payload.order_no && y < H - W * 0.05) {
-      font("normal", Math.round(7 * 2.6 * scale));
+      font("normal", Math.round(9 * scale));
       ctx.fillText(`No. Order: ${payload.order_no}`, pad, y);
     }
   }
 
-  font("italic", Math.round(6 * 2.6 * scale));
+  font("italic", Math.round(8 * scale));
   ctx.textAlign = "center";
   ctx.fillText("Fragile — Handle with care", W / 2, H - W * 0.02);
 
@@ -398,15 +412,52 @@ async function renderPdfUrlToCanvas(url: string, targetWidthPx: number): Promise
   const doc = await pdfjs.getDocument({ data }).promise;
   const page = await doc.getPage(1);
   const base = page.getViewport({ scale: 1 });
-  const scale = targetWidthPx / base.width;
-  const viewport = page.getViewport({ scale });
+  const scanScale = Math.max(2, targetWidthPx / base.width);
+  const scanViewport = page.getViewport({ scale: scanScale });
+  const scan = document.createElement("canvas");
+  scan.width = Math.max(1, Math.floor(scanViewport.width));
+  scan.height = Math.max(1, Math.floor(scanViewport.height));
+  const scanCtx = scan.getContext("2d");
+  if (!scanCtx) throw new Error("Kanvas label tidak tersedia");
+  scanCtx.fillStyle = "#fff";
+  scanCtx.fillRect(0, 0, scan.width, scan.height);
+  await page.render({ canvasContext: scanCtx, viewport: scanViewport, canvas: scan } as any).promise;
+
+  const pixels = scanCtx.getImageData(0, 0, scan.width, scan.height).data;
+  let left = scan.width;
+  let right = 0;
+  let top = scan.height;
+  let bottom = 0;
+  for (let y = 0; y < scan.height; y += 2) {
+    for (let x = 0; x < scan.width; x += 2) {
+      const i = (y * scan.width + x) * 4;
+      if (pixels[i] < 245 || pixels[i + 1] < 245 || pixels[i + 2] < 245) {
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+      }
+    }
+  }
+  if (right <= left || bottom <= top) return scan;
+
+  const cropPad = Math.max(4, Math.round(scan.width * 0.01));
+  left = Math.max(0, left - cropPad);
+  right = Math.min(scan.width - 1, right + cropPad);
+  top = Math.max(0, top - cropPad);
+  bottom = Math.min(scan.height - 1, bottom + cropPad);
+  const cropWidth = right - left + 1;
+  const cropHeight = bottom - top + 1;
+  const scale = targetWidthPx / cropWidth;
+  const viewport = { width: targetWidthPx, height: Math.ceil(cropHeight * scale) };
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.floor(viewport.width));
   canvas.height = Math.max(1, Math.floor(viewport.height));
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(scan, left, top, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
   return canvas;
 }
 
@@ -414,9 +465,9 @@ async function renderPdfUrlToCanvas(url: string, targetWidthPx: number): Promise
 
 /** Cetak resi manual aplikasi ke printer termal. */
 export async function printResiThermal(payload: ResiPayload): Promise<void> {
-  const s = getPrinterSettings();
-  const canvas = renderResiCanvas(payload, pxForWidth(s.widthMm));
-  await printCanvas(canvas);
+  const s = await loadPrinterSettings();
+  const canvas = await renderResiCanvas(payload, pxForWidth(s), s.insetDots);
+  await printCanvas(canvas, s.density);
 }
 
 /** Cetak label Shopee (PDF tersimpan) ke printer termal. */
@@ -424,9 +475,9 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
   const { fetchShopeeLabelUrl } = await import("@/lib/shopee-label");
   const url = await fetchShopeeLabelUrl(orderId);
   try {
-    const s = getPrinterSettings();
-    const canvas = await renderPdfUrlToCanvas(url, pxForWidth(s.widthMm));
-    await printCanvas(canvas);
+    const s = await loadPrinterSettings();
+    const canvas = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
+    await printCanvas(canvas, s.density);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -434,15 +485,23 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
 
 /** Cetak PDF dari object URL apa pun (mis. preview Shopee). */
 export async function printPdfUrlThermal(url: string): Promise<void> {
-  const s = getPrinterSettings();
-  const canvas = await renderPdfUrlToCanvas(url, pxForWidth(s.widthMm));
-  await printCanvas(canvas);
+  const s = await loadPrinterSettings();
+  const content = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
+  const canvas = document.createElement("canvas");
+  canvas.width = pxForWidth(s);
+  canvas.height = content.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Kanvas label tidak tersedia");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(content, s.insetDots, 0);
+  await printCanvas(canvas, s.density);
 }
 
 /** Halaman tes cetak. */
 export async function printTestThermal(): Promise<void> {
-  const s = getPrinterSettings();
-  const W = pxForWidth(s.widthMm);
+  const s = await loadPrinterSettings();
+  const W = pxForWidth(s);
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = Math.round(W * 0.5);
@@ -457,5 +516,5 @@ export async function printTestThermal(): Promise<void> {
   ctx.fillText(`Kertas: ${s.widthMm}mm`, W / 2, canvas.height * 0.5);
   ctx.fillText(`Kepekatan: ${["", "Terang", "Normal", "Gelap"][s.density]}`, W / 2, canvas.height * 0.65);
   ctx.fillText(new Date().toLocaleString("id-ID"), W / 2, canvas.height * 0.8);
-  await printCanvas(canvas);
+  await printCanvas(canvas, s.density);
 }

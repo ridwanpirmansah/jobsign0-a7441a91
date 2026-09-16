@@ -37,6 +37,7 @@ export const BACKUP_TABLES: BackupTable[] = [
   t("public", "employee_consumption", "Konsumsi Karyawan"),
   t("public", "attendances", "Absensi"),
   t("public", "attendance_settings", "Setelan Absensi"),
+  t("public", "printer_settings", "Setelan Printer"),
   t("public", "shipment_events", "Riwayat Kirim"),
   t("public", "shopping_notes", "Catatan Belanja"),
   t("public", "shopee_shops", "Toko Shopee"),
