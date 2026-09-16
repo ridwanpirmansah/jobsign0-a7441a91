@@ -54,7 +54,7 @@ export const getPrinterSettings = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("printer_settings")
-      .select("width_mm,dots_58,dots_80,inset_dots,density")
+      .select("width_mm,dots_58,dots_80,inset_dots,density,paper_dots,content_dots,align")
       .eq("id", 1)
       .single();
     if (error) throw new Error(error.message);
