@@ -535,8 +535,12 @@ export async function printTestThermal(): Promise<void> {
   ctx.font = `bold ${Math.round(W * 0.09)}px Arial`;
   ctx.fillText("TES CETAK", W / 2, canvas.height * 0.3);
   ctx.font = `${Math.round(W * 0.055)}px Arial`;
-  ctx.fillText(`Kertas: ${s.widthMm}mm`, W / 2, canvas.height * 0.5);
-  ctx.fillText(`Kepekatan: ${["", "Terang", "Normal", "Gelap"][s.density]}`, W / 2, canvas.height * 0.65);
+  ctx.fillText(`${paperPx(s)} titik / area ${W}`, W / 2, canvas.height * 0.5);
+  ctx.fillText(`Rata: ${s.align === "left" ? "Kiri" : s.align === "right" ? "Kanan" : "Tengah"}`, W / 2, canvas.height * 0.65);
   ctx.fillText(new Date().toLocaleString("id-ID"), W / 2, canvas.height * 0.8);
-  await printCanvas(canvas, s.density);
+  // garis batas agar mudah melihat area cetak
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, W - 2, canvas.height - 2);
+  await printCanvas(placeOnPaper(canvas, s), s.density);
 }
