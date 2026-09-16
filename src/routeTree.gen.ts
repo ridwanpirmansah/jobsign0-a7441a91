@@ -28,6 +28,7 @@ import { Route as AuthenticatedConsumptionRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCashbonRouteImport } from './routes/_authenticated/cashbon'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedSettingsPrinterRouteImport } from './routes/_authenticated/settings.printer'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
 import { Route as AuthenticatedOwnerShopeeRouteImport } from './routes/_authenticated/owner.shopee'
@@ -146,6 +147,12 @@ const AuthenticatedProjectsIndexRoute =
   AuthenticatedProjectsIndexRouteImport.update({
     id: '/projects/',
     path: '/projects/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsPrinterRoute =
+  AuthenticatedSettingsPrinterRouteImport.update({
+    id: '/settings/printer',
+    path: '/settings/printer',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
@@ -309,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/settings/printer': typeof AuthenticatedSettingsPrinterRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
   '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
@@ -351,6 +359,7 @@ export interface FileRoutesByTo {
   '/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/settings/printer': typeof AuthenticatedSettingsPrinterRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
   '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
@@ -395,6 +404,7 @@ export interface FileRoutesById {
   '/_authenticated/owner/shopee': typeof AuthenticatedOwnerShopeeRoute
   '/_authenticated/owner/sync': typeof AuthenticatedOwnerSyncRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/_authenticated/settings/printer': typeof AuthenticatedSettingsPrinterRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/sync-projects': typeof ApiPublicHooksSyncProjectsRoute
   '/api/public/hooks/sync-shopee': typeof ApiPublicHooksSyncShopeeRoute
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/owner/shopee'
     | '/owner/sync'
     | '/projects/$id'
+    | '/settings/printer'
     | '/projects/'
     | '/api/public/hooks/sync-projects'
     | '/api/public/hooks/sync-shopee'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/owner/shopee'
     | '/owner/sync'
     | '/projects/$id'
+    | '/settings/printer'
     | '/projects'
     | '/api/public/hooks/sync-projects'
     | '/api/public/hooks/sync-shopee'
@@ -524,6 +536,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner/shopee'
     | '/_authenticated/owner/sync'
     | '/_authenticated/projects/$id'
+    | '/_authenticated/settings/printer'
     | '/_authenticated/projects/'
     | '/api/public/hooks/sync-projects'
     | '/api/public/hooks/sync-shopee'
@@ -672,6 +685,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects/'
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/printer': {
+      id: '/_authenticated/settings/printer'
+      path: '/settings/printer'
+      fullPath: '/settings/printer'
+      preLoaderRoute: typeof AuthenticatedSettingsPrinterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects/$id': {
@@ -866,6 +886,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerShopeeRoute: typeof AuthenticatedOwnerShopeeRoute
   AuthenticatedOwnerSyncRoute: typeof AuthenticatedOwnerSyncRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+  AuthenticatedSettingsPrinterRoute: typeof AuthenticatedSettingsPrinterRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
 }
 
@@ -905,6 +926,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerShopeeRoute: AuthenticatedOwnerShopeeRoute,
   AuthenticatedOwnerSyncRoute: AuthenticatedOwnerSyncRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+  AuthenticatedSettingsPrinterRoute: AuthenticatedSettingsPrinterRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
 }
 
