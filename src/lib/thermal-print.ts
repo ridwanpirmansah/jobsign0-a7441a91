@@ -413,15 +413,52 @@ async function renderPdfUrlToCanvas(url: string, targetWidthPx: number): Promise
   const doc = await pdfjs.getDocument({ data }).promise;
   const page = await doc.getPage(1);
   const base = page.getViewport({ scale: 1 });
-  const scale = targetWidthPx / base.width;
-  const viewport = page.getViewport({ scale });
+  const scanScale = Math.max(2, targetWidthPx / base.width);
+  const scanViewport = page.getViewport({ scale: scanScale });
+  const scan = document.createElement("canvas");
+  scan.width = Math.max(1, Math.floor(scanViewport.width));
+  scan.height = Math.max(1, Math.floor(scanViewport.height));
+  const scanCtx = scan.getContext("2d");
+  if (!scanCtx) throw new Error("Kanvas label tidak tersedia");
+  scanCtx.fillStyle = "#fff";
+  scanCtx.fillRect(0, 0, scan.width, scan.height);
+  await page.render({ canvasContext: scanCtx, viewport: scanViewport, canvas: scan } as any).promise;
+
+  const pixels = scanCtx.getImageData(0, 0, scan.width, scan.height).data;
+  let left = scan.width;
+  let right = 0;
+  let top = scan.height;
+  let bottom = 0;
+  for (let y = 0; y < scan.height; y += 2) {
+    for (let x = 0; x < scan.width; x += 2) {
+      const i = (y * scan.width + x) * 4;
+      if (pixels[i] < 245 || pixels[i + 1] < 245 || pixels[i + 2] < 245) {
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+      }
+    }
+  }
+  if (right <= left || bottom <= top) return scan;
+
+  const cropPad = Math.max(4, Math.round(scan.width * 0.01));
+  left = Math.max(0, left - cropPad);
+  right = Math.min(scan.width - 1, right + cropPad);
+  top = Math.max(0, top - cropPad);
+  bottom = Math.min(scan.height - 1, bottom + cropPad);
+  const cropWidth = right - left + 1;
+  const cropHeight = bottom - top + 1;
+  const scale = targetWidthPx / cropWidth;
+  const viewport = { width: targetWidthPx, height: Math.ceil(cropHeight * scale) };
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.floor(viewport.width));
   canvas.height = Math.max(1, Math.floor(viewport.height));
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(scan, left, top, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
   return canvas;
 }
 
@@ -429,8 +466,8 @@ async function renderPdfUrlToCanvas(url: string, targetWidthPx: number): Promise
 
 /** Cetak resi manual aplikasi ke printer termal. */
 export async function printResiThermal(payload: ResiPayload): Promise<void> {
-  const s = getPrinterSettings();
-  const canvas = renderResiCanvas(payload, pxForWidth(s.widthMm));
+  const s = await loadPrinterSettings();
+  const canvas = await renderResiCanvas(payload, pxForWidth(s), s.insetDots);
   await printCanvas(canvas);
 }
 
@@ -439,8 +476,8 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
   const { fetchShopeeLabelUrl } = await import("@/lib/shopee-label");
   const url = await fetchShopeeLabelUrl(orderId);
   try {
-    const s = getPrinterSettings();
-    const canvas = await renderPdfUrlToCanvas(url, pxForWidth(s.widthMm));
+    const s = await loadPrinterSettings();
+    const canvas = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
     await printCanvas(canvas);
   } finally {
     URL.revokeObjectURL(url);
@@ -449,15 +486,23 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
 
 /** Cetak PDF dari object URL apa pun (mis. preview Shopee). */
 export async function printPdfUrlThermal(url: string): Promise<void> {
-  const s = getPrinterSettings();
-  const canvas = await renderPdfUrlToCanvas(url, pxForWidth(s.widthMm));
+  const s = await loadPrinterSettings();
+  const content = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
+  const canvas = document.createElement("canvas");
+  canvas.width = pxForWidth(s);
+  canvas.height = content.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Kanvas label tidak tersedia");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(content, s.insetDots, 0);
   await printCanvas(canvas);
 }
 
 /** Halaman tes cetak. */
 export async function printTestThermal(): Promise<void> {
-  const s = getPrinterSettings();
-  const W = pxForWidth(s.widthMm);
+  const s = await loadPrinterSettings();
+  const W = pxForWidth(s);
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = Math.round(W * 0.5);
