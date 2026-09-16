@@ -58,8 +58,8 @@ function PrinterSettingsPage() {
   const update = (patch: Partial<PrinterSettings>) => setSettings((current) => ({ ...current, ...patch }));
 
   const choosePreset = (value: string) => {
-    if (value === "58") update({ widthMm: 58 });
-    else if (value === "80") update({ widthMm: 80 });
+    if (value === "58") update({ widthMm: 58, paperDots: settings.dots58, contentDots: Math.min(settings.contentDots || settings.dots58, settings.dots58) });
+    else if (value === "80") update({ widthMm: 80, paperDots: settings.dots80, contentDots: Math.min(settings.contentDots || settings.dots80, settings.dots80) });
     else update({ widthMm: Math.max(30, Math.min(120, Math.round(Number(customMm) || 76))) });
   };
 
