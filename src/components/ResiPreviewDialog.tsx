@@ -18,6 +18,7 @@ export function ResiPreviewDialog({
 }) {
   const [barcodeUrl, setBarcodeUrl] = useState<string | null>(null);
   const [shopeeUrl, setShopeeUrl] = useState<string | null>(null);
+  const [shopeeImg, setShopeeImg] = useState<string | null>(null);
   const [shopeeErr, setShopeeErr] = useState<string | null>(null);
   const [loadingShopee, setLoadingShopee] = useState(false);
   const [printing, setPrinting] = useState(false);
