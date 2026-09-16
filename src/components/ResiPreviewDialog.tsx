@@ -34,14 +34,17 @@ export function ResiPreviewDialog({
   useEffect(() => {
     let revoke: string | null = null;
     setShopeeUrl(null);
+    setShopeeImg(null);
     setShopeeErr(null);
     if (payload?.is_shopee && payload.order_id) {
       setLoadingShopee(true);
       import("@/lib/shopee-label")
         .then((m) => m.fetchShopeeLabelUrl(payload.order_id!))
-        .then((url) => {
+        .then(async (url) => {
           revoke = url;
           setShopeeUrl(url);
+          const { renderPdfUrlToImage } = await import("@/lib/thermal-print");
+          setShopeeImg(await renderPdfUrlToImage(url, 900));
         })
         .catch((e: any) => setShopeeErr(e?.message ?? "Gagal mengambil resi Shopee"))
         .finally(() => setLoadingShopee(false));
