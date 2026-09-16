@@ -85,6 +85,9 @@ export const updatePrinterSettings = createServerFn({ method: "POST" })
         dots_80: data.dots80,
         inset_dots: data.insetDots,
         density: data.density,
+        paper_dots: data.paperDots,
+        content_dots: Math.min(data.contentDots, data.paperDots),
+        align: data.align,
       })
       .eq("id", 1);
     if (error) throw new Error(error.message);
