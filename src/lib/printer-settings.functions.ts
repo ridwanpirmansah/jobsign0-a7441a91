@@ -67,6 +67,9 @@ const settingsSchema = z.object({
   dots80: z.number().int().min(384).max(640),
   insetDots: z.number().int().min(0).max(64),
   density: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  paperDots: z.number().int().min(128).max(1024),
+  contentDots: z.number().int().min(128).max(1024),
+  align: z.enum(["left", "center", "right"]),
 });
 
 export const updatePrinterSettings = createServerFn({ method: "POST" })
