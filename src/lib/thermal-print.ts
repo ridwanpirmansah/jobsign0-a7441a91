@@ -214,10 +214,36 @@ async function printCanvas(canvas: HTMLCanvasElement, density: 1 | 2 | 3) {
 
 // ---------- Renderer resi (meniru tata letak PDF 100x100mm) ----------
 
-function pxForWidth(settings: PrinterSettings): number {
+/** Lebar total titik printer (manual bila diisi). */
+function paperPx(settings: PrinterSettings): number {
+  if (settings.paperDots) return Math.max(128, Math.min(1024, settings.paperDots));
   if (settings.widthMm === 58) return settings.dots58;
   if (settings.widthMm === 80) return settings.dots80;
   return Math.max(256, Math.min(640, Math.round(settings.widthMm * 7.2)));
+}
+
+/** Lebar area cetak isi (manual bila diisi). */
+function contentPx(settings: PrinterSettings): number {
+  const paper = paperPx(settings);
+  const content = settings.contentDots ? settings.contentDots : paper - settings.insetDots * 2;
+  return Math.max(128, Math.min(paper, content));
+}
+
+/** Tempatkan kanvas isi ke kanvas selebar kertas sesuai perataan. */
+function placeOnPaper(content: HTMLCanvasElement, settings: PrinterSettings): HTMLCanvasElement {
+  const paper = paperPx(settings);
+  if (content.width === paper) return content;
+  const canvas = document.createElement("canvas");
+  canvas.width = paper;
+  canvas.height = content.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Kanvas cetak tidak tersedia");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const gap = paper - content.width;
+  const x = settings.align === "left" ? 0 : settings.align === "right" ? gap : Math.round(gap / 2);
+  ctx.drawImage(content, x, 0);
+  return canvas;
 }
 
 function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) {
