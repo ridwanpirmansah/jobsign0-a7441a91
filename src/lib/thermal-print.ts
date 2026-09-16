@@ -492,8 +492,8 @@ async function renderPdfUrlToCanvas(url: string, targetWidthPx: number): Promise
 /** Cetak resi manual aplikasi ke printer termal. */
 export async function printResiThermal(payload: ResiPayload): Promise<void> {
   const s = await loadPrinterSettings();
-  const canvas = await renderResiCanvas(payload, pxForWidth(s), s.insetDots);
-  await printCanvas(canvas, s.density);
+  const content = await renderResiCanvas(payload, contentPx(s), 0);
+  await printCanvas(placeOnPaper(content, s), s.density);
 }
 
 /** Cetak label Shopee (PDF tersimpan) ke printer termal. */
@@ -501,9 +501,7 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
   const { fetchShopeeLabelUrl } = await import("@/lib/shopee-label");
   const url = await fetchShopeeLabelUrl(orderId);
   try {
-    const s = await loadPrinterSettings();
-    const canvas = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
-    await printCanvas(canvas, s.density);
+    await printPdfUrlThermal(url);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -512,22 +510,20 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
 /** Cetak PDF dari object URL apa pun (mis. preview Shopee). */
 export async function printPdfUrlThermal(url: string): Promise<void> {
   const s = await loadPrinterSettings();
-  const content = await renderPdfUrlToCanvas(url, Math.max(256, pxForWidth(s) - s.insetDots * 2));
-  const canvas = document.createElement("canvas");
-  canvas.width = pxForWidth(s);
-  canvas.height = content.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Kanvas label tidak tersedia");
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(content, s.insetDots, 0);
-  await printCanvas(canvas, s.density);
+  const content = await renderPdfUrlToCanvas(url, contentPx(s));
+  await printCanvas(placeOnPaper(content, s), s.density);
+}
+
+/** Render halaman pertama PDF jadi gambar PNG (untuk preview di ponsel). */
+export async function renderPdfUrlToImage(url: string, widthPx = 900): Promise<string> {
+  const canvas = await renderPdfUrlToCanvas(url, widthPx);
+  return canvas.toDataURL("image/png");
 }
 
 /** Halaman tes cetak. */
 export async function printTestThermal(): Promise<void> {
   const s = await loadPrinterSettings();
-  const W = pxForWidth(s);
+  const W = contentPx(s);
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = Math.round(W * 0.5);
