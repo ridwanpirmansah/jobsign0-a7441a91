@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   UserCog, LogOut, Zap, FileSpreadsheet,
   ShoppingBag, Tags, Truck, Shield, DatabaseBackup, ListOrdered,
-  Settings, ChevronDown,
+  Settings, ChevronDown, Bluetooth,
 } from "lucide-react";
 
 import {
@@ -27,6 +27,7 @@ const settingsItems: NavItem[] = [
   { title: "Sync Project", url: "/owner/sync", icon: FileSpreadsheet, group: "owner" },
   { title: "Integrasi Shopee", url: "/owner/shopee", icon: ShoppingBag, group: "owner" },
   { title: "Kelola User", url: "/users", icon: UserCog, group: "owner" },
+  { title: "Printer Bluetooth", url: "/settings/printer", icon: Bluetooth, group: "owner" },
   { title: "Setelan Akses Fitur", url: "/owner/permissions", icon: Shield, group: "owner" },
   { title: "Backup & Restore", url: "/owner/backup", icon: DatabaseBackup, group: "owner" },
 ];

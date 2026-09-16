@@ -26,13 +26,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   ShoppingBag, Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, ArrowUpDown,
-  Package, Boxes, ChevronRight, ChevronDown, Truck, PackageCheck, Wand2, Printer, FileEdit,
+  Package, Boxes, ChevronRight, ChevronDown, Truck, PackageCheck, Wand2, Printer, FileEdit, Bluetooth,
 } from "lucide-react";
 
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { generateResiNumber, printResiPdf } from "@/lib/resi-pdf";
+import { generateResiNumber } from "@/lib/resi-pdf";
+import { ResiPreviewDialog, type ResiPreviewPayload } from "@/components/ResiPreviewDialog";
+import { printShopeeLabelThermal, isThermalPrintSupported } from "@/lib/thermal-print";
 import { WorkflowTabs } from "@/components/WorkflowTabs";
 import { TablePagination } from "@/components/TablePagination";
 import { ShopeeImportDialog } from "@/components/ShopeeImportDialog";
@@ -335,6 +337,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const [header, setHeader] = useState<HeaderForm>(emptyHeader());
   const [items, setItems] = useState<ItemForm[]>([]);
   const [shopeeLabelLoading, setShopeeLabelLoading] = useState(false);
+  const [resiPreview, setResiPreview] = useState<ResiPreviewPayload | null>(null);
 
   const [expandedItemKey, setExpandedItemKey] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -799,7 +802,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   )}
                   <Button
                     type="button" size="icon" variant="outline"
-                    title={header.source === "shopee" ? "Buka Resi Shopee (PDF)" : "Print Resi PDF"}
+                    title={header.source === "shopee" ? "Buka Resi Shopee (PDF)" : "Preview & Cetak Resi"}
                     disabled={header.source === "shopee" ? !header.id || shopeeLabelLoading : !header.no_resi}
                     onClick={async () => {
                       if (header.source === "shopee") {
@@ -814,7 +817,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                         }
                         return;
                       }
-                      printResiPdf({
+                      setResiPreview({
                         no_resi: header.no_resi,
                         ekspedisi: header.ekspedisi,
                         co_date: header.co_date,
@@ -828,6 +831,29 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   >
                     <Printer className="h-4 w-4"/>
                   </Button>
+                  {header.source === "shopee" && (
+                    <Button
+                      type="button" size="icon" variant="outline"
+                      title="Cetak Resi Shopee ke Printer Bluetooth"
+                      disabled={!header.id}
+                      onClick={async () => {
+                        if (!isThermalPrintSupported()) {
+                          toast.error("Bluetooth cetak hanya didukung Chrome/Edge di Android — gunakan tombol buka PDF");
+                          return;
+                        }
+                        try {
+                          await printShopeeLabelThermal(header.id!);
+                          toast.success("Perintah cetak terkirim — periksa printer");
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Gagal mencetak ke printer Bluetooth");
+                        }
+                      }}
+                    >
+                      <Bluetooth className="h-4 w-4"/>
+                    </Button>
+                  )}
+                  <ResiPreviewDialog payload={resiPreview} onClose={() => setResiPreview(null)} />
+
 
                 </div>
               </div>
