@@ -802,7 +802,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   )}
                   <Button
                     type="button" size="icon" variant="outline"
-                    title={header.source === "shopee" ? "Buka Resi Shopee (PDF)" : "Print Resi PDF"}
+                    title={header.source === "shopee" ? "Buka Resi Shopee (PDF)" : "Preview & Cetak Resi"}
                     disabled={header.source === "shopee" ? !header.id || shopeeLabelLoading : !header.no_resi}
                     onClick={async () => {
                       if (header.source === "shopee") {
@@ -817,7 +817,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                         }
                         return;
                       }
-                      printResiPdf({
+                      setResiPreview({
                         no_resi: header.no_resi,
                         ekspedisi: header.ekspedisi,
                         co_date: header.co_date,
@@ -831,6 +831,29 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   >
                     <Printer className="h-4 w-4"/>
                   </Button>
+                  {header.source === "shopee" && (
+                    <Button
+                      type="button" size="icon" variant="outline"
+                      title="Cetak Resi Shopee ke Printer Bluetooth"
+                      disabled={!header.id || resiPreview === null && false}
+                      onClick={async () => {
+                        if (!isThermalPrintSupported()) {
+                          toast.error("Bluetooth cetak hanya didukung Chrome/Edge di Android — gunakan tombol buka PDF");
+                          return;
+                        }
+                        try {
+                          await printShopeeLabelThermal(header.id!);
+                          toast.success("Perintah cetak terkirim — periksa printer");
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Gagal mencetak ke printer Bluetooth");
+                        }
+                      }}
+                    >
+                      <Bluetooth className="h-4 w-4"/>
+                    </Button>
+                  )}
+                  <ResiPreviewDialog payload={resiPreview} onClose={() => setResiPreview(null)} />
+
 
                 </div>
               </div>
