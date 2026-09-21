@@ -254,7 +254,7 @@ function itemFromDb(row: any): ItemForm {
   };
 }
 
-function calcItemHpp(item: ItemForm, priceMap: Record<string, number>): number {
+function calcItemHpp(item: ItemForm, priceMap: Record<string, number>, akrilikRateOverride?: number): number {
   if (item.kind === "ready_stock_manual") return num(item.manual_hpp);
   if (item.kind === "ready_stock_ref") return 0; // filled from ref on server
   if (item.kind === "draft_ref") return 0; // filled from referenced draft on server
@@ -268,7 +268,8 @@ function calcItemHpp(item: ItemForm, priceMap: Record<string, number>): number {
   const kabel_socket_meter = item.kabel_socket_meter === "" ? 1 : num(item.kabel_socket_meter);
   const outdoor_cost = item.use_outdoor ? (num(item.outdoor_cost) || titik * 2000) : 0;
   const led_cost = Math.round(led_meter * (priceMap.led_per_meter ?? 0));
-  const akrilik_cost = Math.round(p * l * (priceMap.akrilik_per_cm2 ?? 0));
+  const akrilik_cost = Math.round(p * l * (akrilikRateOverride ?? priceMap.akrilik_per_cm2 ?? 0));
+
   const solder_cost = Math.round(titik * (priceMap.solder_per_titik ?? 0));
   const tempel_cost = Math.round(titik * (priceMap.tempel_per_titik ?? 0));
   const kabel_cost = Math.round(kabel_meter * (priceMap.kabel_per_meter ?? 0));
