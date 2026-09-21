@@ -254,7 +254,7 @@ function itemFromDb(row: any): ItemForm {
   };
 }
 
-function calcItemHpp(item: ItemForm, priceMap: Record<string, number>): number {
+function calcItemHpp(item: ItemForm, priceMap: Record<string, number>, akrilikRateOverride?: number): number {
   if (item.kind === "ready_stock_manual") return num(item.manual_hpp);
   if (item.kind === "ready_stock_ref") return 0; // filled from ref on server
   if (item.kind === "draft_ref") return 0; // filled from referenced draft on server
@@ -268,7 +268,8 @@ function calcItemHpp(item: ItemForm, priceMap: Record<string, number>): number {
   const kabel_socket_meter = item.kabel_socket_meter === "" ? 1 : num(item.kabel_socket_meter);
   const outdoor_cost = item.use_outdoor ? (num(item.outdoor_cost) || titik * 2000) : 0;
   const led_cost = Math.round(led_meter * (priceMap.led_per_meter ?? 0));
-  const akrilik_cost = Math.round(p * l * (priceMap.akrilik_per_cm2 ?? 0));
+  const akrilik_cost = Math.round(p * l * (akrilikRateOverride ?? priceMap.akrilik_per_cm2 ?? 0));
+
   const solder_cost = Math.round(titik * (priceMap.solder_per_titik ?? 0));
   const tempel_cost = Math.round(titik * (priceMap.tempel_per_titik ?? 0));
   const kabel_cost = Math.round(kabel_meter * (priceMap.kabel_per_meter ?? 0));
@@ -502,7 +503,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   };
 
 
-  const totalItemsHpp = useMemo(() =>
+  const sumHpp = (akrilikRate?: number) =>
     items.filter((i) => !i._deleted).reduce((s, i) => {
       if (i.kind === "ready_stock_ref") {
         const rs = (rsQ.data ?? []).find((r: any) => r.id === i.source_ready_stock_order_id);
@@ -512,13 +513,22 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         const dr = (draftsQ.data ?? []).find((r: any) => r.id === i.source_draft_order_id);
         return s + Number(dr?.hpp ?? 0);
       }
-      return s + calcItemHpp(i, priceMap);
-    }, 0),
-    [items, priceMap, rsQ.data, draftsQ.data],
-  );
+      return s + calcItemHpp(i, priceMap, akrilikRate);
+    }, 0);
+
+  const totalItemsHpp = useMemo(() => sumHpp(), [items, priceMap, rsQ.data, draftsQ.data]);
+
+  const akrilik2Rate = priceMap.akrilik_2mm_per_cm2 ?? priceMap.akrilik_per_cm2 ?? 0;
+  const akrilik3Rate = priceMap.akrilik_3mm_per_cm2 ?? priceMap.akrilik_per_cm2 ?? 0;
+  const totalHpp2mm = useMemo(() => sumHpp(akrilik2Rate), [items, priceMap, rsQ.data, draftsQ.data, akrilik2Rate]);
+  const totalHpp3mm = useMemo(() => sumHpp(akrilik3Rate), [items, priceMap, rsQ.data, draftsQ.data, akrilik3Rate]);
+
+  const markupPct = priceMap.marketplace_markup_pct ?? 20;
+  const markupFactor = 1 + markupPct / 100;
 
   const totalPay = num(header.payment) + num(header.split);
   const totalProfit = totalPay - totalItemsHpp;
+
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -950,13 +960,29 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   <div className="text-muted-foreground text-xs">Profit</div>
                   <div className={`text-lg font-semibold ${totalProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>Rp {rp(totalProfit)}</div>
                 </div>
+                <div className="sm:col-span-3 grid sm:grid-cols-2 gap-2">
+                  <div className="rounded-md border border-sky-200 bg-sky-50 p-2">
+                    <div className="text-[11px] font-semibold text-sky-800 uppercase tracking-wide">HPP Akrilik 2mm</div>
+                    <div className="text-lg font-bold text-sky-700">Rp {rp(totalHpp2mm)}</div>
+                    <div className="text-[11px] text-sky-700">Rekomendasi jual: Rp {rp(totalHpp2mm * markupFactor)} · Rp {rp(akrilik2Rate)}/cm²</div>
+                  </div>
+                  <div className="rounded-md border border-violet-200 bg-violet-50 p-2">
+                    <div className="text-[11px] font-semibold text-violet-800 uppercase tracking-wide">HPP Akrilik 3mm</div>
+                    <div className="text-lg font-bold text-violet-700">Rp {rp(totalHpp3mm)}</div>
+                    <div className="text-[11px] text-violet-700">Rekomendasi jual: Rp {rp(totalHpp3mm * markupFactor)} · Rp {rp(akrilik3Rate)}/cm²</div>
+                  </div>
+                  <div className="sm:col-span-2 text-[11px] text-muted-foreground">
+                    Selisih 3mm − 2mm: <b>Rp {rp(totalHpp3mm - totalHpp2mm)}</b> (HPP) · <b>Rp {rp((totalHpp3mm - totalHpp2mm) * markupFactor)}</b> (harga jual)
+                  </div>
+                </div>
                 <div className="sm:col-span-3 rounded-md border border-emerald-200 bg-emerald-50 p-2 flex items-center justify-between gap-2 flex-wrap">
                   <div className="min-w-0">
                     <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wide">Rekomendasi Harga Marketplace</div>
-                    <div className="text-[11px] text-emerald-700">Total Payment × 1.20 — proteksi 20% dari biaya admin marketplace agar profit tidak tergerus.</div>
+                    <div className="text-[11px] text-emerald-700">Total Payment × {markupFactor.toFixed(2)} — proteksi {markupPct}% dari biaya admin marketplace (ikut Master Harga).</div>
                   </div>
-                  <div className="text-xl font-bold text-emerald-700 whitespace-nowrap">Rp {rp(totalPay * 1.2)}</div>
+                  <div className="text-xl font-bold text-emerald-700 whitespace-nowrap">Rp {rp(totalPay * markupFactor)}</div>
                 </div>
+
               </CardContent>
             </Card>
 
