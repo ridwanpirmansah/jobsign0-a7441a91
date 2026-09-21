@@ -503,7 +503,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   };
 
 
-  const totalItemsHpp = useMemo(() =>
+  const sumHpp = (akrilikRate?: number) =>
     items.filter((i) => !i._deleted).reduce((s, i) => {
       if (i.kind === "ready_stock_ref") {
         const rs = (rsQ.data ?? []).find((r: any) => r.id === i.source_ready_stock_order_id);
@@ -513,13 +513,22 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
         const dr = (draftsQ.data ?? []).find((r: any) => r.id === i.source_draft_order_id);
         return s + Number(dr?.hpp ?? 0);
       }
-      return s + calcItemHpp(i, priceMap);
-    }, 0),
-    [items, priceMap, rsQ.data, draftsQ.data],
-  );
+      return s + calcItemHpp(i, priceMap, akrilikRate);
+    }, 0);
+
+  const totalItemsHpp = useMemo(() => sumHpp(), [items, priceMap, rsQ.data, draftsQ.data]);
+
+  const akrilik2Rate = priceMap.akrilik_2mm_per_cm2 ?? priceMap.akrilik_per_cm2 ?? 0;
+  const akrilik3Rate = priceMap.akrilik_3mm_per_cm2 ?? priceMap.akrilik_per_cm2 ?? 0;
+  const totalHpp2mm = useMemo(() => sumHpp(akrilik2Rate), [items, priceMap, rsQ.data, draftsQ.data, akrilik2Rate]);
+  const totalHpp3mm = useMemo(() => sumHpp(akrilik3Rate), [items, priceMap, rsQ.data, draftsQ.data, akrilik3Rate]);
+
+  const markupPct = priceMap.marketplace_markup_pct ?? 20;
+  const markupFactor = 1 + markupPct / 100;
 
   const totalPay = num(header.payment) + num(header.split);
   const totalProfit = totalPay - totalItemsHpp;
+
 
   const saveMut = useMutation({
     mutationFn: async () => {
