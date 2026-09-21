@@ -960,13 +960,29 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                   <div className="text-muted-foreground text-xs">Profit</div>
                   <div className={`text-lg font-semibold ${totalProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>Rp {rp(totalProfit)}</div>
                 </div>
+                <div className="sm:col-span-3 grid sm:grid-cols-2 gap-2">
+                  <div className="rounded-md border border-sky-200 bg-sky-50 p-2">
+                    <div className="text-[11px] font-semibold text-sky-800 uppercase tracking-wide">HPP Akrilik 2mm</div>
+                    <div className="text-lg font-bold text-sky-700">Rp {rp(totalHpp2mm)}</div>
+                    <div className="text-[11px] text-sky-700">Rekomendasi jual: Rp {rp(totalHpp2mm * markupFactor)} · Rp {rp(akrilik2Rate)}/cm²</div>
+                  </div>
+                  <div className="rounded-md border border-violet-200 bg-violet-50 p-2">
+                    <div className="text-[11px] font-semibold text-violet-800 uppercase tracking-wide">HPP Akrilik 3mm</div>
+                    <div className="text-lg font-bold text-violet-700">Rp {rp(totalHpp3mm)}</div>
+                    <div className="text-[11px] text-violet-700">Rekomendasi jual: Rp {rp(totalHpp3mm * markupFactor)} · Rp {rp(akrilik3Rate)}/cm²</div>
+                  </div>
+                  <div className="sm:col-span-2 text-[11px] text-muted-foreground">
+                    Selisih 3mm − 2mm: <b>Rp {rp(totalHpp3mm - totalHpp2mm)}</b> (HPP) · <b>Rp {rp((totalHpp3mm - totalHpp2mm) * markupFactor)}</b> (harga jual)
+                  </div>
+                </div>
                 <div className="sm:col-span-3 rounded-md border border-emerald-200 bg-emerald-50 p-2 flex items-center justify-between gap-2 flex-wrap">
                   <div className="min-w-0">
                     <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wide">Rekomendasi Harga Marketplace</div>
-                    <div className="text-[11px] text-emerald-700">Total Payment × 1.20 — proteksi 20% dari biaya admin marketplace agar profit tidak tergerus.</div>
+                    <div className="text-[11px] text-emerald-700">Total Payment × {markupFactor.toFixed(2)} — proteksi {markupPct}% dari biaya admin marketplace (ikut Master Harga).</div>
                   </div>
-                  <div className="text-xl font-bold text-emerald-700 whitespace-nowrap">Rp {rp(totalPay * 1.2)}</div>
+                  <div className="text-xl font-bold text-emerald-700 whitespace-nowrap">Rp {rp(totalPay * markupFactor)}</div>
                 </div>
+
               </CardContent>
             </Card>
 
