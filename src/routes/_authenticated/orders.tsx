@@ -528,7 +528,8 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const totalPay = num(header.payment) + num(header.split);
   const profit2mm = totalPay - totalHpp2mm;
   const profit3mm = totalPay - totalHpp3mm;
-  const recMarketplace = totalPay * markupFactor;
+  const recMarketplace2mm = totalPay * markupFactor;
+  const recMarketplace3mm = (totalPay + (totalHpp3mm - totalHpp2mm)) * markupFactor;
 
 
   const saveMut = useMutation({
@@ -982,8 +983,15 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                       <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wide">Rekomendasi Harga Marketplace</div>
                       <div className="text-[11px] text-emerald-700">Total Payment + markup {markupPct}% (Master Harga) · proteksi biaya admin marketplace</div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-lg font-bold text-emerald-800">Rp {rp(recMarketplace)}</span>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="text-right">
+                        <span className="text-[10px] font-semibold text-sky-700 bg-sky-100 rounded px-1.5 py-0.5 mr-1">2mm</span>
+                        <span className="text-lg font-bold text-sky-800">Rp {rp(recMarketplace2mm)}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-semibold text-violet-700 bg-violet-100 rounded px-1.5 py-0.5 mr-1">3mm</span>
+                        <span className="text-lg font-bold text-violet-800">Rp {rp(recMarketplace3mm)}</span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-1">
