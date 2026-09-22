@@ -516,7 +516,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       return s + calcItemHpp(i, priceMap, akrilikRate);
     }, 0);
 
-  const totalItemsHpp = useMemo(() => sumHpp(), [items, priceMap, rsQ.data, draftsQ.data]);
 
   const akrilik2Rate = priceMap.akrilik_2mm_per_cm2 ?? priceMap.akrilik_per_cm2 ?? 0;
   const akrilik3Rate = priceMap.akrilik_3mm_per_cm2 ?? priceMap.akrilik_per_cm2 ?? 0;
@@ -527,7 +526,6 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
   const markupFactor = 1 + markupPct / 100;
 
   const totalPay = num(header.payment) + num(header.split);
-  const totalProfit = totalPay - totalItemsHpp;
   const profit2mm = totalPay - totalHpp2mm;
   const profit3mm = totalPay - totalHpp3mm;
   const recMarketplace = totalPay * markupFactor;
