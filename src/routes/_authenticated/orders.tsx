@@ -954,51 +954,41 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
             {/* TOTALS */}
             <Card className="bg-muted/40 mt-3">
               <CardContent className="p-3 text-sm grid sm:grid-cols-3 gap-3">
-                <div><div className="text-muted-foreground text-xs">Total HPP</div><div className="text-lg font-semibold">Rp {rp(totalItemsHpp)}</div></div>
+                <div>
+                  <div className="text-muted-foreground text-xs">Total HPP</div>
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-lg font-semibold">Rp {rp(totalHpp2mm)}</span>
+                    <span className="text-[10px] font-semibold text-sky-700 bg-sky-100 rounded px-1.5 py-0.5">2mm</span>
+                    <span className="text-muted-foreground">/</span>
+                    <span className="text-lg font-semibold">Rp {rp(totalHpp3mm)}</span>
+                    <span className="text-[10px] font-semibold text-violet-700 bg-violet-100 rounded px-1.5 py-0.5">3mm</span>
+                  </div>
+                </div>
                 <div><div className="text-muted-foreground text-xs">Total Payment (+Split)</div><div className="text-lg font-semibold">Rp {rp(totalPay)}</div></div>
                 <div>
                   <div className="text-muted-foreground text-xs">Profit</div>
                   <div className={`text-lg font-semibold ${totalProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>Rp {rp(totalProfit)}</div>
                 </div>
-                <div className="sm:col-span-3 grid sm:grid-cols-2 gap-2">
-                  <div className="rounded-md border border-sky-200 bg-sky-50 p-2">
-                    <div className="text-[11px] font-semibold text-sky-800 uppercase tracking-wide">Akrilik 2mm</div>
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      <div>
-                        <div className="text-[10px] text-sky-700 uppercase">HPP</div>
-                        <div className="text-base font-bold text-sky-700">Rp {rp(totalHpp2mm)}</div>
+                <div className="sm:col-span-3 rounded-md border border-emerald-200 bg-emerald-50 p-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wide">Rekomendasi Harga Marketplace</div>
+                      <div className="text-[11px] text-emerald-700">Markup {markupPct}% dari Master Harga · proteksi biaya admin marketplace</div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="text-right">
+                        <span className="text-[10px] font-semibold text-sky-700 bg-sky-100 rounded px-1.5 py-0.5 mr-1">2mm</span>
+                        <span className="text-lg font-bold text-sky-800">Rp {rp(totalHpp2mm * markupFactor)}</span>
                       </div>
-                      <div className="border-l border-sky-200 pl-2">
-                        <div className="text-[10px] text-sky-700 uppercase">Rekomendasi Marketplace</div>
-                        <div className="text-lg font-bold text-sky-800">Rp {rp(totalHpp2mm * markupFactor)}</div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-semibold text-violet-700 bg-violet-100 rounded px-1.5 py-0.5 mr-1">3mm</span>
+                        <span className="text-lg font-bold text-violet-800">Rp {rp(totalHpp3mm * markupFactor)}</span>
                       </div>
                     </div>
-                    <div className="text-[10px] text-sky-600 mt-1">Markup {markupPct}% · Akrilik Rp {rp(akrilik2Rate)}/cm²</div>
                   </div>
-                  <div className="rounded-md border border-violet-200 bg-violet-50 p-2">
-                    <div className="text-[11px] font-semibold text-violet-800 uppercase tracking-wide">Akrilik 3mm</div>
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      <div>
-                        <div className="text-[10px] text-violet-700 uppercase">HPP</div>
-                        <div className="text-base font-bold text-violet-700">Rp {rp(totalHpp3mm)}</div>
-                      </div>
-                      <div className="border-l border-violet-200 pl-2">
-                        <div className="text-[10px] text-violet-700 uppercase">Rekomendasi Marketplace</div>
-                        <div className="text-lg font-bold text-violet-800">Rp {rp(totalHpp3mm * markupFactor)}</div>
-                      </div>
-                    </div>
-                    <div className="text-[10px] text-violet-600 mt-1">Markup {markupPct}% · Akrilik Rp {rp(akrilik3Rate)}/cm²</div>
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    Tarif akrilik: 2mm Rp {rp(akrilik2Rate)}/cm² · 3mm Rp {rp(akrilik3Rate)}/cm² — Selisih 3mm − 2mm: <b>Rp {rp(totalHpp3mm - totalHpp2mm)}</b> (HPP) · <b>Rp {rp((totalHpp3mm - totalHpp2mm) * markupFactor)}</b> (rekomendasi)
                   </div>
-                  <div className="sm:col-span-2 text-[11px] text-muted-foreground">
-                    Selisih 3mm − 2mm: <b>Rp {rp(totalHpp3mm - totalHpp2mm)}</b> (HPP) · <b>Rp {rp((totalHpp3mm - totalHpp2mm) * markupFactor)}</b> (rekomendasi marketplace)
-                  </div>
-                </div>
-                <div className="sm:col-span-3 rounded-md border border-emerald-200 bg-emerald-50 p-2 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wide">Rekomendasi Harga Marketplace</div>
-                    <div className="text-[11px] text-emerald-700">Total Payment × {markupFactor.toFixed(2)} — proteksi {markupPct}% dari biaya admin marketplace (ikut Master Harga).</div>
-                  </div>
-                  <div className="text-xl font-bold text-emerald-700 whitespace-nowrap">Rp {rp(totalPay * markupFactor)}</div>
                 </div>
 
               </CardContent>
