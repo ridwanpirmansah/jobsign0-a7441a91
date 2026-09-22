@@ -962,17 +962,35 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                 </div>
                 <div className="sm:col-span-3 grid sm:grid-cols-2 gap-2">
                   <div className="rounded-md border border-sky-200 bg-sky-50 p-2">
-                    <div className="text-[11px] font-semibold text-sky-800 uppercase tracking-wide">HPP Akrilik 2mm</div>
-                    <div className="text-lg font-bold text-sky-700">Rp {rp(totalHpp2mm)}</div>
-                    <div className="text-[11px] text-sky-700">Rekomendasi jual: Rp {rp(totalHpp2mm * markupFactor)} · Rp {rp(akrilik2Rate)}/cm²</div>
+                    <div className="text-[11px] font-semibold text-sky-800 uppercase tracking-wide">Akrilik 2mm</div>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <div>
+                        <div className="text-[10px] text-sky-700 uppercase">HPP</div>
+                        <div className="text-base font-bold text-sky-700">Rp {rp(totalHpp2mm)}</div>
+                      </div>
+                      <div className="border-l border-sky-200 pl-2">
+                        <div className="text-[10px] text-sky-700 uppercase">Rekomendasi Marketplace</div>
+                        <div className="text-lg font-bold text-sky-800">Rp {rp(totalHpp2mm * markupFactor)}</div>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-sky-600 mt-1">Markup {markupPct}% · Akrilik Rp {rp(akrilik2Rate)}/cm²</div>
                   </div>
                   <div className="rounded-md border border-violet-200 bg-violet-50 p-2">
-                    <div className="text-[11px] font-semibold text-violet-800 uppercase tracking-wide">HPP Akrilik 3mm</div>
-                    <div className="text-lg font-bold text-violet-700">Rp {rp(totalHpp3mm)}</div>
-                    <div className="text-[11px] text-violet-700">Rekomendasi jual: Rp {rp(totalHpp3mm * markupFactor)} · Rp {rp(akrilik3Rate)}/cm²</div>
+                    <div className="text-[11px] font-semibold text-violet-800 uppercase tracking-wide">Akrilik 3mm</div>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <div>
+                        <div className="text-[10px] text-violet-700 uppercase">HPP</div>
+                        <div className="text-base font-bold text-violet-700">Rp {rp(totalHpp3mm)}</div>
+                      </div>
+                      <div className="border-l border-violet-200 pl-2">
+                        <div className="text-[10px] text-violet-700 uppercase">Rekomendasi Marketplace</div>
+                        <div className="text-lg font-bold text-violet-800">Rp {rp(totalHpp3mm * markupFactor)}</div>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-violet-600 mt-1">Markup {markupPct}% · Akrilik Rp {rp(akrilik3Rate)}/cm²</div>
                   </div>
                   <div className="sm:col-span-2 text-[11px] text-muted-foreground">
-                    Selisih 3mm − 2mm: <b>Rp {rp(totalHpp3mm - totalHpp2mm)}</b> (HPP) · <b>Rp {rp((totalHpp3mm - totalHpp2mm) * markupFactor)}</b> (harga jual)
+                    Selisih 3mm − 2mm: <b>Rp {rp(totalHpp3mm - totalHpp2mm)}</b> (HPP) · <b>Rp {rp((totalHpp3mm - totalHpp2mm) * markupFactor)}</b> (rekomendasi marketplace)
                   </div>
                 </div>
                 <div className="sm:col-span-3 rounded-md border border-emerald-200 bg-emerald-50 p-2 flex items-center justify-between gap-2 flex-wrap">
