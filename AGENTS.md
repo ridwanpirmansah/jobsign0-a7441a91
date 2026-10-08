@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Thermal printing composes the unchanged receipt and an order-data footer into a single raster page; fixed-height mode uses physical dot resolution and no trailing line feeds so each job advances one configured label pitch.
+- Order print labels are read through an authenticated server function with user-scoped access, resolving referenced stock/draft names and dimensions rather than relying on incomplete preview payloads.

@@ -37,9 +37,10 @@ export function ResiPreviewDialog({
     setShopeeImg(null);
     setShopeeErr(null);
     if (payload?.is_shopee && payload.order_id) {
+      const orderId = payload.order_id;
       setLoadingShopee(true);
       import("@/lib/shopee-label")
-        .then((m) => m.fetchShopeeLabelUrl(payload.order_id!))
+        .then((m) => m.fetchShopeeLabelUrl(orderId))
         .then(async (url) => {
           revoke = url;
           setShopeeUrl(url);
@@ -107,7 +108,7 @@ export function ResiPreviewDialog({
                   <Button
                     className="flex-1 gap-2"
                     disabled={printing}
-                    onClick={() => printThermal(() => printPdfUrlThermal(shopeeUrl))}
+                    onClick={() => printThermal(() => printPdfUrlThermal(shopeeUrl, payload.order_id, payload.text_neon || ""))}
                   >
                     <Printer className="h-4 w-4" /> {printing ? "Mencetak..." : "Cetak"}
                   </Button>

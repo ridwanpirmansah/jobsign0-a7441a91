@@ -830,6 +830,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                         return;
                       }
                       setResiPreview({
+                        order_id: header.id,
                         no_resi: header.no_resi,
                         ekspedisi: header.ekspedisi,
                         co_date: header.co_date,
