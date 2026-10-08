@@ -902,6 +902,7 @@ export type Database = {
           density: number
           dots_58: number
           dots_80: number
+          height_mm: number
           id: number
           inset_dots: number
           paper_dots: number
@@ -914,6 +915,7 @@ export type Database = {
           density?: number
           dots_58?: number
           dots_80?: number
+          height_mm?: number
           id?: number
           inset_dots?: number
           paper_dots?: number
@@ -926,6 +928,7 @@ export type Database = {
           density?: number
           dots_58?: number
           dots_80?: number
+          height_mm?: number
           id?: number
           inset_dots?: number
           paper_dots?: number
