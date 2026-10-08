@@ -4923,6 +4923,9 @@ CREATE TABLE public.printer_settings (
   dots_80 integer NOT NULL DEFAULT 576 CHECK (dots_80 BETWEEN 384 AND 640),
   inset_dots integer NOT NULL DEFAULT 16 CHECK (inset_dots BETWEEN 0 AND 64),
   density smallint NOT NULL DEFAULT 2 CHECK (density BETWEEN 1 AND 3),
+  paper_dots integer NOT NULL DEFAULT 576 CHECK (paper_dots BETWEEN 128 AND 1024),
+  content_dots integer NOT NULL DEFAULT 544 CHECK (content_dots BETWEEN 128 AND 1024),
+  align text NOT NULL DEFAULT 'center' CHECK (align IN ('left', 'center', 'right')),
   updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
 
