@@ -41,7 +41,14 @@ import { ShopeeImportDialog } from "@/components/ShopeeImportDialog";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: () => <OrdersPage mode="orders" />,
-  head: () => ({ meta: [{ title: "Daftar Order Neon Sign" }] }),
+  head: () => ({ meta: [
+    { title: "Daftar Order Neon Sign | Neon Workflow" },
+    { name: "description", content: "Kelola pesanan neon sign, harga, dan cetak resi pengiriman." },
+    { property: "og:title", content: "Daftar Order Neon Sign | Neon Workflow" },
+    { property: "og:description", content: "Kelola pesanan neon sign, harga, dan cetak resi pengiriman." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 const SOURCES = ["shopee", "tiktok", "tokopedia", "lazada", "direct", "lainnya"] as const;
@@ -830,6 +837,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
                         return;
                       }
                       setResiPreview({
+                        order_id: header.id,
                         no_resi: header.no_resi,
                         ekspedisi: header.ekspedisi,
                         co_date: header.co_date,

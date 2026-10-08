@@ -8,3 +8,5 @@
       nonaktifkan relasi & aturan otomatis selama restore lalu pasang kembali.
 - [x] Rapikan raster resi Shopee dan resi bawaan untuk printer 58/80 mm.
 - [x] Jadikan pengaturan printer berlaku bersama untuk seluruh pengguna.
+- [x] Tambahkan nama dan ukuran pesanan setelah resi tanpa mengubah format aslinya.
+- [x] Tambahkan tinggi stiker bersama dan verifikasi panjang satu cetakan melalui pengujian serta kanvas browser; kalibrasi fisik tetap perlu dicoba pada printer.

@@ -4918,10 +4918,14 @@ GRANT EXECUTE ON FUNCTION public.restore_truncate(text) TO service_role;
 CREATE TABLE public.printer_settings (
   id smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   width_mm integer NOT NULL DEFAULT 58 CHECK (width_mm BETWEEN 30 AND 120),
+  height_mm integer NOT NULL DEFAULT 0 CHECK (height_mm = 0 OR height_mm BETWEEN 20 AND 500),
   dots_58 integer NOT NULL DEFAULT 384 CHECK (dots_58 BETWEEN 256 AND 576),
   dots_80 integer NOT NULL DEFAULT 576 CHECK (dots_80 BETWEEN 384 AND 640),
   inset_dots integer NOT NULL DEFAULT 16 CHECK (inset_dots BETWEEN 0 AND 64),
   density smallint NOT NULL DEFAULT 2 CHECK (density BETWEEN 1 AND 3),
+  paper_dots integer NOT NULL DEFAULT 576 CHECK (paper_dots BETWEEN 128 AND 1024),
+  content_dots integer NOT NULL DEFAULT 544 CHECK (content_dots BETWEEN 128 AND 1024),
+  align text NOT NULL DEFAULT 'center' CHECK (align IN ('left', 'center', 'right')),
   updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
 

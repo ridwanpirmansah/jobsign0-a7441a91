@@ -6,6 +6,7 @@ export type PrintAlign = "left" | "center" | "right";
 
 export type PrinterSettings = {
   widthMm: number;
+  heightMm: number;
   dots58: number;
   dots80: number;
   insetDots: number;
@@ -19,6 +20,7 @@ export type PrinterSettings = {
 
 export const DEFAULT_PRINTER_SETTINGS: PrinterSettings = {
   widthMm: 58,
+  heightMm: 0,
   dots58: 384,
   dots80: 576,
   insetDots: 16,
@@ -32,6 +34,7 @@ function toSettings(row: any): PrinterSettings {
   const paperDots = Number(row?.paper_dots ?? 576);
   return {
     widthMm: Number(row?.width_mm ?? 58),
+    heightMm: Number(row?.height_mm ?? 0),
     dots58: Number(row?.dots_58 ?? 384),
     dots80: Number(row?.dots_80 ?? 576),
     insetDots: Number(row?.inset_dots ?? 16),
@@ -54,7 +57,7 @@ export const getPrinterSettings = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("printer_settings")
-      .select("width_mm,dots_58,dots_80,inset_dots,density,paper_dots,content_dots,align")
+      .select("width_mm,height_mm,dots_58,dots_80,inset_dots,density,paper_dots,content_dots,align")
       .eq("id", 1)
       .single();
     if (error) throw new Error(error.message);
@@ -63,6 +66,7 @@ export const getPrinterSettings = createServerFn({ method: "GET" })
 
 const settingsSchema = z.object({
   widthMm: z.number().int().min(30).max(120),
+  heightMm: z.union([z.literal(0), z.number().int().min(20).max(500)]),
   dots58: z.number().int().min(256).max(576),
   dots80: z.number().int().min(384).max(640),
   insetDots: z.number().int().min(0).max(64),
@@ -81,6 +85,7 @@ export const updatePrinterSettings = createServerFn({ method: "POST" })
       .from("printer_settings")
       .update({
         width_mm: data.widthMm,
+        height_mm: data.heightMm,
         dots_58: data.dots58,
         dots_80: data.dots80,
         inset_dots: data.insetDots,

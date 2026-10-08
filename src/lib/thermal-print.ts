@@ -3,6 +3,8 @@
  * Hanya didukung Chrome/Edge Android + printer BLE.
  */
 import { generateBarcodeDataUrl, type ResiPayload } from "@/lib/resi-pdf";
+import { thermalPageLayout, thermalTrailingFeed } from "@/lib/thermal-layout";
+import { getOrderPrintLabel } from "@/lib/order-print-label.functions";
 import {
   DEFAULT_PRINTER_SETTINGS,
   getPrinterSettings as getSharedPrinterSettings,
@@ -144,8 +146,9 @@ async function sendChunks(characteristic: any, bytes: Uint8Array) {
 // ---------- Kanvas -> ESC/POS raster ----------
 
 /** Floyd–Steinberg dithering lalu bangun perintah gambar `GS v 0`. */
-function canvasToRasterCommand(canvas: HTMLCanvasElement, density: 1 | 2 | 3): Uint8Array {
-  const ctx = canvas.getContext("2d")!;
+function canvasToRasterCommand(canvas: HTMLCanvasElement, density: 1 | 2 | 3, heightMm = 0): Uint8Array {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Kanvas cetak tidak tersedia");
   const w = canvas.width;
   const h = canvas.height;
   const img = ctx.getImageData(0, 0, w, h);
@@ -193,7 +196,7 @@ function canvasToRasterCommand(canvas: HTMLCanvasElement, density: 1 | 2 | 3): U
       if (out[y * w + x]) data[y * rowBytes + (x >> 3)] |= 0x80 >> (x & 7);
     }
   }
-  const feed = new Uint8Array([0x0a, 0x0a, 0x0a]); // feed agar tidak terpotong
+  const feed = thermalTrailingFeed(heightMm);
   const result = new Uint8Array(head.length + data.length + feed.length);
   result.set(head, 0);
   result.set(data, head.length);
@@ -201,8 +204,9 @@ function canvasToRasterCommand(canvas: HTMLCanvasElement, density: 1 | 2 | 3): U
   return result;
 }
 
-async function printCanvas(canvas: HTMLCanvasElement, density: 1 | 2 | 3) {
-  const payload = canvasToRasterCommand(canvas, density);
+async function printCanvas(canvas: HTMLCanvasElement, settings: PrinterSettings, label = "") {
+  const page = composeThermalPage(canvas, settings, label);
+  const payload = canvasToRasterCommand(page, settings.density, settings.heightMm);
   const conn = await connectPrinter();
   try {
     await sendChunks(conn.characteristic, payload);
@@ -213,6 +217,53 @@ async function printCanvas(canvas: HTMLCanvasElement, density: 1 | 2 | 3) {
 }
 
 // ---------- Renderer resi (meniru tata letak PDF 100x100mm) ----------
+
+/** Append the footer outside the original receipt, then fit the entire page proportionally. */
+export function composeThermalPage(receipt: HTMLCanvasElement, settings: PrinterSettings, label: string): HTMLCanvasElement {
+  const pad = 8;
+  const footer = document.createElement("canvas");
+  footer.width = receipt.width;
+  const measure = footer.getContext("2d");
+  if (!measure) throw new Error("Kanvas cetak tidak tersedia");
+  const fontSize = Math.max(16, Math.round(receipt.width * 0.045));
+  measure.font = `bold ${fontSize}px Arial`;
+  // Break long unspaced product names as well as ordinary words.
+  const lines: string[] = [];
+  let current = "";
+  for (const char of label.trim()) {
+    if (measure.measureText(current + char).width > receipt.width - pad * 2 && current) {
+      lines.push(current.trim());
+      current = "";
+    }
+    current += char;
+  }
+  if (current.trim()) lines.push(current.trim());
+  const lineHeight = Math.ceil(fontSize * 1.3);
+  const footerHeight = lines.length ? pad * 2 + lines.length * lineHeight : 0;
+  footer.height = Math.max(1, footerHeight);
+  const ctx = footer.getContext("2d");
+  if (!ctx) throw new Error("Kanvas cetak tidak tersedia");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, footer.width, footer.height);
+  ctx.fillStyle = "#000";
+  ctx.font = `bold ${fontSize}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  lines.forEach((text, index) => ctx.fillText(text, footer.width / 2, pad + index * lineHeight));
+  const layout = thermalPageLayout(receipt.width, receipt.height, footerHeight, settings.heightMm);
+  const page = document.createElement("canvas");
+  page.width = paperPx(settings);
+  page.height = layout.height;
+  const pageCtx = page.getContext("2d");
+  if (!pageCtx) throw new Error("Kanvas cetak tidak tersedia");
+  pageCtx.fillStyle = "#fff";
+  pageCtx.fillRect(0, 0, page.width, page.height);
+  const gap = page.width - layout.receiptWidth;
+  const x = settings.align === "left" ? 0 : settings.align === "right" ? gap : Math.round(gap / 2);
+  pageCtx.drawImage(receipt, x, 0, layout.receiptWidth, layout.receiptHeight);
+  if (footerHeight) pageCtx.drawImage(footer, x, layout.receiptHeight, layout.receiptWidth, layout.footerHeight);
+  return page;
+}
 
 /** Lebar total titik printer (manual bila diisi). */
 function paperPx(settings: PrinterSettings): number {
@@ -490,10 +541,11 @@ async function renderPdfUrlToCanvas(url: string, targetWidthPx: number): Promise
 // ---------- API publik ----------
 
 /** Cetak resi manual aplikasi ke printer termal. */
-export async function printResiThermal(payload: ResiPayload): Promise<void> {
+export async function printResiThermal(payload: ResiPayload & { order_id?: string }): Promise<void> {
   const s = await loadPrinterSettings();
   const content = await renderResiCanvas(payload, contentPx(s), 0);
-  await printCanvas(placeOnPaper(content, s), s.density);
+  const label = payload.order_id ? await getOrderPrintLabel({ data: { orderId: payload.order_id } }) : payload.text_neon || "";
+  await printCanvas(content, s, label);
 }
 
 /** Cetak label Shopee (PDF tersimpan) ke printer termal. */
@@ -501,17 +553,18 @@ export async function printShopeeLabelThermal(orderId: string): Promise<void> {
   const { fetchShopeeLabelUrl } = await import("@/lib/shopee-label");
   const url = await fetchShopeeLabelUrl(orderId);
   try {
-    await printPdfUrlThermal(url);
+    await printPdfUrlThermal(url, orderId);
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
 /** Cetak PDF dari object URL apa pun (mis. preview Shopee). */
-export async function printPdfUrlThermal(url: string): Promise<void> {
+export async function printPdfUrlThermal(url: string, orderId?: string, fallbackLabel = ""): Promise<void> {
   const s = await loadPrinterSettings();
   const content = await renderPdfUrlToCanvas(url, contentPx(s));
-  await printCanvas(placeOnPaper(content, s), s.density);
+  const label = orderId ? await getOrderPrintLabel({ data: { orderId } }) : fallbackLabel;
+  await printCanvas(content, s, label);
 }
 
 /** Render halaman pertama PDF jadi gambar PNG (untuk preview di ponsel). */
@@ -542,5 +595,5 @@ export async function printTestThermal(): Promise<void> {
   ctx.strokeStyle = "#000";
   ctx.lineWidth = 2;
   ctx.strokeRect(1, 1, W - 2, canvas.height - 2);
-  await printCanvas(placeOnPaper(canvas, s), s.density);
+  await printCanvas(canvas, s, "GAME ROOM 40x40");
 }

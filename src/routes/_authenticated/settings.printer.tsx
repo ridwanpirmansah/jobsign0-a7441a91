@@ -127,6 +127,14 @@ function PrinterSettingsPage() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label htmlFor="thermal-height">Tinggi kertas / stiker (mm)</Label>
+            <Input id="thermal-height" type="number" min={0} max={500} step={1}
+              className="mt-1" value={settings.heightMm}
+              onChange={(event) => update({ heightMm: Math.round(Number(event.target.value) || 0) })} />
+            <p className="mt-1 text-[11px] text-muted-foreground">0 = kertas menerus; stiker 20–500 mm. Isi panjang satu stiker termasuk celah antarstiker.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Posisikan stiker pertama sebelum tes cetak. Ketepatan batas stiker bergantung pada kalibrasi printer.</p>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Lebar total printer (titik)</Label>
