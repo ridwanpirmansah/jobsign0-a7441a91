@@ -9,122 +9,71 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
-import { Route as AuthenticatedCashbonRouteImport } from './routes/_authenticated/cashbon'
-import { Route as AuthenticatedConsumptionRouteImport } from './routes/_authenticated/consumption'
-import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedDraftsRouteImport } from './routes/_authenticated/drafts'
-import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
-import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
-import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
-import { Route as AuthenticatedRatesRouteImport } from './routes/_authenticated/rates'
-import { Route as AuthenticatedReadyStockRouteImport } from './routes/_authenticated/ready-stock'
-import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
-import { Route as AuthenticatedShoppingNotesRouteImport } from './routes/_authenticated/shopping-notes'
-import { Route as AuthenticatedStatusRouteImport } from './routes/_authenticated/status'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
-import { Route as AuthenticatedMeAttendanceRouteImport } from './routes/_authenticated/me.attendance'
-import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
-import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
-import { Route as AuthenticatedMePickupRouteImport } from './routes/_authenticated/me.pickup'
-import { Route as AuthenticatedMeRepairsRouteImport } from './routes/_authenticated/me.repairs'
-import { Route as AuthenticatedMeScanRouteImport } from './routes/_authenticated/me.scan'
-import { Route as AuthenticatedMeShipRouteImport } from './routes/_authenticated/me.ship'
-import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner.analytics'
-import { Route as AuthenticatedOwnerAttendanceHistoryRouteImport } from './routes/_authenticated/owner.attendance-history'
-import { Route as AuthenticatedOwnerAttendanceQrRouteImport } from './routes/_authenticated/owner.attendance-qr'
-import { Route as AuthenticatedOwnerBackupRouteImport } from './routes/_authenticated/owner.backup'
-import { Route as AuthenticatedOwnerCarriersRouteImport } from './routes/_authenticated/owner.carriers'
-import { Route as AuthenticatedOwnerExpensesRouteImport } from './routes/_authenticated/owner.expenses'
-import { Route as AuthenticatedOwnerMenuOrderRouteImport } from './routes/_authenticated/owner.menu-order'
-import { Route as AuthenticatedOwnerPermissionsRouteImport } from './routes/_authenticated/owner.permissions'
-import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
-import { Route as AuthenticatedOwnerShopeeRouteImport } from './routes/_authenticated/owner.shopee'
-import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
+import { Route as AuthenticatedStatusRouteImport } from './routes/_authenticated/status'
+import { Route as AuthenticatedShoppingNotesRouteImport } from './routes/_authenticated/shopping-notes'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedReadyStockRouteImport } from './routes/_authenticated/ready-stock'
+import { Route as AuthenticatedRatesRouteImport } from './routes/_authenticated/rates'
+import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
+import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
+import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
+import { Route as AuthenticatedDraftsRouteImport } from './routes/_authenticated/drafts'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
+import { Route as AuthenticatedConsumptionRouteImport } from './routes/_authenticated/consumption'
+import { Route as AuthenticatedCashbonRouteImport } from './routes/_authenticated/cashbon'
+import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
-import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedSettingsPrinterRouteImport } from './routes/_authenticated/settings.printer'
-import { Route as ApiPublicHooksSyncProjectsRouteImport } from './routes/api/public/hooks/sync-projects'
-import { Route as ApiPublicHooksSyncShopeeRouteImport } from './routes/api/public/hooks/sync-shopee'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedOwnerSyncRouteImport } from './routes/_authenticated/owner.sync'
+import { Route as AuthenticatedOwnerShopeeRouteImport } from './routes/_authenticated/owner.shopee'
+import { Route as AuthenticatedOwnerPricesRouteImport } from './routes/_authenticated/owner.prices'
+import { Route as AuthenticatedOwnerPermissionsRouteImport } from './routes/_authenticated/owner.permissions'
+import { Route as AuthenticatedOwnerMenuOrderRouteImport } from './routes/_authenticated/owner.menu-order'
+import { Route as AuthenticatedOwnerExpensesRouteImport } from './routes/_authenticated/owner.expenses'
+import { Route as AuthenticatedOwnerCarriersRouteImport } from './routes/_authenticated/owner.carriers'
+import { Route as AuthenticatedOwnerBackupRouteImport } from './routes/_authenticated/owner.backup'
+import { Route as AuthenticatedOwnerAttendanceQrRouteImport } from './routes/_authenticated/owner.attendance-qr'
+import { Route as AuthenticatedOwnerAttendanceHistoryRouteImport } from './routes/_authenticated/owner.attendance-history'
+import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner.analytics'
+import { Route as AuthenticatedMeShipRouteImport } from './routes/_authenticated/me.ship'
+import { Route as AuthenticatedMeScanRouteImport } from './routes/_authenticated/me.scan'
+import { Route as AuthenticatedMeRepairsRouteImport } from './routes/_authenticated/me.repairs'
+import { Route as AuthenticatedMePickupRouteImport } from './routes/_authenticated/me.pickup'
+import { Route as AuthenticatedMeJobsRouteImport } from './routes/_authenticated/me.jobs'
+import { Route as AuthenticatedMeEarningsRouteImport } from './routes/_authenticated/me.earnings'
+import { Route as AuthenticatedMeAttendanceRouteImport } from './routes/_authenticated/me.attendance'
 import { Route as ApiPublicShopeeCallbackRouteImport } from './routes/api/public/shopee/callback'
+import { Route as ApiPublicHooksSyncShopeeRouteImport } from './routes/api/public/hooks/sync-shopee'
+import { Route as ApiPublicHooksSyncProjectsRouteImport } from './routes/api/public/hooks/sync-projects'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
-  id: '/approvals',
-  path: '/approvals',
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCashbonRoute = AuthenticatedCashbonRouteImport.update({
-  id: '/cashbon',
-  path: '/cashbon',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedConsumptionRoute =
-  AuthenticatedConsumptionRouteImport.update({
-    id: '/consumption',
-    path: '/consumption',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCustomersRoute = AuthenticatedCustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDraftsRoute = AuthenticatedDraftsRouteImport.update({
-  id: '/drafts',
-  path: '/drafts',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
-  id: '/employees',
-  path: '/employees',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPayrollRoute = AuthenticatedPayrollRouteImport.update({
-  id: '/payroll',
-  path: '/payroll',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedRatesRoute = AuthenticatedRatesRouteImport.update({
-  id: '/rates',
-  path: '/rates',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedReadyStockRoute = AuthenticatedReadyStockRouteImport.update({
-  id: '/ready-stock',
-  path: '/ready-stock',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
+const AuthenticatedStatusRoute = AuthenticatedStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedShoppingNotesRoute =
@@ -133,115 +82,65 @@ const AuthenticatedShoppingNotesRoute =
     path: '/shopping-notes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedStatusRoute = AuthenticatedStatusRouteImport.update({
-  id: '/status',
-  path: '/status',
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const AuthenticatedReadyStockRoute = AuthenticatedReadyStockRouteImport.update({
+  id: '/ready-stock',
+  path: '/ready-stock',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMeAttendanceRoute =
-  AuthenticatedMeAttendanceRouteImport.update({
-    id: '/me/attendance',
-    path: '/me/attendance',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedMeEarningsRoute = AuthenticatedMeEarningsRouteImport.update({
-  id: '/me/earnings',
-  path: '/me/earnings',
+const AuthenticatedRatesRoute = AuthenticatedRatesRouteImport.update({
+  id: '/rates',
+  path: '/rates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMeJobsRoute = AuthenticatedMeJobsRouteImport.update({
-  id: '/me/jobs',
-  path: '/me/jobs',
+const AuthenticatedPayrollRoute = AuthenticatedPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMePickupRoute = AuthenticatedMePickupRouteImport.update({
-  id: '/me/pickup',
-  path: '/me/pickup',
+const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMeRepairsRoute = AuthenticatedMeRepairsRouteImport.update({
-  id: '/me/repairs',
-  path: '/me/repairs',
+const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMeScanRoute = AuthenticatedMeScanRouteImport.update({
-  id: '/me/scan',
-  path: '/me/scan',
+const AuthenticatedDraftsRoute = AuthenticatedDraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMeShipRoute = AuthenticatedMeShipRouteImport.update({
-  id: '/me/ship',
-  path: '/me/ship',
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedOwnerAnalyticsRoute =
-  AuthenticatedOwnerAnalyticsRouteImport.update({
-    id: '/owner/analytics',
-    path: '/owner/analytics',
+const AuthenticatedCustomersRoute = AuthenticatedCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConsumptionRoute =
+  AuthenticatedConsumptionRouteImport.update({
+    id: '/consumption',
+    path: '/consumption',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedOwnerAttendanceHistoryRoute =
-  AuthenticatedOwnerAttendanceHistoryRouteImport.update({
-    id: '/owner/attendance-history',
-    path: '/owner/attendance-history',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerAttendanceQrRoute =
-  AuthenticatedOwnerAttendanceQrRouteImport.update({
-    id: '/owner/attendance-qr',
-    path: '/owner/attendance-qr',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerBackupRoute =
-  AuthenticatedOwnerBackupRouteImport.update({
-    id: '/owner/backup',
-    path: '/owner/backup',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerCarriersRoute =
-  AuthenticatedOwnerCarriersRouteImport.update({
-    id: '/owner/carriers',
-    path: '/owner/carriers',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerExpensesRoute =
-  AuthenticatedOwnerExpensesRouteImport.update({
-    id: '/owner/expenses',
-    path: '/owner/expenses',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerMenuOrderRoute =
-  AuthenticatedOwnerMenuOrderRouteImport.update({
-    id: '/owner/menu-order',
-    path: '/owner/menu-order',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerPermissionsRoute =
-  AuthenticatedOwnerPermissionsRouteImport.update({
-    id: '/owner/permissions',
-    path: '/owner/permissions',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerPricesRoute =
-  AuthenticatedOwnerPricesRouteImport.update({
-    id: '/owner/prices',
-    path: '/owner/prices',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerShopeeRoute =
-  AuthenticatedOwnerShopeeRouteImport.update({
-    id: '/owner/shopee',
-    path: '/owner/shopee',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOwnerSyncRoute = AuthenticatedOwnerSyncRouteImport.update({
-  id: '/owner/sync',
-  path: '/owner/sync',
+const AuthenticatedCashbonRoute = AuthenticatedCashbonRouteImport.update({
+  id: '/cashbon',
+  path: '/cashbon',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProjectsIndexRoute =
@@ -250,16 +149,128 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
-  id: '/projects/$id',
-  path: '/projects/$id',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedSettingsPrinterRoute =
   AuthenticatedSettingsPrinterRouteImport.update({
     id: '/settings/printer',
     path: '/settings/printer',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
+  id: '/projects/$id',
+  path: '/projects/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOwnerSyncRoute = AuthenticatedOwnerSyncRouteImport.update({
+  id: '/owner/sync',
+  path: '/owner/sync',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOwnerShopeeRoute =
+  AuthenticatedOwnerShopeeRouteImport.update({
+    id: '/owner/shopee',
+    path: '/owner/shopee',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerPricesRoute =
+  AuthenticatedOwnerPricesRouteImport.update({
+    id: '/owner/prices',
+    path: '/owner/prices',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerPermissionsRoute =
+  AuthenticatedOwnerPermissionsRouteImport.update({
+    id: '/owner/permissions',
+    path: '/owner/permissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerMenuOrderRoute =
+  AuthenticatedOwnerMenuOrderRouteImport.update({
+    id: '/owner/menu-order',
+    path: '/owner/menu-order',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerExpensesRoute =
+  AuthenticatedOwnerExpensesRouteImport.update({
+    id: '/owner/expenses',
+    path: '/owner/expenses',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerCarriersRoute =
+  AuthenticatedOwnerCarriersRouteImport.update({
+    id: '/owner/carriers',
+    path: '/owner/carriers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerBackupRoute =
+  AuthenticatedOwnerBackupRouteImport.update({
+    id: '/owner/backup',
+    path: '/owner/backup',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerAttendanceQrRoute =
+  AuthenticatedOwnerAttendanceQrRouteImport.update({
+    id: '/owner/attendance-qr',
+    path: '/owner/attendance-qr',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerAttendanceHistoryRoute =
+  AuthenticatedOwnerAttendanceHistoryRouteImport.update({
+    id: '/owner/attendance-history',
+    path: '/owner/attendance-history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerAnalyticsRoute =
+  AuthenticatedOwnerAnalyticsRouteImport.update({
+    id: '/owner/analytics',
+    path: '/owner/analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMeShipRoute = AuthenticatedMeShipRouteImport.update({
+  id: '/me/ship',
+  path: '/me/ship',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeScanRoute = AuthenticatedMeScanRouteImport.update({
+  id: '/me/scan',
+  path: '/me/scan',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeRepairsRoute = AuthenticatedMeRepairsRouteImport.update({
+  id: '/me/repairs',
+  path: '/me/repairs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMePickupRoute = AuthenticatedMePickupRouteImport.update({
+  id: '/me/pickup',
+  path: '/me/pickup',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeJobsRoute = AuthenticatedMeJobsRouteImport.update({
+  id: '/me/jobs',
+  path: '/me/jobs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeEarningsRoute = AuthenticatedMeEarningsRouteImport.update({
+  id: '/me/earnings',
+  path: '/me/earnings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeAttendanceRoute =
+  AuthenticatedMeAttendanceRouteImport.update({
+    id: '/me/attendance',
+    path: '/me/attendance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicShopeeCallbackRoute = ApiPublicShopeeCallbackRouteImport.update({
+  id: '/api/public/shopee/callback',
+  path: '/api/public/shopee/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksSyncShopeeRoute =
+  ApiPublicHooksSyncShopeeRouteImport.update({
+    id: '/api/public/hooks/sync-shopee',
+    path: '/api/public/hooks/sync-shopee',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksSyncProjectsRoute =
   ApiPublicHooksSyncProjectsRouteImport.update({
@@ -267,17 +278,6 @@ const ApiPublicHooksSyncProjectsRoute =
     path: '/api/public/hooks/sync-projects',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksSyncShopeeRoute =
-  ApiPublicHooksSyncShopeeRouteImport.update({
-    id: '/api/public/hooks/sync-shopee',
-    path: '/api/public/hooks/sync-shopee',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicShopeeCallbackRoute = ApiPublicShopeeCallbackRouteImport.update({
-  id: '/api/public/shopee/callback',
-  path: '/api/public/shopee/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -554,11 +554,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -568,102 +568,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/approvals': {
-      id: '/_authenticated/approvals'
-      path: '/approvals'
-      fullPath: '/approvals'
-      preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cashbon': {
-      id: '/_authenticated/cashbon'
-      path: '/cashbon'
-      fullPath: '/cashbon'
-      preLoaderRoute: typeof AuthenticatedCashbonRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/consumption': {
-      id: '/_authenticated/consumption'
-      path: '/consumption'
-      fullPath: '/consumption'
-      preLoaderRoute: typeof AuthenticatedConsumptionRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/customers': {
-      id: '/_authenticated/customers'
-      path: '/customers'
-      fullPath: '/customers'
-      preLoaderRoute: typeof AuthenticatedCustomersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/drafts': {
-      id: '/_authenticated/drafts'
-      path: '/drafts'
-      fullPath: '/drafts'
-      preLoaderRoute: typeof AuthenticatedDraftsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/employees': {
-      id: '/_authenticated/employees'
-      path: '/employees'
-      fullPath: '/employees'
-      preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/orders': {
-      id: '/_authenticated/orders'
-      path: '/orders'
-      fullPath: '/orders'
-      preLoaderRoute: typeof AuthenticatedOrdersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/payroll': {
-      id: '/_authenticated/payroll'
-      path: '/payroll'
-      fullPath: '/payroll'
-      preLoaderRoute: typeof AuthenticatedPayrollRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/rates': {
-      id: '/_authenticated/rates'
-      path: '/rates'
-      fullPath: '/rates'
-      preLoaderRoute: typeof AuthenticatedRatesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ready-stock': {
-      id: '/_authenticated/ready-stock'
-      path: '/ready-stock'
-      fullPath: '/ready-stock'
-      preLoaderRoute: typeof AuthenticatedReadyStockRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/reports': {
-      id: '/_authenticated/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AuthenticatedReportsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/shopping-notes': {
-      id: '/_authenticated/shopping-notes'
-      path: '/shopping-notes'
-      fullPath: '/shopping-notes'
-      preLoaderRoute: typeof AuthenticatedShoppingNotesRouteImport
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/status': {
@@ -673,137 +589,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStatusRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/users': {
-      id: '/_authenticated/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+    '/_authenticated/shopping-notes': {
+      id: '/_authenticated/shopping-notes'
+      path: '/shopping-notes'
+      fullPath: '/shopping-notes'
+      preLoaderRoute: typeof AuthenticatedShoppingNotesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/me/attendance': {
-      id: '/_authenticated/me/attendance'
-      path: '/me/attendance'
-      fullPath: '/me/attendance'
-      preLoaderRoute: typeof AuthenticatedMeAttendanceRouteImport
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/me/earnings': {
-      id: '/_authenticated/me/earnings'
-      path: '/me/earnings'
-      fullPath: '/me/earnings'
-      preLoaderRoute: typeof AuthenticatedMeEarningsRouteImport
+    '/_authenticated/ready-stock': {
+      id: '/_authenticated/ready-stock'
+      path: '/ready-stock'
+      fullPath: '/ready-stock'
+      preLoaderRoute: typeof AuthenticatedReadyStockRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/me/jobs': {
-      id: '/_authenticated/me/jobs'
-      path: '/me/jobs'
-      fullPath: '/me/jobs'
-      preLoaderRoute: typeof AuthenticatedMeJobsRouteImport
+    '/_authenticated/rates': {
+      id: '/_authenticated/rates'
+      path: '/rates'
+      fullPath: '/rates'
+      preLoaderRoute: typeof AuthenticatedRatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/me/pickup': {
-      id: '/_authenticated/me/pickup'
-      path: '/me/pickup'
-      fullPath: '/me/pickup'
-      preLoaderRoute: typeof AuthenticatedMePickupRouteImport
+    '/_authenticated/payroll': {
+      id: '/_authenticated/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof AuthenticatedPayrollRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/me/repairs': {
-      id: '/_authenticated/me/repairs'
-      path: '/me/repairs'
-      fullPath: '/me/repairs'
-      preLoaderRoute: typeof AuthenticatedMeRepairsRouteImport
+    '/_authenticated/orders': {
+      id: '/_authenticated/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof AuthenticatedOrdersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/me/scan': {
-      id: '/_authenticated/me/scan'
-      path: '/me/scan'
-      fullPath: '/me/scan'
-      preLoaderRoute: typeof AuthenticatedMeScanRouteImport
+    '/_authenticated/employees': {
+      id: '/_authenticated/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/me/ship': {
-      id: '/_authenticated/me/ship'
-      path: '/me/ship'
-      fullPath: '/me/ship'
-      preLoaderRoute: typeof AuthenticatedMeShipRouteImport
+    '/_authenticated/drafts': {
+      id: '/_authenticated/drafts'
+      path: '/drafts'
+      fullPath: '/drafts'
+      preLoaderRoute: typeof AuthenticatedDraftsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/owner/analytics': {
-      id: '/_authenticated/owner/analytics'
-      path: '/owner/analytics'
-      fullPath: '/owner/analytics'
-      preLoaderRoute: typeof AuthenticatedOwnerAnalyticsRouteImport
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/owner/attendance-history': {
-      id: '/_authenticated/owner/attendance-history'
-      path: '/owner/attendance-history'
-      fullPath: '/owner/attendance-history'
-      preLoaderRoute: typeof AuthenticatedOwnerAttendanceHistoryRouteImport
+    '/_authenticated/customers': {
+      id: '/_authenticated/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof AuthenticatedCustomersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/owner/attendance-qr': {
-      id: '/_authenticated/owner/attendance-qr'
-      path: '/owner/attendance-qr'
-      fullPath: '/owner/attendance-qr'
-      preLoaderRoute: typeof AuthenticatedOwnerAttendanceQrRouteImport
+    '/_authenticated/consumption': {
+      id: '/_authenticated/consumption'
+      path: '/consumption'
+      fullPath: '/consumption'
+      preLoaderRoute: typeof AuthenticatedConsumptionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/owner/backup': {
-      id: '/_authenticated/owner/backup'
-      path: '/owner/backup'
-      fullPath: '/owner/backup'
-      preLoaderRoute: typeof AuthenticatedOwnerBackupRouteImport
+    '/_authenticated/cashbon': {
+      id: '/_authenticated/cashbon'
+      path: '/cashbon'
+      fullPath: '/cashbon'
+      preLoaderRoute: typeof AuthenticatedCashbonRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/owner/carriers': {
-      id: '/_authenticated/owner/carriers'
-      path: '/owner/carriers'
-      fullPath: '/owner/carriers'
-      preLoaderRoute: typeof AuthenticatedOwnerCarriersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/owner/expenses': {
-      id: '/_authenticated/owner/expenses'
-      path: '/owner/expenses'
-      fullPath: '/owner/expenses'
-      preLoaderRoute: typeof AuthenticatedOwnerExpensesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/owner/menu-order': {
-      id: '/_authenticated/owner/menu-order'
-      path: '/owner/menu-order'
-      fullPath: '/owner/menu-order'
-      preLoaderRoute: typeof AuthenticatedOwnerMenuOrderRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/owner/permissions': {
-      id: '/_authenticated/owner/permissions'
-      path: '/owner/permissions'
-      fullPath: '/owner/permissions'
-      preLoaderRoute: typeof AuthenticatedOwnerPermissionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/owner/prices': {
-      id: '/_authenticated/owner/prices'
-      path: '/owner/prices'
-      fullPath: '/owner/prices'
-      preLoaderRoute: typeof AuthenticatedOwnerPricesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/owner/shopee': {
-      id: '/_authenticated/owner/shopee'
-      path: '/owner/shopee'
-      fullPath: '/owner/shopee'
-      preLoaderRoute: typeof AuthenticatedOwnerShopeeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/owner/sync': {
-      id: '/_authenticated/owner/sync'
-      path: '/owner/sync'
-      fullPath: '/owner/sync'
-      preLoaderRoute: typeof AuthenticatedOwnerSyncRouteImport
+    '/_authenticated/approvals': {
+      id: '/_authenticated/approvals'
+      path: '/approvals'
+      fullPath: '/approvals'
+      preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects/': {
@@ -813,13 +687,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/projects/$id': {
-      id: '/_authenticated/projects/$id'
-      path: '/projects/$id'
-      fullPath: '/projects/$id'
-      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/settings/printer': {
       id: '/_authenticated/settings/printer'
       path: '/settings/printer'
@@ -827,11 +694,144 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPrinterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/hooks/sync-projects': {
-      id: '/api/public/hooks/sync-projects'
-      path: '/api/public/hooks/sync-projects'
-      fullPath: '/api/public/hooks/sync-projects'
-      preLoaderRoute: typeof ApiPublicHooksSyncProjectsRouteImport
+    '/_authenticated/projects/$id': {
+      id: '/_authenticated/projects/$id'
+      path: '/projects/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/sync': {
+      id: '/_authenticated/owner/sync'
+      path: '/owner/sync'
+      fullPath: '/owner/sync'
+      preLoaderRoute: typeof AuthenticatedOwnerSyncRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/shopee': {
+      id: '/_authenticated/owner/shopee'
+      path: '/owner/shopee'
+      fullPath: '/owner/shopee'
+      preLoaderRoute: typeof AuthenticatedOwnerShopeeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/prices': {
+      id: '/_authenticated/owner/prices'
+      path: '/owner/prices'
+      fullPath: '/owner/prices'
+      preLoaderRoute: typeof AuthenticatedOwnerPricesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/permissions': {
+      id: '/_authenticated/owner/permissions'
+      path: '/owner/permissions'
+      fullPath: '/owner/permissions'
+      preLoaderRoute: typeof AuthenticatedOwnerPermissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/menu-order': {
+      id: '/_authenticated/owner/menu-order'
+      path: '/owner/menu-order'
+      fullPath: '/owner/menu-order'
+      preLoaderRoute: typeof AuthenticatedOwnerMenuOrderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/expenses': {
+      id: '/_authenticated/owner/expenses'
+      path: '/owner/expenses'
+      fullPath: '/owner/expenses'
+      preLoaderRoute: typeof AuthenticatedOwnerExpensesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/carriers': {
+      id: '/_authenticated/owner/carriers'
+      path: '/owner/carriers'
+      fullPath: '/owner/carriers'
+      preLoaderRoute: typeof AuthenticatedOwnerCarriersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/backup': {
+      id: '/_authenticated/owner/backup'
+      path: '/owner/backup'
+      fullPath: '/owner/backup'
+      preLoaderRoute: typeof AuthenticatedOwnerBackupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/attendance-qr': {
+      id: '/_authenticated/owner/attendance-qr'
+      path: '/owner/attendance-qr'
+      fullPath: '/owner/attendance-qr'
+      preLoaderRoute: typeof AuthenticatedOwnerAttendanceQrRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/attendance-history': {
+      id: '/_authenticated/owner/attendance-history'
+      path: '/owner/attendance-history'
+      fullPath: '/owner/attendance-history'
+      preLoaderRoute: typeof AuthenticatedOwnerAttendanceHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner/analytics': {
+      id: '/_authenticated/owner/analytics'
+      path: '/owner/analytics'
+      fullPath: '/owner/analytics'
+      preLoaderRoute: typeof AuthenticatedOwnerAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/ship': {
+      id: '/_authenticated/me/ship'
+      path: '/me/ship'
+      fullPath: '/me/ship'
+      preLoaderRoute: typeof AuthenticatedMeShipRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/scan': {
+      id: '/_authenticated/me/scan'
+      path: '/me/scan'
+      fullPath: '/me/scan'
+      preLoaderRoute: typeof AuthenticatedMeScanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/repairs': {
+      id: '/_authenticated/me/repairs'
+      path: '/me/repairs'
+      fullPath: '/me/repairs'
+      preLoaderRoute: typeof AuthenticatedMeRepairsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/pickup': {
+      id: '/_authenticated/me/pickup'
+      path: '/me/pickup'
+      fullPath: '/me/pickup'
+      preLoaderRoute: typeof AuthenticatedMePickupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/jobs': {
+      id: '/_authenticated/me/jobs'
+      path: '/me/jobs'
+      fullPath: '/me/jobs'
+      preLoaderRoute: typeof AuthenticatedMeJobsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/earnings': {
+      id: '/_authenticated/me/earnings'
+      path: '/me/earnings'
+      fullPath: '/me/earnings'
+      preLoaderRoute: typeof AuthenticatedMeEarningsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/me/attendance': {
+      id: '/_authenticated/me/attendance'
+      path: '/me/attendance'
+      fullPath: '/me/attendance'
+      preLoaderRoute: typeof AuthenticatedMeAttendanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/shopee/callback': {
+      id: '/api/public/shopee/callback'
+      path: '/api/public/shopee/callback'
+      fullPath: '/api/public/shopee/callback'
+      preLoaderRoute: typeof ApiPublicShopeeCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/sync-shopee': {
@@ -841,11 +841,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSyncShopeeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/shopee/callback': {
-      id: '/api/public/shopee/callback'
-      path: '/api/public/shopee/callback'
-      fullPath: '/api/public/shopee/callback'
-      preLoaderRoute: typeof ApiPublicShopeeCallbackRouteImport
+    '/api/public/hooks/sync-projects': {
+      id: '/api/public/hooks/sync-projects'
+      path: '/api/public/hooks/sync-projects'
+      fullPath: '/api/public/hooks/sync-projects'
+      preLoaderRoute: typeof ApiPublicHooksSyncProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

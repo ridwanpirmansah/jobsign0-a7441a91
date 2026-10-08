@@ -3,6 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   ssr: false,
+  head: () => ({ meta: [
+    { title: "Neon Workflow | Fuji Electric" },
+    { name: "description", content: "Pengelolaan pesanan dan produksi neon sign Fuji Electric." },
+    { property: "og:title", content: "Neon Workflow | Fuji Electric" },
+    { property: "og:description", content: "Pengelolaan pesanan dan produksi neon sign Fuji Electric." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   beforeLoad: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
