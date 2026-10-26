@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Tambahkan akses preview, download, dan cetak resi pada riwayat Status Orderan tanpa batas tiga hari; build berhasil dan tes pencetakan lulus.
+- [ ] Verifikasi cetak resi pesanan lama melalui akun aktif; menunggu pengguna masuk di preview karena sesi pengujian tidak tersedia.
+
 - [x] Perbaiki Restore Semua agar data operasional dapat dipindahkan tanpa akun login lama.
 - [x] Normalisasi data backup lama dan pulihkan relasi Order–Project bertahap.
 - [x] Perjelas petunjuk restore dan dokumentasi deployment.
