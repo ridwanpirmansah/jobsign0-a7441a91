@@ -19,7 +19,14 @@ import { ResiPreviewDialog } from "@/components/ResiPreviewDialog";
 
 export const Route = createFileRoute("/_authenticated/status")({
   component: StatusPage,
-  head: () => ({ meta: [{ title: "Status Orderan" }] }),
+  head: () => ({ meta: [
+    { title: "Status Orderan & Riwayat Pesanan | Fuji Electric" },
+    { name: "description", content: "Pantau status pengerjaan dan riwayat pengiriman pesanan Fuji Electric, serta lihat dan cetak resi pesanan." },
+    { property: "og:title", content: "Status Orderan & Riwayat Pesanan | Fuji Electric" },
+    { property: "og:description", content: "Pantau pengerjaan, riwayat pengiriman, dan resi pesanan Fuji Electric." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 type Step = "waiting" | "cutting" | "potong" | "solder" | "tempel" | "kabel" | "packing" | "shipping";
@@ -455,9 +462,13 @@ function StatusPage() {
       <ResiPreviewDialog payload={previewPayload} onClose={() => setPreviewPayload(null)} />
 
       <HistoryDialog
-        open={historyOpen}
+        open={historyOpen && !previewPayload}
         onOpenChange={setHistoryOpen}
         onOpenDetail={(pid) => { setHistoryOpen(false); setSelectedId(pid); }}
+        onPreview={(row) => {
+          if (!row.no_resi) return;
+          void openPreview(row.order_id, { ...row, no_resi: row.no_resi });
+        }}
       />
     </div>
   );
@@ -471,10 +482,11 @@ type HistoryRow = {
   projects: HistoryProject[];
 };
 
-function HistoryDialog({ open, onOpenChange, onOpenDetail }: {
+function HistoryDialog({ open, onOpenChange, onOpenDetail, onPreview }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onOpenDetail: (projectId: string) => void;
+  onPreview: (row: HistoryRow) => void;
 }) {
   const [q, setQ] = useState("");
   const { data, isLoading } = useQuery({
@@ -528,12 +540,17 @@ function HistoryDialog({ open, onOpenChange, onOpenDetail }: {
             filtered.map((r) => {
               const firstProject = r.projects[0];
               return (
-                <button
+                <div
                   key={r.order_id}
-                  type="button"
-                  onClick={() => firstProject && onOpenDetail(firstProject.id)}
-                  className="flex w-full items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
+                  className="flex w-full items-start gap-2 rounded-lg border border-border bg-background p-2"
                 >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={!firstProject}
+                    onClick={() => firstProject && onOpenDetail(firstProject.id)}
+                    className="h-auto min-w-0 flex-1 justify-start whitespace-normal p-0 text-left"
+                  >
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="font-mono text-xs font-semibold text-slate-700 truncate">#{r.order_no}</span>
@@ -559,10 +576,25 @@ function HistoryDialog({ open, onOpenChange, onOpenDetail }: {
                       )}
                     </div>
                   </div>
-                  <Badge className={`shrink-0 gap-1 border-transparent ${r.picked_up_at ? "bg-green-600" : "bg-slate-500"} text-white`}>
-                    <Truck className="h-3 w-3" /> {r.picked_up_at ? "Dikirim" : "Selesai"}
-                  </Badge>
-                </button>
+                  </Button>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <Badge className={`shrink-0 gap-1 border-transparent ${r.picked_up_at ? "bg-green-600" : "bg-slate-500"} text-white`}>
+                      <Truck className="h-3 w-3" /> {r.picked_up_at ? "Dikirim" : "Selesai"}
+                    </Badge>
+                    {r.no_resi && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => onPreview(r)}
+                        aria-label={`Lihat resi ${r.order_no}`}
+                      >
+                        <Eye className="h-3 w-3" /> Resi
+                      </Button>
+                    )}
+                  </div>
+                </div>
               );
             })
           )}
