@@ -5,6 +5,7 @@
  */
 import { createHmac } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { resolveShopeeImportTarget } from "./order-identity";
 
 export const SHOPEE_CALLBACK_PATH = "/api/public/shopee/callback";
 
@@ -465,23 +466,25 @@ export async function previewOrders(days: number): Promise<ShopeeOrderPreview[]>
       if (sns.length === 0) continue;
       const details = await fetchDetails(shop, sns);
 
-      const { data: maps } = await supabaseAdmin
+      const { data: maps, error: mapsError } = await supabaseAdmin
         .from("shopee_order_map")
-        .select("order_sn, order_id, orders(order_no)")
+        .select("order_sn, order_id, orders(id, order_no, status, consumed_at)")
         .eq("shop_id", shop.shop_id)
         .in("order_sn", sns);
+      if (mapsError) throw new Error(mapsError.message);
       const byS = new Map<string, any>();
       for (const m of maps ?? []) byS.set((m as any).order_sn, m);
 
       for (const d of details) {
         const base = mapDetail(d);
         const m = byS.get(base.order_sn);
+        const target = resolveShopeeImportTarget(m?.orders);
         rows.push({
           ...base,
           shop_id: shop.shop_id,
           shop_name: shopLabel(shop),
-          already_imported: !!m?.order_id,
-          order_no: (m?.orders as any)?.order_no ?? null,
+          already_imported: !!target,
+          order_no: target?.order_no ?? null,
         });
       }
     } catch (e: any) {
@@ -537,14 +540,16 @@ async function importDetail(shop: ShopeeShop, d: any, result: ShopeeSyncResult) 
     return;
   }
 
-  const { data: existing } = await supabaseAdmin
+  const { data: existing, error: mappingError } = await supabaseAdmin
     .from("shopee_order_map")
-    .select("id, order_id")
+    .select("id, order_id, orders(id, order_no, status, consumed_at)")
     .eq("order_sn", p.order_sn)
     .eq("shop_id", shop.shop_id)
     .maybeSingle();
 
-  if (existing?.order_id) {
+  if (mappingError) throw new Error(mappingError.message);
+  const target = resolveShopeeImportTarget(existing?.orders);
+  if (existing && target) {
     // hanya perbarui field pengiriman, jangan timpa editan manual
     const patch: Record<string, any> = {};
     if (p.no_resi) patch.no_resi = p.no_resi;
@@ -553,7 +558,9 @@ async function importDetail(shop: ShopeeShop, d: any, result: ShopeeSyncResult) 
     if (p.total > 0) patch.payment = p.total;
 
     if (Object.keys(patch).length > 0) {
-      const { error } = await supabaseAdmin.from("orders").update(patch as any).eq("id", existing.order_id);
+      const { error } = await supabaseAdmin.from("orders").update(patch as any)
+        .eq("id", target.id).eq("status", target.status).is("consumed_at", null)
+        .select("id").single();
       if (error) {
         result.errors.push(`${p.order_sn}: ${error.message}`);
         result.skipped++;
@@ -564,7 +571,7 @@ async function importDetail(shop: ShopeeShop, d: any, result: ShopeeSyncResult) 
       .from("shopee_order_map")
       .update({ shopee_status: p.status, raw: d, shop_id: shop.shop_id } as any)
       .eq("id", existing.id);
-    await importShopeeShippingAssets(shop, p.order_sn, existing.order_id, p.status, result);
+    await importShopeeShippingAssets(shop, p.order_sn, target.id, p.status, result);
     result.updated++;
     return;
   }
@@ -599,7 +606,7 @@ async function importDetail(shop: ShopeeShop, d: any, result: ShopeeSyncResult) 
     return;
   }
 
-  await supabaseAdmin.from("shopee_order_map").upsert(
+  const { error: mapSaveError } = await supabaseAdmin.from("shopee_order_map").upsert(
     {
       order_sn: p.order_sn,
       shop_id: shop.shop_id,
@@ -610,6 +617,7 @@ async function importDetail(shop: ShopeeShop, d: any, result: ShopeeSyncResult) 
     } as any,
     { onConflict: "order_sn,shop_id" },
   );
+  if (mapSaveError) throw new Error(mapSaveError.message);
   await importShopeeShippingAssets(shop, p.order_sn, created.id, p.status, result);
   result.inserted++;
 }

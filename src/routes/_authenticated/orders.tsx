@@ -38,6 +38,7 @@ import { printShopeeLabelThermal, isThermalPrintSupported } from "@/lib/thermal-
 import { WorkflowTabs } from "@/components/WorkflowTabs";
 import { TablePagination } from "@/components/TablePagination";
 import { ShopeeImportDialog } from "@/components/ShopeeImportDialog";
+import { matchesOrderSearch } from "@/lib/order-identity";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: () => <OrdersPage mode="orders" />,
@@ -676,9 +677,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       else if (isDraft) { if (o.status !== "draft") return false; }
       else { if (o.status === "ready_stock" || o.status === "draft") return false; }
       if (srcFilter !== "all" && o.source !== srcFilter) return false;
-      if (!filter.trim()) return true;
-      const q = filter.toLowerCase();
-      return [o.order_no, o.username, o.kota, o.text_neon].some((v) => String(v ?? "").toLowerCase().includes(q));
+      return matchesOrderSearch(o, filter);
     });
 
     const numericKeys: SortKey[] = ["titik", "hpp", "payment", "profit"];
@@ -1036,7 +1035,7 @@ export function OrdersPage({ mode = "orders" }: { mode?: "orders" | "ready_stock
       <Card>
         <CardHeader className="pb-3 px-3 pt-3 sm:p-6">
           <div className="flex items-center gap-2 flex-wrap">
-            <Input placeholder="Cari no order / nama / kota / text..." value={filter} onChange={(e) => setFilter(e.target.value)} className="max-w-xs" />
+            <Input placeholder="Cari no order / resi / nama / kota / text..." value={filter} onChange={(e) => setFilter(e.target.value)} className="max-w-xs" />
             <Select value={srcFilter} onValueChange={setSrcFilter}>
               <SelectTrigger className="w-40"><SelectValue/></SelectTrigger>
               <SelectContent>

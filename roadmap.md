@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Perbaiki penanda dan tujuan impor Shopee agar memakai pesanan aktif, bukan Ready Stock/Draft; RS-85 terkonfirmasi sumber stok untuk pembeli berbeda, bukan tujuan impor ulang.
+- [x] Tambahkan pencarian pesanan berdasarkan nomor resi; 16 tes lulus, aturan terverifikasi di browser, build OK.
+- [ ] Verifikasi impor ulang Shopee dan pencarian melalui akun aktif; sesi pengujian belum tersedia, pengguna perlu masuk di preview.
+
 - [x] Tambahkan akses preview, download, dan cetak resi pada riwayat Status Orderan tanpa batas tiga hari; build berhasil dan tes pencetakan lulus.
 - [ ] Verifikasi cetak resi pesanan lama melalui akun aktif; menunggu pengguna masuk di preview karena sesi pengujian tidak tersedia.
 
