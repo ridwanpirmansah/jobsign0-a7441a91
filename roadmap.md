@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Perbaiki penanda dan tujuan impor Shopee agar memakai pesanan aktif, bukan Ready Stock/Draft.
+- [ ] Tambahkan pencarian pesanan berdasarkan nomor resi dan verifikasi pengujian.
+
 - [x] Tambahkan akses preview, download, dan cetak resi pada riwayat Status Orderan tanpa batas tiga hari; build berhasil dan tes pencetakan lulus.
 - [ ] Verifikasi cetak resi pesanan lama melalui akun aktif; menunggu pengguna masuk di preview karena sesi pengujian tidak tersedia.
 
